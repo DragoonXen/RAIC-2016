@@ -333,7 +333,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
         }
 
         for (Wizard unit : world.getWizards()) {
-			drawUnit(unit, unit.getVisionRange());
+			drawUnit(unit);//, unit.getVisionRange()
 		}
 
         for (Building unit : world.getBuildings()) {
@@ -341,7 +341,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
 
         for (Minion unit : world.getMinions()) {
-			drawUnit(unit, unit.getVisionRange());
+			drawUnit(unit);//, unit.getVisionRange()
 		}
 
         for (Projectile unit : world.getProjectiles()) {

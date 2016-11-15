@@ -239,6 +239,44 @@ public class Utils {
 		return true;
 	}
 
+	public static void calcTilesAvailable(List<CircularUnit> units, ScanMatrixItem[] items) {
+		double radius = Constants.getGame().getWizardRadius();
+		double x, y;
+		List<CircularUnit> filteredUnits = new ArrayList<>(units.size());
+		for (CircularUnit unit : units) {
+			x = Utils.distancePointToSegment(new Point(unit.getX(), unit.getY()), items[0], items[items.length - 1]);
+			if (x < unit.getRadius() + radius) {
+				filteredUnits.add(unit);
+			}
+		}
+		for (int i = 0; i != items.length; ++i) {
+			ScanMatrixItem item = items[i];
+			x = item.getX();
+			y = item.getY();
+			if (x < radius ||
+					y < radius ||
+					x + radius > Constants.getGame().getMapSize() ||
+					y + radius > Constants.getGame().getMapSize()) {
+				item.setAvailable(false);
+				continue;
+			}
+			if (blockUnit != null) {
+				if (FastMath.hypot(blockUnit.getX() - x, blockUnit.getY() - y) + .001 < blockUnit.getRadius() + radius) {
+					item.setAvailable(false);
+					continue;
+				}
+			}
+			blockUnit = null;
+			for (CircularUnit unit : filteredUnits) {
+				if (FastMath.hypot(unit.getX() - x, unit.getY() - y) < unit.getRadius() + radius) {
+					item.setAvailable(false);
+					blockUnit = unit;
+					break;
+				}
+			}
+		}
+	}
+
 	public static boolean hasEnemy(LivingUnit[] units) {
 		for (LivingUnit unit : units) {
 			if (unit.getFaction() == Constants.getEnemyFaction() ||

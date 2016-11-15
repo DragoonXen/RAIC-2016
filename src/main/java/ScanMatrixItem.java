@@ -58,7 +58,7 @@ public class ScanMatrixItem extends Point {
 		this.otherBonus = 0.;
 		this.wayPoint = null;
 		this.totalScore = Double.MIN_VALUE;
-		//this.available = false;
+		this.available = true;
 	}
 
 	public double getX() {
