@@ -2,6 +2,8 @@ import model.Building;
 import model.CircularUnit;
 import model.LaneType;
 import model.LivingUnit;
+import model.Status;
+import model.StatusType;
 import model.Unit;
 import model.Wizard;
 import model.World;
@@ -299,6 +301,15 @@ public class Utils {
 		for (LivingUnit unit : units) {
 			if (unit.getFaction() == Constants.getEnemyFaction() ||
 					unit.getFaction() == Constants.getEnemyFaction() && unit.getLife() < unit.getMaxLife()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static boolean wizardHasStatus(Wizard wizard, StatusType statusType) {
+		for (Status status : wizard.getStatuses()) {
+			if (status.getType() == statusType) {
 				return true;
 			}
 		}
