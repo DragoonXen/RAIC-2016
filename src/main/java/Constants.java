@@ -102,7 +102,7 @@ public abstract class Constants {
     }
 
     public final static int minionLineScore = 5;
-    public final static int wizardLineScore = 20;
+    public final static int wizardLineScore = 200;
     public final static int towerLineScore = 15;
 
 }
