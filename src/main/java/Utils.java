@@ -38,9 +38,13 @@ public class Utils {
 	public static LaneType getDefaultMyLine(int selfId) {
 		switch (selfId) {
 			case 1:
+			case 2:
 			case 6:
+			case 7:
 				return LaneType.TOP;
 			case 5:
+			case 4:
+			case 9:
 			case 10:
 				return LaneType.BOTTOM;
 			default:

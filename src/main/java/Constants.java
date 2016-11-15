@@ -17,6 +17,9 @@ public abstract class Constants {
     public static int CURRENT_PT_X = (int) Math.round(MOVE_BACK_DISTANCE / MOVE_SCAN_STEP + .1);
     public static int CURRENT_PT_Y = (int) Math.round(MOVE_SIDE_DISTANCE / MOVE_SCAN_STEP + .1);
 
+    public static int MAP_SIDE_DANGER_DISTANCE = 35 + 50; // wizard radius = 35
+    public static double MAP_SIDE_DANGER_FACTOR = .05;
+
     public static double DANGER_PENALTY = 200.;
     public static double DANGER_AT_START_MULT_RUN = .9;
 

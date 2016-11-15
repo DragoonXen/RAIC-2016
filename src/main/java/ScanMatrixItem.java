@@ -53,6 +53,8 @@ public class ScanMatrixItem extends Point {
 		this.minionsDanger = 0.;
 		this.buildingsDanger = 0.;
 		this.otherDanger = 0.;
+		checkMapSideDanger(x);
+		checkMapSideDanger(y);
 		this.attackBonus = 0.;
 		this.expBonus = 0.;
 		this.distance = -1;
@@ -61,6 +63,15 @@ public class ScanMatrixItem extends Point {
 		this.wayPoint = null;
 		this.totalScore = Double.MIN_VALUE;
 		this.available = true;
+	}
+
+	private void checkMapSideDanger(double coord) {
+		if (coord > Constants.getGame().getMapSize() / 2) {
+			coord = Constants.getGame().getMapSize() - coord - 1;
+		}
+		if (coord < Constants.MAP_SIDE_DANGER_DISTANCE) {
+			otherDanger += (Constants.MAP_SIDE_DANGER_DISTANCE - coord) * Constants.MAP_SIDE_DANGER_FACTOR;
+		}
 	}
 
 	public double getX() {

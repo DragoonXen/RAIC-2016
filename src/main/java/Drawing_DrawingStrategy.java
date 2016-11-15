@@ -206,6 +206,9 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			double minScore = Double.MAX_VALUE;
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				for (int j = 0; j != scan_matrix[0].length; ++j) {
+					if (!scan_matrix[i][j].isAvailable()) {
+						continue;
+					}
 					double score = scan_matrix[i][j].getTotalScore(self);
 					if (minScore > score) {
 						minScore = score;
