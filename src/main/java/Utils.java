@@ -1,3 +1,4 @@
+import model.Building;
 import model.CircularUnit;
 import model.LaneType;
 import model.LivingUnit;
@@ -64,7 +65,12 @@ public class Utils {
 	}
 
 	public static <T extends CircularUnit> List<T> filterUnit(T[] units, Point point, FilteredWorld.FilterType filterType) {
+		List<T> unitsList = new ArrayList<>();
+		if (units.length == 0) {
+			return unitsList;
+		}
 		double distance = 0.;
+		boolean isBuilding = false;
 		switch (filterType) {
 			case FIGHT:
 				distance = Constants.getFightDistanceFilter();
@@ -74,9 +80,11 @@ public class Utils {
 				break;
 			case AIM:
 				distance = Variables.self.getCastRange();
+				if (units[0] instanceof Building) {
+					isBuilding = true;
+				}
 				break;
 		}
-		List<T> unitsList = new ArrayList<>();
 
 		switch (filterType) {
 			case MOVE:
@@ -87,10 +95,24 @@ public class Utils {
 				}
 				break;
 			case FIGHT:
-			case AIM:
 				for (T unit : units) {
 					if (unit.getDistanceTo(point.getX(), point.getY()) <= distance) {
 						unitsList.add(unit);
+					}
+				}
+				break;
+			case AIM:
+				if (isBuilding) {
+					for (T unit : units) {
+						if (unit.getDistanceTo(point.getX(), point.getY()) - unit.getRadius() <= distance) {
+							unitsList.add(unit);
+						}
+					}
+				} else {
+					for (T unit : units) {
+						if (unit.getDistanceTo(point.getX(), point.getY()) <= distance) {
+							unitsList.add(unit);
+						}
 					}
 				}
 				break;

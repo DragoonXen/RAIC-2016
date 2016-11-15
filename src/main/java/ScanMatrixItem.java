@@ -117,13 +117,21 @@ public class ScanMatrixItem extends Point {
 		this.attackBonus = Math.max(this.attackBonus, attackBonus);
 	}
 
+	public void addExpBonus(double bonus) {
+		this.expBonus += bonus;
+	}
+
 	public void addExpBonus(int life, int maxLife) {
 		addExpBonus(life, maxLife, 1.);
 	}
 
 	public void addExpBonus(int life, int maxLife, double factor) {
+		this.expBonus += calcExpBonus(life, maxLife, factor);
+	}
+
+	public static double calcExpBonus(int life, int maxLife, double factor) {
 		double tmp = ((maxLife - life) / (double) maxLife) * (maxLife / 100.);
-		this.expBonus += tmp * tmp * factor;
+		return tmp * tmp * factor;
 	}
 
 	public boolean isAvailable() {
