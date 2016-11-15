@@ -159,9 +159,6 @@ public class ScanMatrixItem extends Point {
 
 		double total = 0.;
 		double dangers = getAllDangers();
-		if (dangers >= self.getLife()) {
-			dangers = self.getLife();
-		}
 		dangers /= self.getLife();
 		total -= dangers * dangers * Constants.DANGER_PENALTY;
 
