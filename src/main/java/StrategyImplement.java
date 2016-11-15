@@ -494,7 +494,7 @@ public class StrategyImplement {
 						break;
 					case FETISH_BLOWDART:
 						ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(game.getDartDirectDamage());
-						ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(game.getFetishBlowdartAttackRange());
+						ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(game.getFetishBlowdartAttackRange() + game.getMinionSpeed());
 						structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 						break;
 				}
