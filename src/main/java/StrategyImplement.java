@@ -151,7 +151,11 @@ public class StrategyImplement {
 					Math.abs(turnAngle) <= Constants.MAX_SHOOT_ANGLE) {
 				move.setCastAngle(turnAngle);
 				move.setAction(ActionType.MAGIC_MISSILE);
-				move.setMinCastDistance(self.getDistanceTo(target) - target.getRadius());
+				if (target instanceof Tree) {
+					move.setMinCastDistance(self.getCastRange() - .01);
+				} else {
+					move.setMinCastDistance(self.getDistanceTo(target) - target.getRadius());
+				}
 				if (turnTo(moveToPoint, move)) { // turn to move direction to move faster
 					return;
 				}
@@ -183,9 +187,17 @@ public class StrategyImplement {
 
 	private void findTargets() {
 		targets.clear();
+		boolean treeCut = myLineCalc.getDistanceTo(self) > Constants.getTopLine().getLineDistance();
 		for (LivingUnit livingUnit : filteredWorld.getAimsList()) {
 			if (livingUnit.getFaction() != Constants.getEnemyFaction() &&
-					(livingUnit.getFaction() != Faction.NEUTRAL || livingUnit.getLife() >= livingUnit.getMaxLife())) {
+					(livingUnit.getFaction() != Faction.NEUTRAL || livingUnit.getLife() >= livingUnit.getMaxLife()) &&
+					livingUnit.getFaction() != Faction.OTHER) {
+				continue;
+			}
+			if (livingUnit instanceof Tree) {
+				if (treeCut) {
+					targets.add(new AbstractMap.SimpleEntry<>(-Utils.calcLineDistanceOtherDanger(livingUnit, myLineCalc) * .0001, livingUnit));
+				}
 				continue;
 			}
 			double score = Constants.LOW_AIM_SCORE;
@@ -204,8 +216,6 @@ public class StrategyImplement {
 				score *= Constants.WIZARD_AIM_PROIRITY;
 			} else if (livingUnit instanceof Building) {
 				score *= Constants.BUILDING_AIM_PROIRITY;
-			} else {
-				score *= 0.; // it's a tree
 			}
 			targets.add(new AbstractMap.SimpleEntry<>(score, livingUnit));
 		}
@@ -374,11 +384,10 @@ public class StrategyImplement {
 				if (!item.isAvailable()) {
 					continue;
 				}
-				double distanceTo = myLineCalc.getDistanceTo(item.getX(), item.getY()) -
-						Constants.getTopLine().getLineDistance();
+
+				double distanceTo = Utils.calcLineDistanceOtherDanger(item, myLineCalc);
 				if (distanceTo > 0.) {
-					distanceTo /= Constants.getTopLine().getLineDistance();
-					item.addOtherDanger(distanceTo * distanceTo * distanceTo);
+					item.addOtherDanger(distanceTo);
 				}
 
 				if (!enemyFound) {

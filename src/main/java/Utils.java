@@ -277,6 +277,20 @@ public class Utils {
 		}
 	}
 
+	public static double calcLineDistanceOtherDanger(Unit unit, BaseLine myLineCalc) {
+		return calcLineDistanceOtherDanger(new Point(unit.getX(), unit.getY()), myLineCalc);
+	}
+
+	public static double calcLineDistanceOtherDanger(Point point, BaseLine myLineCalc) {
+		double distanceTo = myLineCalc.getDistanceTo(point.getX(), point.getY()) -
+				Constants.getTopLine().getLineDistance();
+		if (distanceTo > 0.) {
+			distanceTo /= Constants.getTopLine().getLineDistance();
+			return distanceTo * distanceTo * distanceTo;
+		}
+		return 0.;
+	}
+
 	public static boolean hasEnemy(LivingUnit[] units) {
 		for (LivingUnit unit : units) {
 			if (unit.getFaction() == Constants.getEnemyFaction() ||
