@@ -17,7 +17,7 @@ public abstract class Constants {
     public static int CURRENT_PT_X = (int) Math.round(MOVE_BACK_DISTANCE / MOVE_SCAN_STEP + .1);
     public static int CURRENT_PT_Y = (int) Math.round(MOVE_SIDE_DISTANCE / MOVE_SCAN_STEP + .1);
 
-    public static double DANGER_PENALTY = 500.;
+    public static double DANGER_PENALTY = 200.;
     public static double DANGER_AT_START_MULT_RUN = .9;
 
     public static int[] STEP_X_HELP = new int[]{0, 0, -1, 1};
