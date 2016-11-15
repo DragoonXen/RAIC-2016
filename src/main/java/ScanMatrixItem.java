@@ -20,6 +20,7 @@ public class ScanMatrixItem extends Point {
 	private double otherDanger;
 	private double otherBonus;
 	private double attackBonus;
+	private double meleeAttackBonus;
 	private double expBonus;
 	private double totalScore;
 	private boolean available;
@@ -55,6 +56,7 @@ public class ScanMatrixItem extends Point {
 		this.attackBonus = 0.;
 		this.expBonus = 0.;
 		this.distance = -1;
+		this.meleeAttackBonus = 0.;
 		this.otherBonus = 0.;
 		this.wayPoint = null;
 		this.totalScore = Double.MIN_VALUE;
@@ -117,6 +119,10 @@ public class ScanMatrixItem extends Point {
 		this.attackBonus = Math.max(this.attackBonus, attackBonus);
 	}
 
+	public void putMeleeAttackBonus(double attackBonus) {
+		this.meleeAttackBonus = Math.max(this.meleeAttackBonus, attackBonus);
+	}
+
 	public void addExpBonus(double bonus) {
 		this.expBonus += bonus;
 	}
@@ -160,6 +166,7 @@ public class ScanMatrixItem extends Point {
 		total -= dangers * dangers * Constants.DANGER_PENALTY;
 
 		total += expBonus;
+		total += meleeAttackBonus;
 		total += attackBonus;
 		total -= otherDanger;
 		total += otherBonus;

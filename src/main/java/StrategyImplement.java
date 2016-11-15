@@ -51,6 +51,7 @@ public class StrategyImplement {
 	protected Point moveToPoint;
 
 	protected CircularUnit target;
+	protected CircularUnit meleeTarget;
 
 	private PriorityQueue<WayPoint> queue = new PriorityQueue<>();
 
@@ -138,30 +139,90 @@ public class StrategyImplement {
 			turnTo(moveToPoint, move);
 			return;
 		}
+
 		double turnAngle = self.getAngleTo(target);
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
-		int turnCount = (int) ((maxTurnAngle + Math.abs(turnAngle)) / maxTurnAngle);
-
-		if (self.getRemainingCooldownTicksByAction()[ActionType.MAGIC_MISSILE.ordinal()] > turnCount + 3) {
-			if (turnTo(moveToPoint, move)) {
+		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+		//если уже надо бы поворачиваться дла атаки
+		if (waitTimeForAction(ActionType.MAGIC_MISSILE) <= turnTicksCount + 2) {
+			// если уже можем попасть - атакуем и бежим дальше
+			if (checkShot(turnAngle, target, move)) {
+				turnTo(moveToPoint, move);
 				return;
 			}
-		} else {
-			if (self.getRemainingCooldownTicksByAction()[ActionType.MAGIC_MISSILE.ordinal()] == 0 &&
-					Math.abs(turnAngle) <= Constants.MAX_SHOOT_ANGLE) {
-				move.setCastAngle(turnAngle);
-				move.setAction(ActionType.MAGIC_MISSILE);
-				if (target instanceof Tree) {
-					move.setMinCastDistance(self.getCastRange() - .01);
-				} else {
-					move.setMinCastDistance(self.getDistanceTo(target) - target.getRadius());
-				}
-				if (turnTo(moveToPoint, move)) { // turn to move direction to move faster
+			// если не можем попасть - доворачиваем на цель
+			turnTo(turnAngle, maxTurnAngle, move);
+			return;
+		}
+		if (meleeTarget != null) {
+			// милишная цель есть
+			double meleeTurnAngle = self.getAngleTo(meleeTarget);
+			int meleeTurnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+			//если уже надо бы поворачиваться дла атаки
+			if (waitTimeForAction(ActionType.STAFF) <= meleeTurnTicksCount + 2) {
+				// если уже можем попасть - атакуем и бежим дальше
+				if (checkHit(meleeTurnAngle, meleeTarget, move)) {
+					turnTo(moveToPoint, move);
 					return;
 				}
+				// если не можем попасть - доворачиваем на цель
+				turnTo(meleeTurnAngle, maxTurnAngle, move);
+				return;
 			}
 		}
-		turnTo(turnAngle, maxTurnAngle, move);
+		// целей нет или же мы успеем к ним повернуться
+		turnTo(moveToPoint, move);
+	}
+
+	private int waitTimeForAction(ActionType actionType) {
+		return Math.max(self.getRemainingCooldownTicksByAction()[actionType.ordinal()], self.getRemainingActionCooldownTicks());
+	}
+
+	protected boolean checkHit(double angle, CircularUnit target, Move move) {
+		if (Math.abs(angle) > Constants.getGame().getStaffSector() * .5) {
+			return false;
+		}
+		if (FastMath.hypot(self.getX() - target.getX(), self.getY() - target.getY()) < target.getRadius() + Constants.getGame().getStaffRange()
+				&& waitTimeForAction(ActionType.STAFF) == 0) {
+			move.setAction(ActionType.STAFF);
+			return true;
+		}
+		return false;
+	}
+
+	private boolean checkShot(double angle, CircularUnit target, Move move) {
+		if (checkHit(angle, target, move)) {
+			return true;
+		}
+		if (Math.abs(angle) > Constants.MAX_SHOOT_ANGLE) {
+			return false;
+		}
+		if (FastMath.hypot(self.getX() - target.getX(), self.getY() - target.getY()) < target.getRadius() + self.getCastRange()
+				&& waitTimeForAction(ActionType.MAGIC_MISSILE) == 0) {
+			move.setCastAngle(angle);
+			move.setAction(ActionType.MAGIC_MISSILE);
+			if (target instanceof Tree) {
+				move.setMinCastDistance(self.getCastRange() - .01);
+			} else {
+				move.setMinCastDistance(self.getDistanceTo(target) - target.getRadius());
+			}
+			return true;
+		}
+		return false;
+	}
+
+	private int getTurnCount(double currentAngle, double maxTurnAngle, double maxAttackAngle) {
+		if (Math.abs(currentAngle) < maxAttackAngle) {
+			currentAngle = 0.;
+		} else {
+			if (currentAngle < 0.) {
+				currentAngle += maxAttackAngle;
+			} else {
+				currentAngle -= maxAttackAngle;
+			}
+		}
+
+		return (int) ((maxTurnAngle - .001 + Math.abs(currentAngle)) / maxTurnAngle);
 	}
 
 	private boolean turnTo(Point point, Move move) {
@@ -201,7 +262,7 @@ public class StrategyImplement {
 				continue;
 			}
 			double score = Constants.LOW_AIM_SCORE;
-			double tmp = (livingUnit.getMaxLife() - livingUnit.getLife()) / livingUnit.getMaxLife();
+			double tmp = (livingUnit.getMaxLife() - livingUnit.getLife()) / (double) livingUnit.getMaxLife();
 			score += tmp * tmp;
 			if (livingUnit instanceof Minion) {
 				if (((Minion) livingUnit).getType() == MinionType.FETISH_BLOWDART) {
@@ -226,6 +287,9 @@ public class StrategyImplement {
 			Point pointB = new Point(target.getX(), target.getY());
 
 			for (Tree tree : filteredWorld.getTrees()) {
+				if (tree == target) {
+					continue;
+				}
 				double distance = Utils.distancePointToSegment(new Point(tree.getX(), tree.getY()), pointA, pointB);
 				if (distance < tree.getRadius() + Constants.getGame().getMagicMissileRadius()) {
 					target = null;
@@ -235,6 +299,16 @@ public class StrategyImplement {
 			if (target != null) {
 				break;
 			}
+		}
+
+		double distance;
+		for (Map.Entry<Double, CircularUnit> doubleCircularUnitEntry : targets) {
+			meleeTarget = doubleCircularUnitEntry.getValue();
+			distance = FastMath.hypot(self.getX() - meleeTarget.getX(), self.getY() - meleeTarget.getY());
+			if (distance + .001 < meleeTarget.getRadius() + Constants.getGame().getStaffRange()) {
+				break;
+			}
+			meleeTarget = null;
 		}
 	}
 
@@ -399,8 +473,6 @@ public class StrategyImplement {
 		if (!enemyFound) {
 			return;
 		}
-		ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
-
 		ScoreCalcStructure structure = new ScoreCalcStructure();
 		for (int i = 0; i != scan_matrix.length; ++i) {
 			for (Minion minion : filteredWorld.getMinions()) {
@@ -427,7 +499,13 @@ public class StrategyImplement {
 						break;
 				}
 				ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(3.);
+				ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
 				structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
+
+				ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(3.);
+				ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + minion.getRadius());
+				structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+
 				applyScoreForLine(scan_matrix[i], structure, minion);
 			}
 
@@ -441,14 +519,26 @@ public class StrategyImplement {
 					ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
 					structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
 				}
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() + game.getWizardForwardSpeed() * Math.min(1,
-																																			-wizard.getRemainingActionCooldownTicks() + 3));
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(12.);
+				if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
+					ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() + self.getRadius() + game.getWizardForwardSpeed() * 2);
+					ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(12. * 3);
+				} else {
+					ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(
+							wizard.getCastRange() +
+									game.getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() + 4));
+					ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(12.);
+				}
+
 				structure.putItem(ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER);
 
 				ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
 				ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(12.);
 				structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
+
+				ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(12.);
+				ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
+				structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+
 				applyScoreForLine(scan_matrix[i], structure, wizard);
 			}
 
@@ -471,6 +561,10 @@ public class StrategyImplement {
 				ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER
 						.setDistance(building.getAttackRange() - Math.max(building.getRemainingActionCooldownTicks() - 5, 0) * 1.5);
 				structure.putItem(ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER);
+
+				ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(12.);
+				ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + building.getRadius());
+				structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
 
 				applyScoreForLine(scan_matrix[i], structure, building);
 			}

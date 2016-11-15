@@ -66,6 +66,14 @@ public class ScoreCalcStructure {
 		}
 	};
 
+	public final static ScoreItem MELEE_ATTACK_BONUS_APPLYER = new ScoreItem() {
+
+		@Override
+		public void applyScore(ScanMatrixItem item) {
+			item.putMeleeAttackBonus(this.score);
+		}
+	};
+
 	public final static ScoreItem WIZARDS_DANGER_BONUS_APPLYER = new ScoreItem() {
 
 		@Override

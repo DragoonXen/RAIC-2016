@@ -30,6 +30,8 @@ public abstract class Constants {
     public static double LOW_AIM_SCORE = .5;
     public static double NEUTRAL_FACTION_AIM_PROIRITY = 0.2;
 
+    public static double ENEMY_WIZARD_ATTACK_LIFE = 0.75;
+
     public static double MAX_SHOOT_ANGLE = Math.PI / 12.;
 
     public static double EXPERIENCE_DISTANCE = 600.;

@@ -1,4 +1,6 @@
+import model.ActionType;
 import model.Building;
+import model.CircularUnit;
 import model.Game;
 import model.LaneType;
 import model.LivingUnit;
@@ -27,11 +29,14 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
     private List<Drawing_DrawingData> drawingDataList;
     private Drawing_MainFrame mainFrame;
 	private Drawing_DrawPanel drawPanel;
+	private Drawing_TextInfoPanel textInfoPanel;
 	private Game game;
 
     private boolean draw = false;
 
 	private long timeSum = 0;
+
+	private List<Integer> staffHits = new ArrayList<>();
 
     private static Drawing_DrawingStrategy instance;
 	protected TreeMap<Double, ScanMatrixItem> foundScanMatrixItems = new TreeMap<>();
@@ -78,6 +83,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			if (mainFrame == null) {
 				mainFrame = new Drawing_MainFrame(world.getWidth(), world.getHeight());
 				drawPanel = mainFrame.getDrawPanel();
+				textInfoPanel = mainFrame.getTextInfoPanel();
 				this.game = game;
 			}
 			while (drawingDataList.size() < world.getTickIndex()) {
@@ -236,16 +242,45 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			if (moveToPoint != null) {
 				drawCross(moveToPoint, 5., Color.blue);
 			}
-			Iterator<WayPoint> iterator = wayPoints.iterator();
-			WayPoint curr = null, prev;
-			if (iterator.hasNext()) {
-				curr = iterator.next();
+			if (!wayPoints.isEmpty()) {
+				Iterator<WayPoint> iterator = wayPoints.iterator();
+				WayPoint curr = null, prev;
+				if (iterator.hasNext()) {
+					curr = iterator.next();
+				}
+				while (iterator.hasNext()) {
+					prev = curr;
+					curr = iterator.next();
+					drawLine(drawPanel, prev.getPoint(), curr.getPoint(), Color.BLUE);
+				}
+				drawLine(drawPanel, wayPoints.get(0).getPoint(), moveToPoint, Color.orange);
 			}
-			while (iterator.hasNext()) {
-				prev = curr;
-				curr = iterator.next();
-				drawLine(drawPanel, prev.getPoint(), curr.getPoint(), Color.BLUE);
+
+			if (target != null) {
+				drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.BLACK);
+				if (meleeTarget != null && meleeTarget != target) {
+					drawCross(new Point(meleeTarget.getX(), meleeTarget.getY()), meleeTarget.getRadius(), Color.BLACK);
+				}
 			}
+
+			StringBuilder sb = new StringBuilder("Action timeout: " + self.getRemainingActionCooldownTicks());
+			sb.append(" [");
+			for (ActionType actionType : ActionType.values()) {
+				sb.append(", ").append(actionType.toString()).append(": ").append(self.getRemainingCooldownTicksByAction()[actionType.ordinal()]);
+			}
+			sb.append("]");
+			textInfoPanel.putText(sb.toString(), 1);
+			textInfoPanel.putText(String.format("hp:%d/%d", self.getLife(), self.getMaxLife()), 2);
+
+			sb = new StringBuilder("Staff hits ticks: ");
+			if (staffHits.isEmpty()) {
+				sb.append("none");
+			} else {
+				for (Integer staffHit : staffHits) {
+					sb.append(staffHit).append(" ");
+				}
+			}
+			textInfoPanel.putText(sb.toString(), 3);
 		}
 	}
 
@@ -276,6 +311,15 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	}
 
 	@Override
+	protected boolean checkHit(double angle, CircularUnit target, Move move) {
+		boolean value = super.checkHit(angle, target, move);
+		if (value && !draw) {
+			staffHits.add(world.getTickIndex());
+		}
+		return value;
+	}
+
+	@Override
 	protected void getBestMovePoint() {
 		super.getBestMovePoint();
 		foundScanMatrixItems.clear();
@@ -302,7 +346,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	}
 
 	private void drawData(Drawing_DrawingData drawingData) {
-        World world = drawingData.getWorld();
+		Wizard self = drawingData.getSelf();
+		World world = drawingData.getWorld();
 
         Drawing_DrawPanel drawPanel = mainFrame.getDrawPanel();
         drawPanel.clear();
@@ -351,9 +396,14 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
                                                    true,
                                                    getProjectiveColor(unit.getType())));
         }
+		drawPanel.addFigure(new Drawing_Circle(self.getX(),
+											   self.getY(),
+											   self.getCastRange(),
+											   false,
+											   Color.blue));
 
-        mainFrame.repaint();
-    }
+		mainFrame.repaint();
+	}
 
     private Color getHpColor(int currLife, int maxLife) {
         if (currLife == maxLife) {
