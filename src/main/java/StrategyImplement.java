@@ -61,7 +61,6 @@ public class StrategyImplement {
 
 	public void move(Wizard self, World world, Game game, Move move) {
 		Variables.self = self;
-		Utils.prepareNewStep();
 		enemyFound = false;
 		target = null;
 		this.world = world;
@@ -607,7 +606,7 @@ public class StrategyImplement {
 
 			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER.setScore(building.getDamage() * shieldBonus);
 			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER
-					.setDistance(building.getAttackRange() - Math.max(building.getRemainingActionCooldownTicks() - 1, 0) * 1.5);
+					.setDistance(building.getAttackRange() + Math.min(2, -building.getRemainingActionCooldownTicks() + 4) * 1.5);
 			structure.putItem(ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER);
 
 			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);

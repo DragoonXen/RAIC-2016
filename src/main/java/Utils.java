@@ -218,46 +218,20 @@ public class Utils {
 
 	private static CircularUnit blockUnit;
 
-	public static void prepareNewStep() {
-		blockUnit = null;
-	}
-
-	public static boolean isAvailableTile(List<CircularUnit> units, double x, double y) {
-		double radius = Constants.getGame().getWizardRadius();
-		if (x < radius ||
-				y < radius ||
-				x + radius > Constants.getGame().getMapSize() ||
-				y + radius > Constants.getGame().getMapSize()) {
-			return false;
-		}
-		if (blockUnit != null) {
-			if (FastMath.hypot(blockUnit.getX() - x, blockUnit.getY() - y) + .001 < blockUnit.getRadius() + radius) {
-				return false;
-			}
-		}
-		Iterator<CircularUnit> iterator = units.iterator();
-		while (iterator.hasNext()) {
-			CircularUnit unit = iterator.next();
-			if (FastMath.hypot(unit.getX() - x, unit.getY() - y) < unit.getRadius() + radius) {
-				blockUnit = unit;
-				return false;
-			}
-		}
-
-		blockUnit = null;
-		return true;
-	}
-
 	public static void calcTilesAvailable(List<CircularUnit> units, ScanMatrixItem[] items) {
 		double radius = Constants.getGame().getWizardRadius();
 		double x, y;
 		List<CircularUnit> filteredUnits = new ArrayList<>(units.size());
 		for (CircularUnit unit : units) {
 			x = Utils.distancePointToSegment(new Point(unit.getX(), unit.getY()), items[0], items[items.length - 1]);
-			if (x < unit.getRadius() + radius) {
+			if (x + Constants.STUCK_FIX_RADIUS_ADD < unit.getRadius() + radius) {
 				filteredUnits.add(unit);
 			}
 		}
+		if (filteredUnits.isEmpty()) {
+			return;
+		}
+		blockUnit = null;
 		for (int i = 0; i != items.length; ++i) {
 			ScanMatrixItem item = items[i];
 			x = item.getX();
@@ -277,7 +251,7 @@ public class Utils {
 			}
 			blockUnit = null;
 			for (CircularUnit unit : filteredUnits) {
-				if (FastMath.hypot(unit.getX() - x, unit.getY() - y) + .001 < unit.getRadius() + radius) {
+				if (FastMath.hypot(unit.getX() - x, unit.getY() - y) < unit.getRadius() + radius + Constants.STUCK_FIX_RADIUS_ADD) {
 					item.setAvailable(false);
 					blockUnit = unit;
 					break;
