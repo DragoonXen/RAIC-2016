@@ -55,6 +55,7 @@ public abstract class Constants {
     private static BottomLine bottomLine;
     private static BaseLine[] lines;
     private static double fightDistanceFilter;
+    private static double staffHitSector;
 
     public static void init(Game game, Wizard self) {
         Constants.game = game;
@@ -65,6 +66,7 @@ public abstract class Constants {
         currentFaction = self.getFaction();
         enemyFaction = self.getFaction() == Faction.ACADEMY ? Faction.RENEGADES : Faction.ACADEMY;
         fightDistanceFilter = MOVE_DISTANCE_FILTER + game.getWizardCastRange() + game.getRangeBonusPerSkillLevel() * 4;
+        staffHitSector = game.getStaffSector() / 2.;
     }
 
     public static Game getGame() {
@@ -108,6 +110,10 @@ public abstract class Constants {
 
     public static double getFightDistanceFilter() {
         return fightDistanceFilter;
+    }
+
+    public static double getStaffHitSector() {
+        return staffHitSector;
     }
 
     public final static int minionLineScore = 5;

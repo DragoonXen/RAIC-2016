@@ -99,6 +99,8 @@ public class StrategyImplement {
 		filteredWorld = Utils.filterWorld(world,
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER));
+
+		Utils.calcCurrentSkillBonuses(self, filteredWorld);
 		enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||
 				Utils.hasEnemy(filteredWorld.getWizards()) ||
 				Utils.hasEnemy(filteredWorld.getBuildings());
@@ -145,8 +147,16 @@ public class StrategyImplement {
 		}
 
 		double turnAngle = self.getAngleTo(target);
-		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
+
+		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor;
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+
+		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
+		if (hastenedTicksRemain > -1 && turnTicksCount > hastenedTicksRemain) {
+			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
+			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+		}
+
 		//если уже надо бы поворачиваться дла атаки
 		if (waitTimeForAction(ActionType.MAGIC_MISSILE) <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
@@ -159,9 +169,17 @@ public class StrategyImplement {
 			return;
 		}
 		if (meleeTarget != null) {
+
+			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor;
+			int meleeTurnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.getStaffHitSector());
+
+			if (hastenedTicksRemain > -1 && turnTicksCount > hastenedTicksRemain) {
+				maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
+				meleeTurnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.getStaffHitSector());
+			}
 			// милишная цель есть
 			double meleeTurnAngle = self.getAngleTo(meleeTarget);
-			int meleeTurnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+
 			//если уже надо бы поворачиваться дла атаки
 			if (waitTimeForAction(ActionType.STAFF) <= meleeTurnTicksCount + 2) {
 				// если уже можем попасть - атакуем и бежим дальше
@@ -183,7 +201,7 @@ public class StrategyImplement {
 	}
 
 	protected boolean checkHit(double angle, CircularUnit target, Move move) {
-		if (Math.abs(angle) > Constants.getGame().getStaffSector() * .5) {
+		if (Math.abs(angle) > Constants.getStaffHitSector()) {
 			return false;
 		}
 		if (FastMath.hypot(self.getX() - target.getX(), self.getY() - target.getY()) < target.getRadius() + Constants.getGame().getStaffRange()
@@ -239,7 +257,7 @@ public class StrategyImplement {
 		if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
 			return false;
 		}
-		turnTo(self.getAngleTo(point.getX(), point.getY()), Constants.getGame().getWizardMaxTurnAngle(), move);
+		turnTo(self.getAngleTo(point.getX(), point.getY()), Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor, move);
 		return true;
 	}
 
@@ -333,8 +351,9 @@ public class StrategyImplement {
 		double strafe = Math.sin(angle) * distance;
 		double acc = Math.cos(angle) * distance;
 		double fwdLimit = acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed();
+		fwdLimit *= Variables.moveFactor;
 		fwdLimit = Math.abs(acc / fwdLimit);
-		fwdLimit = Math.max(fwdLimit, Math.abs(strafe / Constants.getGame().getWizardStrafeSpeed()));
+		fwdLimit = Math.max(fwdLimit, Math.abs(strafe / (Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor)));
 		if (fwdLimit > 1.) {
 			strafe /= fwdLimit;
 			acc /= fwdLimit;

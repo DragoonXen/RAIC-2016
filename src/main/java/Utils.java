@@ -2,6 +2,7 @@ import model.Building;
 import model.CircularUnit;
 import model.LaneType;
 import model.LivingUnit;
+import model.SkillType;
 import model.Status;
 import model.StatusType;
 import model.Unit;
@@ -10,6 +11,7 @@ import model.World;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -314,5 +316,145 @@ public class Utils {
 			}
 		}
 		return false;
+	}
+
+	public static int wizardStatusTicks(Wizard wizard, StatusType statusType) {
+		int hasteStatusTicks = -1;
+		for (Status status : wizard.getStatuses()) {
+			if (status.getType() == statusType) {
+				hasteStatusTicks = Math.max(status.getRemainingDurationTicks(), hasteStatusTicks);
+			}
+		}
+		return hasteStatusTicks;
+	}
+
+	private static int[] skillsCount = new int[5];
+	private static int[] aurasCount = new int[5];
+
+	public static void calcCurrentSkillBonuses(Wizard self, FilteredWorld filteredWorld) {
+		Arrays.fill(skillsCount, 0);
+		Arrays.fill(aurasCount, 0);
+		for (SkillType skillType : self.getSkills()) {
+			switch (skillType) {
+				case RANGE_BONUS_PASSIVE_1:
+					skillsCount[SkillFork.RANGE.ordinal()] = Math.max(skillsCount[SkillFork.RANGE.ordinal()], 1);
+					break;
+				case RANGE_BONUS_AURA_1:
+					aurasCount[SkillFork.RANGE.ordinal()] = Math.max(aurasCount[SkillFork.RANGE.ordinal()], 1);
+					break;
+				case RANGE_BONUS_PASSIVE_2:
+					skillsCount[SkillFork.RANGE.ordinal()] = 2;
+					break;
+				case RANGE_BONUS_AURA_2:
+					aurasCount[SkillFork.RANGE.ordinal()] = 2;
+					break;
+
+				case MAGICAL_DAMAGE_BONUS_PASSIVE_1:
+					skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = Math.max(skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()], 1);
+					break;
+				case MAGICAL_DAMAGE_BONUS_AURA_1:
+					aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()], 1);
+					break;
+				case MAGICAL_DAMAGE_BONUS_PASSIVE_2:
+					skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = 2;
+					break;
+				case MAGICAL_DAMAGE_BONUS_AURA_2:
+					aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = 2;
+					break;
+
+				case STAFF_DAMAGE_BONUS_PASSIVE_1:
+					skillsCount[SkillFork.STAFF_DAMAGE.ordinal()] = Math.max(skillsCount[SkillFork.STAFF_DAMAGE.ordinal()], 1);
+					break;
+				case STAFF_DAMAGE_BONUS_AURA_1:
+					aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] = Math.max(aurasCount[SkillFork.STAFF_DAMAGE.ordinal()], 1);
+					break;
+				case STAFF_DAMAGE_BONUS_PASSIVE_2:
+					skillsCount[SkillFork.STAFF_DAMAGE.ordinal()] = 2;
+					break;
+				case STAFF_DAMAGE_BONUS_AURA_2:
+					aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] = 2;
+					break;
+
+				case MOVEMENT_BONUS_FACTOR_PASSIVE_1:
+					skillsCount[SkillFork.MOVEMENT.ordinal()] = Math.max(skillsCount[SkillFork.MOVEMENT.ordinal()], 1);
+					break;
+				case MOVEMENT_BONUS_FACTOR_AURA_1:
+					aurasCount[SkillFork.MOVEMENT.ordinal()] = Math.max(aurasCount[SkillFork.MOVEMENT.ordinal()], 1);
+					break;
+				case MOVEMENT_BONUS_FACTOR_PASSIVE_2:
+					skillsCount[SkillFork.MOVEMENT.ordinal()] = 2;
+					break;
+				case MOVEMENT_BONUS_FACTOR_AURA_2:
+					aurasCount[SkillFork.MOVEMENT.ordinal()] = 2;
+					break;
+
+				case MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1:
+					skillsCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = Math.max(skillsCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()], 1);
+					break;
+				case MAGICAL_DAMAGE_ABSORPTION_AURA_1:
+					aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()], 1);
+					break;
+				case MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2:
+					skillsCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = 2;
+					break;
+				case MAGICAL_DAMAGE_ABSORPTION_AURA_2:
+					aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = 2;
+					break;
+			}
+		}
+		for (Wizard wizard : filteredWorld.getWizards()) {
+			if (wizard.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			if (wizard.getDistanceTo(self) < Constants.getGame().getAuraSkillRange()) {
+				for (SkillType skillType : wizard.getSkills()) {
+					switch (skillType) {
+						case RANGE_BONUS_AURA_1:
+							aurasCount[SkillFork.RANGE.ordinal()] = Math.max(aurasCount[SkillFork.RANGE.ordinal()], 1);
+							break;
+						case RANGE_BONUS_AURA_2:
+							aurasCount[SkillFork.RANGE.ordinal()] = 2;
+							break;
+
+						case MAGICAL_DAMAGE_BONUS_AURA_1:
+							aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()], 1);
+							break;
+						case MAGICAL_DAMAGE_BONUS_AURA_2:
+							aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = 2;
+							break;
+
+						case STAFF_DAMAGE_BONUS_AURA_1:
+							aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] = Math.max(aurasCount[SkillFork.STAFF_DAMAGE.ordinal()], 1);
+							break;
+						case STAFF_DAMAGE_BONUS_AURA_2:
+							aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] = 2;
+							break;
+
+						case MOVEMENT_BONUS_FACTOR_AURA_1:
+							aurasCount[SkillFork.MOVEMENT.ordinal()] = Math.max(aurasCount[SkillFork.MOVEMENT.ordinal()], 1);
+							break;
+						case MOVEMENT_BONUS_FACTOR_AURA_2:
+							aurasCount[SkillFork.MOVEMENT.ordinal()] = 2;
+							break;
+
+						case MAGICAL_DAMAGE_ABSORPTION_AURA_1:
+							aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()], 1);
+							break;
+						case MAGICAL_DAMAGE_ABSORPTION_AURA_2:
+							aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = 2;
+							break;
+					}
+				}
+			}
+		}
+
+		Variables.turnFactor = 1.;
+		Variables.moveFactor = 1. + Constants.getGame().getMovementBonusFactorPerSkillLevel() *
+				(aurasCount[SkillFork.MOVEMENT.ordinal()] + skillsCount[SkillFork.MOVEMENT.ordinal()]);
+
+		if (Utils.wizardHasStatus(self, StatusType.HASTENED)) {
+			Variables.turnFactor += Constants.getGame().getHastenedRotationBonusFactor();
+			Variables.moveFactor += Constants.getGame().getHastenedMovementBonusFactor();
+		}
 	}
 }
