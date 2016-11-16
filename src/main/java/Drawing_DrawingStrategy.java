@@ -354,6 +354,29 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 
         Drawing_DrawPanel drawPanel = mainFrame.getDrawPanel();
         drawPanel.clear();
+		// paint FOW
+		double[] x = new double[]{0, 0, Constants.getGame().getMapSize(), Constants.getGame().getMapSize()};
+		double[] y = new double[]{0, Constants.getGame().getMapSize(), Constants.getGame().getMapSize(), 0};
+		drawPanel.addFigure(new Drawing_Polygon(x, y, true, Color.gray, -1000));
+		for (Building unit : world.getBuildings()) {
+			if (unit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			drawPanel.addFigure(new Drawing_Circle(unit.getX(), unit.getY(), unit.getVisionRange(), true, Color.white, -1000));
+		}
+		for (Wizard unit : world.getWizards()) {
+			if (unit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			drawPanel.addFigure(new Drawing_Circle(unit.getX(), unit.getY(), unit.getVisionRange(), true, Color.white, -1000));
+		}
+		for (Minion unit : world.getMinions()) {
+			if (unit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			drawPanel.addFigure(new Drawing_Circle(unit.getX(), unit.getY(), unit.getVisionRange(), true, Color.white, -1000));
+		}
+
         Drawing_TextInfoPanel textPanel = mainFrame.getTextInfoPanel();
         textPanel.clear();
 
