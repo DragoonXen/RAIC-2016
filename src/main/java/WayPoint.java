@@ -50,8 +50,8 @@ public class WayPoint implements Comparable<WayPoint> {
 		if (dangerOnWay != o.dangerOnWay) {
 			return Double.compare(dangerOnWay, o.dangerOnWay);
 		}
-		if (point.getDistanceFromSelf() != o.point.getDistanceFromSelf()) {
-			return Double.compare(point.getDistanceFromSelf(), o.point.getDistanceFromSelf());
+		if (distanceFromStart != o.distanceFromStart) {
+			return Integer.compare(distanceFromStart, o.distanceFromStart);
 		}
 		return Double.compare(scoresOnWay, o.scoresOnWay);
 	}

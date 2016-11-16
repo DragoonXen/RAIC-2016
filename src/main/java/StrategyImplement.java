@@ -6,7 +6,6 @@ import model.Faction;
 import model.Game;
 import model.LaneType;
 import model.LivingUnit;
-import model.Message;
 import model.Minion;
 import model.MinionType;
 import model.Move;
@@ -58,6 +57,8 @@ public class StrategyImplement {
 
 	private List<Map.Entry<Double, CircularUnit>> targets = new ArrayList<>();
 
+	protected BuildingPhantom[] BUILDING_PHANTOMS = new BuildingPhantom[0];
+
 	public void move(Wizard self, World world, Game game, Move move) {
 		Variables.self = self;
 		Utils.prepareNewStep();
@@ -69,15 +70,16 @@ public class StrategyImplement {
 		switch (world.getTickIndex()) {
 			case 0:
 				myLine = Utils.getDefaultMyLine((int) self.getId());
-				break;
-			case 1:
-				for (Message message : self.getMessages()) {
-					if (message.getLane() != null) {
-						myLine = message.getLane();
-					}
+				int phantomIdx = 0;
+				BUILDING_PHANTOMS = new BuildingPhantom[14];
+				for (Building building : world.getBuildings()) {
+					BUILDING_PHANTOMS[phantomIdx++] = new BuildingPhantom(building, false);
+					BUILDING_PHANTOMS[phantomIdx++] = new BuildingPhantom(building, true);
 				}
 				break;
 		}
+
+		BUILDING_PHANTOMS = Utils.updateBuildingPhantoms(world, BUILDING_PHANTOMS);
 
 		if (world.getTickIndex() > lastTick + 1) { //I'm was dead
 			calcLinesScore();
@@ -98,7 +100,8 @@ public class StrategyImplement {
 
 		filteredWorld = Utils.filterWorld(world,
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
-													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER));
+													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
+										  BUILDING_PHANTOMS);
 
 		Utils.calcCurrentSkillBonuses(self, filteredWorld);
 		enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||

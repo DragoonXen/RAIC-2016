@@ -2,6 +2,7 @@ import model.Building;
 import model.CircularUnit;
 import model.LaneType;
 import model.LivingUnit;
+import model.Minion;
 import model.SkillType;
 import model.Status;
 import model.StatusType;
@@ -56,7 +57,7 @@ public class Utils {
 		}
 	}
 
-	public static FilteredWorld filterWorld(World world, Point point) {
+	public static FilteredWorld filterWorld(World world, Point point, Building[] buildings) {
 		return new FilteredWorld(
 				world.getTickIndex(),
 				world.getTickCount(),
@@ -67,7 +68,7 @@ public class Utils {
 				filterUnit(world.getMinions(), point, FilteredWorld.FilterType.FIGHT),
 				filterUnit(world.getProjectiles(), point, FilteredWorld.FilterType.FIGHT),
 				filterUnit(world.getBonuses(), point, FilteredWorld.FilterType.FIGHT),
-				filterUnit(world.getBuildings(), point, FilteredWorld.FilterType.FIGHT),
+				filterUnit(buildings, point, FilteredWorld.FilterType.FIGHT),
 				filterUnit(world.getTrees(), point, FilteredWorld.FilterType.MOVE),
 				point);
 	}
@@ -456,5 +457,71 @@ public class Utils {
 			Variables.turnFactor += Constants.getGame().getHastenedRotationBonusFactor();
 			Variables.moveFactor += Constants.getGame().getHastenedMovementBonusFactor();
 		}
+	}
+
+	public static BuildingPhantom[] updateBuildingPhantoms(World world, BuildingPhantom[] phantoms) {
+		for (BuildingPhantom phantom : phantoms) {
+			phantom.resetUpdate();
+		}
+
+		for (Building building : world.getBuildings()) {
+			for (BuildingPhantom phantom : phantoms) {
+				if (phantom.getId() == building.getId()) {
+					phantom.updateInfo(building);
+					break;
+				}
+			}
+		}
+
+		int hasBroken = 0;
+		for (BuildingPhantom phantom : phantoms) {
+			if (phantom.isUpdated()) {
+				continue;
+			}
+			if (phantom.getFaction() == Constants.getCurrentFaction()) {
+				phantom.setBroken(true);
+				++hasBroken;
+				continue;
+			}
+
+			for (Wizard unit : world.getWizards()) {
+				if (unit.getFaction() != Constants.getCurrentFaction()) {
+					continue;
+				}
+				if (FastMath.hypot(unit.getX() - phantom.getX(), unit.getY() - phantom.getY()) + .1 < unit.getVisionRange()) {
+					++hasBroken;
+					phantom.setBroken(true);
+					break;
+				}
+			}
+			if (phantom.isBroken()) {
+				continue;
+			}
+
+			for (Minion unit : world.getMinions()) {
+				if (unit.getFaction() != Constants.getCurrentFaction()) {
+					continue;
+				}
+				if (FastMath.hypot(unit.getX() - phantom.getX(), unit.getY() - phantom.getY()) + .1 < unit.getVisionRange()) {
+					++hasBroken;
+					phantom.setBroken(true);
+					break;
+				}
+			}
+			if (!phantom.isBroken()) {
+				phantom.nextTick();
+			}
+		}
+		BuildingPhantom[] response = phantoms;
+		if (hasBroken != 0) {
+			response = new BuildingPhantom[phantoms.length - hasBroken];
+			int idx = 0;
+			for (BuildingPhantom phantom : phantoms) {
+				if (!phantom.isBroken()) {
+					response[idx++] = phantom;
+				}
+			}
+		}
+		return response;
 	}
 }

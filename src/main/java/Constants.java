@@ -10,8 +10,8 @@ public abstract class Constants {
 
     public final static LaneType[] WHICH_LINE_NO = new LaneType[]{LaneType.TOP, LaneType.MIDDLE, LaneType.BOTTOM};
     public static double MOVE_FWD_DISTANCE = 351.;
-    public static double MOVE_SIDE_DISTANCE = 150.;
-    public static double MOVE_BACK_DISTANCE = 150.;
+    public static double MOVE_SIDE_DISTANCE = 162.;
+    public static double MOVE_BACK_DISTANCE = 162.;
     public static double MOVE_SCAN_FIGURE_CENTER = (MOVE_FWD_DISTANCE - MOVE_BACK_DISTANCE) / 2.;
     public static double MOVE_SCAN_STEP = 3.;
     public static int CURRENT_PT_X = (int) Math.round(MOVE_BACK_DISTANCE / MOVE_SCAN_STEP + .1);

@@ -71,8 +71,11 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			this.lastTick = tick;
             LaneType laneTypeMem = this.myLine;
             this.myLine = drawingData.getMyLine();
-            move(drawingData.getSelf(), drawingData.getWorld(), game, new Move(), true);
-            this.myLine = laneTypeMem;
+			BuildingPhantom[] mem = this.BUILDING_PHANTOMS;
+			this.BUILDING_PHANTOMS = drawingData.getBuildingPhantoms();
+			move(drawingData.getSelf(), drawingData.getWorld(), game, new Move(), true);
+			this.BUILDING_PHANTOMS = mem;
+			this.myLine = laneTypeMem;
             this.lastTick = lastTickMem;
 		}
 	}
@@ -89,8 +92,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			while (drawingDataList.size() < world.getTickIndex()) {
 				drawingDataList.add(null);
 			}
-            drawingDataList.add(new Drawing_DrawingData(self, world, this.myLine));
-            mainFrame.getSlider().setMaximum(Math.max(world.getTickIndex(), mainFrame.getSlider().getMaximum()));
+			drawingDataList.add(new Drawing_DrawingData(self, world, this.myLine, this.BUILDING_PHANTOMS));
+			mainFrame.getSlider().setMaximum(Math.max(world.getTickIndex(), mainFrame.getSlider().getMaximum()));
 			move(self, world, game, move, false);
 		}
     }
@@ -201,90 +204,97 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
 
 		if (draw) {
-			Drawing_DrawPanel drawPanel = mainFrame.getDrawPanel();
-			double maxScore = Double.MIN_VALUE;
-			double minScore = Double.MAX_VALUE;
-			for (int i = 0; i != scan_matrix.length; ++i) {
-				for (int j = 0; j != scan_matrix[0].length; ++j) {
-					if (!scan_matrix[i][j].isAvailable()) {
-						continue;
-					}
-					double score = scan_matrix[i][j].getTotalScore(self);
-					if (minScore > score) {
-						minScore = score;
-					}
-					if (maxScore < score) {
-						maxScore = score;
-					}
-				}
-			}
-			for (int i = 0; i != scan_matrix.length; ++i) {
-				for (int j = 0; j != scan_matrix[0].length; ++j) {
-					ScanMatrixItem item = scan_matrix[i][j];
-					if (!item.isAvailable()) {
-						continue;
-					}
-
-					drawPanel.addFigure(new Drawing_Circle(item.getX(),
-														   item.getY(),
-														   getColor(item.getTotalScore(self), minScore, maxScore)));
-				}
-			}
-
-			for (ScanMatrixItem scanMatrixItem : foundScanMatrixItems.values()) {
-				drawCross(scanMatrixItem, 5., Color.MAGENTA);
-			}
-
-			Point filterPoint = new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
-										  self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER);
-			drawPanel.addFigure(new Drawing_Circle(filterPoint.getX(), filterPoint.getY(), Constants.MOVE_DISTANCE_FILTER, Color.red));
-			drawPanel.addFigure(new Drawing_Circle(filterPoint.getX(), filterPoint.getY(), Constants.getFightDistanceFilter(), Color.red));
-			if (pointToReach != null) {
-				drawCross(pointToReach, 5., Color.black);
-			}
-			if (moveToPoint != null) {
-				drawCross(moveToPoint, 5., Color.blue);
-			}
-			if (!wayPoints.isEmpty()) {
-				Iterator<WayPoint> iterator = wayPoints.iterator();
-				WayPoint curr = null, prev;
-				if (iterator.hasNext()) {
-					curr = iterator.next();
-				}
-				while (iterator.hasNext()) {
-					prev = curr;
-					curr = iterator.next();
-					drawLine(drawPanel, prev.getPoint(), curr.getPoint(), Color.BLUE);
-				}
-				drawLine(drawPanel, wayPoints.get(0).getPoint(), moveToPoint, Color.orange);
-			}
-
-			if (target != null) {
-				drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.BLACK);
-				if (meleeTarget != null && meleeTarget != target) {
-					drawCross(new Point(meleeTarget.getX(), meleeTarget.getY()), meleeTarget.getRadius(), Color.BLACK);
-				}
-			}
-
-			StringBuilder sb = new StringBuilder("Action timeout: " + self.getRemainingActionCooldownTicks());
-			sb.append(" [");
-			for (ActionType actionType : ActionType.values()) {
-				sb.append(", ").append(actionType.toString()).append(": ").append(self.getRemainingCooldownTicksByAction()[actionType.ordinal()]);
-			}
-			sb.append("]");
-			textInfoPanel.putText(sb.toString(), 1);
-			textInfoPanel.putText(String.format("hp:%d/%d", self.getLife(), self.getMaxLife()), 2);
-
-			sb = new StringBuilder("Staff hits ticks: ");
-			if (staffHits.isEmpty()) {
-				sb.append("none");
-			} else {
-				for (Integer staffHit : staffHits) {
-					sb.append(staffHit).append(" ");
-				}
-			}
-			textInfoPanel.putText(sb.toString(), 3);
+			drawUpdatedData(self);
 		}
+	}
+
+	private void drawUpdatedData(Wizard self) {
+		for (BuildingPhantom buildingPhantom : BUILDING_PHANTOMS) {
+			drawUnit(buildingPhantom);
+		}
+
+		double maxScore = Double.MIN_VALUE;
+		double minScore = Double.MAX_VALUE;
+		for (int i = 0; i != scan_matrix.length; ++i) {
+			for (int j = 0; j != scan_matrix[0].length; ++j) {
+				if (!scan_matrix[i][j].isAvailable()) {
+					continue;
+				}
+				double score = scan_matrix[i][j].getTotalScore(self);
+				if (minScore > score) {
+					minScore = score;
+				}
+				if (maxScore < score) {
+					maxScore = score;
+				}
+			}
+		}
+		for (int i = 0; i != scan_matrix.length; ++i) {
+			for (int j = 0; j != scan_matrix[0].length; ++j) {
+				ScanMatrixItem item = scan_matrix[i][j];
+				if (!item.isAvailable()) {
+					continue;
+				}
+
+				drawPanel.addFigure(new Drawing_Circle(item.getX(),
+													   item.getY(),
+													   getColor(item.getTotalScore(self), minScore, maxScore)));
+			}
+		}
+
+		for (ScanMatrixItem scanMatrixItem : foundScanMatrixItems.values()) {
+			drawCross(scanMatrixItem, 5., Color.MAGENTA);
+		}
+
+		Point filterPoint = new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
+									  self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER);
+		drawPanel.addFigure(new Drawing_Circle(filterPoint.getX(), filterPoint.getY(), Constants.MOVE_DISTANCE_FILTER, Color.red));
+		drawPanel.addFigure(new Drawing_Circle(filterPoint.getX(), filterPoint.getY(), Constants.getFightDistanceFilter(), Color.red));
+		if (pointToReach != null) {
+			drawCross(pointToReach, 5., Color.black);
+		}
+		if (moveToPoint != null) {
+			drawCross(moveToPoint, 5., Color.blue);
+		}
+		if (!wayPoints.isEmpty()) {
+			Iterator<WayPoint> iterator = wayPoints.iterator();
+			WayPoint curr = null, prev;
+			if (iterator.hasNext()) {
+				curr = iterator.next();
+			}
+			while (iterator.hasNext()) {
+				prev = curr;
+				curr = iterator.next();
+				drawLine(drawPanel, prev.getPoint(), curr.getPoint(), Color.BLUE);
+			}
+			drawLine(drawPanel, wayPoints.get(0).getPoint(), moveToPoint, Color.orange);
+		}
+
+		if (target != null) {
+			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.BLACK);
+			if (meleeTarget != null && meleeTarget != target) {
+				drawCross(new Point(meleeTarget.getX(), meleeTarget.getY()), meleeTarget.getRadius(), Color.BLACK);
+			}
+		}
+
+		StringBuilder sb = new StringBuilder("Action timeout: " + self.getRemainingActionCooldownTicks());
+		sb.append(" [");
+		for (ActionType actionType : ActionType.values()) {
+			sb.append(", ").append(actionType.toString()).append(": ").append(self.getRemainingCooldownTicksByAction()[actionType.ordinal()]);
+		}
+		sb.append("]");
+		textInfoPanel.putText(sb.toString(), 1);
+		textInfoPanel.putText(String.format("hp:%d/%d", self.getLife(), self.getMaxLife()), 2);
+
+		sb = new StringBuilder("Staff hits ticks: ");
+		if (staffHits.isEmpty()) {
+			sb.append("none");
+		} else {
+			for (Integer staffHit : staffHits) {
+				sb.append(staffHit).append(" ");
+			}
+		}
+		textInfoPanel.putText(sb.toString(), 3);
 	}
 
 	private void drawLine(Drawing_DrawPanel drawPanel, Point pointA, Point pointB, Color color) {
@@ -405,10 +415,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 
         for (Wizard unit : world.getWizards()) {
 			drawUnit(unit);//, unit.getVisionRange()
-		}
-
-        for (Building unit : world.getBuildings()) {
-			drawUnit(unit);
 		}
 
         for (Minion unit : world.getMinions()) {
