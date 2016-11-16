@@ -274,7 +274,7 @@ public class Utils {
 			}
 			blockUnit = null;
 			for (CircularUnit unit : filteredUnits) {
-				if (FastMath.hypot(unit.getX() - x, unit.getY() - y) < unit.getRadius() + radius) {
+				if (FastMath.hypot(unit.getX() - x, unit.getY() - y) + .001 < unit.getRadius() + radius) {
 					item.setAvailable(false);
 					blockUnit = unit;
 					break;
