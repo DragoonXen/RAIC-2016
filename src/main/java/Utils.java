@@ -153,8 +153,8 @@ public class Utils {
 			}
 		}
 
-		int[] di = new int[]{0, 1, -1, 0};//, 1, 1, -1, -1};
-		int[] dj = new int[]{1, 0, 0, -1};//, 1, -1, -1, 1};
+		int[] di = new int[]{1, 0, 0, -1};//, 1, 1, -1, -1};
+		int[] dj = new int[]{0, 1, -1, 0};//, 1, -1, -1, 1};
 //		double diagonalDistance = Math.sqrt(Constants.MOVE_SCAN_STEP * Constants.MOVE_SCAN_STEP);
 		for (int i = 0; i != matrix.length; ++i) {
 			for (int j = 0; j != matrix[0].length; ++j) {
