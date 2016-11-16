@@ -127,6 +127,9 @@ public class StrategyImplement {
 						lastPointGoTo = currentPointGoTo;
 					}
 				}
+				if (whichPointGoTo == 0 && wayPoints.size() > 1) {
+					whichPointGoTo = 1;
+				}
 				moveTo(wayPoints.get(whichPointGoTo), move);
 			}
 		}
