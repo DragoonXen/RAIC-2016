@@ -354,14 +354,16 @@ public class StrategyImplement {
 		double acc = Math.cos(angle) * distance;
 		double fwdLimit = acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed();
 		fwdLimit *= Variables.moveFactor;
-		fwdLimit = Math.abs(acc / fwdLimit);
-		fwdLimit = Math.max(fwdLimit, Math.abs(strafe / (Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor)));
-		if (fwdLimit > 1.) {
-			strafe /= fwdLimit;
-			acc /= fwdLimit;
+
+		double division = Math.abs(acc / fwdLimit);
+		division = Math.max(division, Math.abs(strafe / (Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor)));
+		if (division > 1.) {
+			strafe /= division;
+			acc /= division;
 		}
-		move.setStrafeSpeed(strafe);
-		move.setSpeed(acc);
+		double fix = Math.max(1., Math.sqrt(Math.pow(acc / fwdLimit, 2) + Math.pow(Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor, 2)));
+		move.setStrafeSpeed(strafe / fix);
+		move.setSpeed(acc / fix);
 	}
 
 	private boolean testPointDirectAvailable(Point point) {

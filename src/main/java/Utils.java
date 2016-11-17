@@ -1,5 +1,6 @@
 import model.Building;
 import model.CircularUnit;
+import model.Faction;
 import model.LaneType;
 import model.LivingUnit;
 import model.Minion;
@@ -218,6 +219,24 @@ public class Utils {
 
 	private static CircularUnit blockUnit;
 
+	public static boolean isAvailableTile(List<CircularUnit> units, double x, double y) {
+		double radius = Constants.getGame().getWizardRadius();
+		if (x < radius ||
+				y < radius ||
+				x + radius > Constants.getGame().getMapSize() ||
+				y + radius > Constants.getGame().getMapSize()) {
+			return false;
+		}
+		Iterator<CircularUnit> iterator = units.iterator();
+		while (iterator.hasNext()) {
+			CircularUnit unit = iterator.next();
+			if (FastMath.hypot(unit.getX() - x, unit.getY() - y) < unit.getRadius() + radius + Constants.STUCK_FIX_RADIUS_ADD) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public static void calcTilesAvailable(List<CircularUnit> units, ScanMatrixItem[] items) {
 		double radius = Constants.getGame().getWizardRadius();
 		double x, y;
@@ -255,6 +274,119 @@ public class Utils {
 					break;
 				}
 			}
+		}
+	}
+
+	public static void calcTileScore(ScanMatrixItem item, FilteredWorld filteredWorld, BaseLine myLineCalc, Wizard self) {
+		item.setAvailable(Utils.isAvailableTile(filteredWorld.getAllBlocksList(), item.getX(), item.getY()));
+		if (!item.isAvailable()) {
+			return;
+		}
+		double distanceTo = Utils.calcLineDistanceOtherDanger(item, myLineCalc);
+		if (distanceTo > 0.) {
+			item.addOtherDanger(distanceTo);
+		}
+		double myDamage = 12.;
+		if (Utils.wizardHasStatus(self, StatusType.EMPOWERED)) {
+			myDamage *= 2;
+		}
+		double shieldBonus = Utils.wizardHasStatus(self, StatusType.SHIELDED) ? Constants.getGame().getShieldedDirectDamageAbsorptionFactor() : 1.;
+		ScoreCalcStructure structure = new ScoreCalcStructure();
+		for (Minion minion : filteredWorld.getMinions()) {
+			if (minion.getFaction() != Constants.getEnemyFaction() &&
+					(minion.getFaction() != Faction.NEUTRAL || minion.getLife() >= minion.getMaxLife())) {
+				continue;
+			}
+			structure.clear();
+			double expBonus = ScanMatrixItem.calcExpBonus(minion.getLife(), minion.getMaxLife(), 1.);
+			if (expBonus > 0.) {
+				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
+				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
+			}
+			switch (minion.getType()) {
+				case ORC_WOODCUTTER:
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(minion.getDamage() * shieldBonus);
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Constants.getGame().getOrcWoodcutterAttackRange() + self.getRadius() + Constants.getGame().getMinionSpeed() + 1);
+					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
+					break;
+				case FETISH_BLOWDART:
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(Constants.getGame().getDartDirectDamage() * shieldBonus);
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Constants.getGame().getFetishBlowdartAttackRange() + Constants.getGame().getMinionSpeed());
+					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
+					break;
+			}
+			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
+			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
+			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
+
+			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
+			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + minion.getRadius());
+			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+			structure.applyScores(item, FastMath.hypot(minion.getX(), minion.getY()));
+		}
+
+		for (Wizard wizard : filteredWorld.getWizards()) {
+			if (wizard.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
+			structure.clear();
+			double expBonus = ScanMatrixItem.calcExpBonus(wizard.getLife(), wizard.getMaxLife(), 4.);
+			if (expBonus > 0.) {
+				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
+				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
+			}
+			double wizardDamage = 12.;
+			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
+				wizardDamage *= 2;
+			}
+			if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
+				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2);
+				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(wizardDamage * 3. * shieldBonus);
+			} else {
+				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(
+						wizard.getCastRange() +
+								Constants.getGame().getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() + 4));
+				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(wizardDamage * shieldBonus);
+			}
+
+			structure.putItem(ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER);
+
+			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
+			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage);
+			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
+
+			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
+			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
+			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+
+			structure.applyScores(item, FastMath.hypot(wizard.getX(), wizard.getY()));
+		}
+
+		for (Building building : filteredWorld.getBuildings()) {
+			if (building.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
+			structure.clear();
+			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 1.);
+			if (expBonus > 0.) {
+				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
+				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
+			}
+
+			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage);
+			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange() + building.getRadius());
+			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
+
+			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER.setScore(building.getDamage() * shieldBonus);
+			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER
+					.setDistance(building.getAttackRange() + Math.min(2, -building.getRemainingActionCooldownTicks() + 4) * 1.5);
+			structure.putItem(ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER);
+
+			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
+			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + building.getRadius());
+			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+
+			structure.applyScores(item, FastMath.hypot(building.getX(), building.getY()));
 		}
 	}
 
