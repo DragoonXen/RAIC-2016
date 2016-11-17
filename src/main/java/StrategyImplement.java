@@ -355,15 +355,14 @@ public class StrategyImplement {
 		double fwdLimit = acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed();
 		fwdLimit *= Variables.moveFactor;
 
-		double division = Math.abs(acc / fwdLimit);
-		division = Math.max(division, Math.abs(strafe / (Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor)));
-		if (division > 1.) {
-			strafe /= division;
-			acc /= division;
+		double fix = Math.hypot(acc / fwdLimit, strafe / Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor);
+		if (fix > 1.) {
+			move.setStrafeSpeed(strafe / fix);
+			move.setSpeed(acc / fix);
+		} else {
+			move.setStrafeSpeed(strafe);
+			move.setSpeed(acc);
 		}
-		double fix = Math.max(1., Math.sqrt(Math.pow(acc / fwdLimit, 2) + Math.pow(Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor, 2)));
-		move.setStrafeSpeed(strafe / fix);
-		move.setSpeed(acc / fix);
 	}
 
 	private boolean testPointDirectAvailable(Point point) {
@@ -372,7 +371,7 @@ public class StrategyImplement {
 		Point to = new Point(point.getX(), point.getY());
 		for (CircularUnit circularUnit : filteredWorld.getAllBlocksList()) {
 			distance = Utils.distancePointToSegment(new Point(circularUnit.getX(), circularUnit.getY()), from, to);
-			if (distance < self.getRadius() + circularUnit.getRadius() + .001) {
+			if (distance < self.getRadius() + circularUnit.getRadius() + Constants.STUCK_FIX_RADIUS_ADD) {
 				return false;
 			}
 		}
