@@ -228,9 +228,6 @@ public class Utils {
 				filteredUnits.add(unit);
 			}
 		}
-		if (filteredUnits.isEmpty()) {
-			return;
-		}
 		blockUnit = null;
 		for (int i = 0; i != items.length; ++i) {
 			ScanMatrixItem item = items[i];
@@ -244,12 +241,13 @@ public class Utils {
 				continue;
 			}
 			if (blockUnit != null) {
-				if (FastMath.hypot(blockUnit.getX() - x, blockUnit.getY() - y) + .001 < blockUnit.getRadius() + radius) {
+				if (FastMath.hypot(blockUnit.getX() - x, blockUnit.getY() - y) < blockUnit.getRadius() + radius + Constants.STUCK_FIX_RADIUS_ADD) {
 					item.setAvailable(false);
 					continue;
 				}
+				filteredUnits.remove(blockUnit);
+				blockUnit = null;
 			}
-			blockUnit = null;
 			for (CircularUnit unit : filteredUnits) {
 				if (FastMath.hypot(unit.getX() - x, unit.getY() - y) < unit.getRadius() + radius + Constants.STUCK_FIX_RADIUS_ADD) {
 					item.setAvailable(false);
