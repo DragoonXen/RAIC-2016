@@ -224,7 +224,7 @@ public class Utils {
 		List<CircularUnit> filteredUnits = new ArrayList<>(units.size());
 		for (CircularUnit unit : units) {
 			x = Utils.distancePointToSegment(new Point(unit.getX(), unit.getY()), items[0], items[items.length - 1]);
-			if (x + Constants.STUCK_FIX_RADIUS_ADD < unit.getRadius() + radius) {
+			if (x < unit.getRadius() + radius + Constants.STUCK_FIX_RADIUS_ADD) {
 				filteredUnits.add(unit);
 			}
 		}
