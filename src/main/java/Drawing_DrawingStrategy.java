@@ -317,6 +317,11 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			}
 		}
 		textInfoPanel.putText(sb.toString(), 3);
+		textInfoPanel.putText(String.format("SpeedX: %s, SpeedY: %s, speed: %s",
+											self.getSpeedX(),
+											self.getSpeedY(),
+											FastMath.hypot(self.getSpeedX(), self.getSpeedY())),
+							  4);
 	}
 
 	private void drawLine(Drawing_DrawPanel drawPanel, Point pointA, Point pointB, Color color) {
