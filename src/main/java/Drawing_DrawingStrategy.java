@@ -5,6 +5,7 @@ import model.Game;
 import model.LaneType;
 import model.LivingUnit;
 import model.Minion;
+import model.MinionType;
 import model.Move;
 import model.Projectile;
 import model.ProjectileType;
@@ -119,6 +120,16 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 											   unit.getRadius(),
 											   true,
 											   color));
+
+		if (unit instanceof Minion && ((Minion) unit).getType() == MinionType.FETISH_BLOWDART) {
+			double angle = unit.getAngle();
+			angle += Math.PI / 2.;
+			drawPanel.addFigure(new Drawing_Line(unit.getX() + Math.cos(angle) * unit.getRadius(),
+												 unit.getY() + Math.sin(angle) * unit.getRadius(),
+												 unit.getX() - Math.cos(angle) * unit.getRadius(),
+												 unit.getY() - Math.sin(angle) * unit.getRadius(),
+												 Color.black));
+		}
 
 		drawPanel.addFigure(new Drawing_Circle(unit.getX(),
 											   unit.getY(),
