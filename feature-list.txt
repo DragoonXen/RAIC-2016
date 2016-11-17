@@ -8,4 +8,5 @@ max speed/turn angle +
 добивание нейтралов
 
 
-seen: d0a14f5456ec19730fe78183d921bc47041f074d
+tick 14776 0c89c4e11f89036b9edcaa1a5f97e38a47bb2e09
+tick 14000 b07a633d22174df3b49146e7cff3bae6e5303a6e

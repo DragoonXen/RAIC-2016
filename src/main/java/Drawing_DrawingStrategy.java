@@ -99,19 +99,26 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
     }
 
 	private void drawUnit(LivingUnit unit) {
-		drawUnit(unit, null);
+		drawUnit(unit, null, null);
 	}
 
-	private void drawUnit(LivingUnit unit, Double visibleDistance) {
+	private void drawUnit(LivingUnit unit, Color color) {
+		drawUnit(unit, null, color);
+	}
+
+	private void drawUnit(LivingUnit unit, Double visibleDistance, Color color) {
+		if (color == null) {
+			color = Constants.getCurrentFaction() == unit.getFaction() ?
+					Color.green :
+					Constants.getEnemyFaction() == unit.getFaction() ?
+							Color.red :
+							Color.blue;
+		}
 		drawPanel.addFigure(new Drawing_Circle(unit.getX(),
 											   unit.getY(),
 											   unit.getRadius(),
 											   true,
-											   Constants.getCurrentFaction() == unit.getFaction() ?
-													   Color.green :
-													   Constants.getEnemyFaction() == unit.getFaction() ?
-															   Color.red :
-															   Color.blue));
+											   color));
 
 		drawPanel.addFigure(new Drawing_Circle(unit.getX(),
 											   unit.getY(),
@@ -210,7 +217,11 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 
 	private void drawUpdatedData(Wizard self) {
 		for (BuildingPhantom buildingPhantom : BUILDING_PHANTOMS) {
-			drawUnit(buildingPhantom);
+			if (buildingPhantom.isUpdated()) {
+				drawUnit(buildingPhantom);
+			} else {
+				drawUnit(buildingPhantom, Color.pink);
+			}
 		}
 
 		double maxScore = Double.MIN_VALUE;
