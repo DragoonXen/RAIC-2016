@@ -27,6 +27,8 @@ public abstract class Constants {
     public static double DANGER_PENALTY = 200.;
     public static double DANGER_AT_START_MULT_RUN = .9;
 
+    public static double MOVE_ANGLE_PRECISE = Math.PI / 180.;
+
     public static int[] STEP_X_HELP = new int[]{0, 0, -1, 1};
     public static int[] STEP_Y_HELP = new int[]{-1, 1, 0, 0};
 

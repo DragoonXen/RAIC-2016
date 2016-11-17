@@ -46,6 +46,8 @@ public class StrategyImplement {
 
 	protected ScanMatrixItem pointToReach;
 
+	private ScanMatrixItem testScanItem = new ScanMatrixItem(0, 0);
+
 	protected ArrayList<WayPoint> wayPoints = new ArrayList<>();
 
 	protected Point moveToPoint;
@@ -111,16 +113,16 @@ public class StrategyImplement {
 		findAWay();
 		if (!wayPoints.isEmpty()) {
 			int lastPointGoTo = 1;
-			double dangerAtStart = wayPoints.get(0).getPoint().getAllDangers();
+			double dangerAtStart = wayPoints.get(0).getPoint().getAllDangers() * Constants.DANGER_AT_START_MULT_RUN;
 			while (lastPointGoTo < wayPoints.size() &&
-					wayPoints.get(lastPointGoTo).getPoint().getAllDangers() >= dangerAtStart * Constants.DANGER_AT_START_MULT_RUN) {
+					wayPoints.get(lastPointGoTo).getPoint().getAllDangers() >= dangerAtStart) {
 				++lastPointGoTo;
 			}
 			if (lastPointGoTo == wayPoints.size()) {
 				--lastPointGoTo;
 			}
 			if (testPointDirectAvailable(lastPointGoTo)) {
-				moveTo(wayPoints.get(lastPointGoTo), move);
+				moveTo(lastPointGoTo, move);
 			} else {
 				int whichPointGoTo = 0;
 				while (whichPointGoTo + 1 < lastPointGoTo) {
@@ -134,7 +136,7 @@ public class StrategyImplement {
 				if (whichPointGoTo == 0 && wayPoints.size() > 1) {
 					whichPointGoTo = 1;
 				}
-				moveTo(wayPoints.get(whichPointGoTo), move);
+				moveTo(whichPointGoTo, move);
 			}
 		}
 
@@ -345,25 +347,79 @@ public class StrategyImplement {
 		}
 	}
 
-	protected void moveTo(WayPoint wayPoint, Move move) {
-		moveToPoint = wayPoint.getPoint();
-		ScanMatrixItem point = wayPoint.getPoint();
+	protected void moveTo(int pointIdx, Move move) {
+		ScanMatrixItem point = wayPoints.get(pointIdx).getPoint();
+		moveToPoint = point;
 		double distance = FastMath.hypot(self, point.getX(), point.getY());
 		double angle = self.getAngleTo(point.getX(), point.getY());
+
+		AccAndSpeedWithFix accAndStrafe = getAccAndSpeedByAngle(angle, distance);
+		move.setSpeed(accAndStrafe.getSpeed());
+		move.setStrafeSpeed(accAndStrafe.getStrafe());
+
+		if (accAndStrafe.getFix() < 1.) { //not enought speed, what if I have more points to move, but run from enemy?
+			double minAngle = angle;
+			double maxAngle = angle;
+			double lastAngle = angle;
+			while (pointIdx < wayPoints.size()) {
+				Point wayPoint = wayPoints.get(pointIdx++).getPoint();
+				lastAngle = self.getAngleTo(wayPoint.getX(), wayPoint.getY());
+				if (lastAngle < minAngle) {
+					minAngle = lastAngle;
+				} else if (lastAngle > maxAngle) {
+					maxAngle = lastAngle;
+				}
+			}
+			if (angle < lastAngle) {
+				minAngle = angle;
+				lastAngle = -Constants.MOVE_ANGLE_PRECISE;
+			} else {
+				maxAngle = angle;
+				//swap max and min, calc from max to min
+				lastAngle = maxAngle;
+				maxAngle = minAngle;
+				minAngle = lastAngle;
+
+				lastAngle = Constants.MOVE_ANGLE_PRECISE;
+			}
+			double bestDanger = point.getAllDangers();
+			Point bestPosition = point;
+			AccAndSpeedWithFix bestMove = accAndStrafe;
+
+			while (minAngle + Constants.MOVE_ANGLE_PRECISE < maxAngle) {
+				accAndStrafe = getAccAndSpeedByAngle(maxAngle, 100.);
+				testScanItem.setPoint(self.getX() + Math.cos(self.getAngle() + maxAngle) * accAndStrafe.getSpeed() + Math.cos(self.getAngle() + Math.PI / 2. + maxAngle) * accAndStrafe.getStrafe(),
+									  self.getY() + Math.sin(self.getAngle() + maxAngle) * accAndStrafe.getSpeed() + Math.sin(self.getAngle() + Math.PI / 2. + maxAngle) * accAndStrafe.getStrafe());
+				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self);
+				if (testScanItem.isAvailable() && testScanItem.getAllDangers() <= bestDanger) {
+					bestPosition = new Point(testScanItem.getX(), testScanItem.getY());
+					bestMove = accAndStrafe;
+					bestDanger = testScanItem.getAllDangers();
+				}
+				maxAngle += lastAngle;
+			}
+			moveToPoint = bestPosition;
+			move.setSpeed(bestMove.getSpeed());
+			move.setStrafeSpeed(bestMove.getStrafe());
+		}
+//		} else { //speed enought, but what if I go throught dangerous zone?
+//
+//		}
+	}
+
+	public AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance) {
 		double strafe = Math.sin(angle) * distance;
 		double acc = Math.cos(angle) * distance;
-		double fwdLimit = acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed();
-		fwdLimit *= Variables.moveFactor;
+		double fwdLimit = (acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed()) * Variables.moveFactor;
 
 		double fix = Math.hypot(acc / fwdLimit, strafe / Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor);
 		if (fix > 1.) {
-			move.setStrafeSpeed(strafe / fix);
-			move.setSpeed(acc / fix);
+			return new AccAndSpeedWithFix(acc / fix, strafe / fix, fix);
 		} else {
-			move.setStrafeSpeed(strafe);
-			move.setSpeed(acc);
+			return new AccAndSpeedWithFix(acc, strafe, fix);
 		}
 	}
+
 
 	private boolean testPointDirectAvailable(Point point) {
 		double distance;
