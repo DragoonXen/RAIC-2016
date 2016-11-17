@@ -272,7 +272,7 @@ public class StrategyImplement {
 
 	private void findTargets() {
 		targets.clear();
-		boolean treeCut = myLineCalc.getDistanceTo(self) > Constants.getTopLine().getLineDistance();
+		boolean treeCut = myLineCalc.getDistanceTo(self) > (Constants.getTopLine().getLineDistance() * 1.5);
 		for (LivingUnit livingUnit : filteredWorld.getAimsList()) {
 			if (livingUnit.getFaction() != Constants.getEnemyFaction() &&
 					(livingUnit.getFaction() != Faction.NEUTRAL || livingUnit.getLife() >= livingUnit.getMaxLife()) &&
