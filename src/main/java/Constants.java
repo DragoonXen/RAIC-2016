@@ -31,6 +31,11 @@ public abstract class Constants {
     public static double MOVE_ANGLE_PRECISE = Math.PI / 180. * .2; // 0.2 per calc
     public static double RUN_ANGLE_EXPAND = Math.PI / 180. * 45.; // 45 degrees
 
+    public static int SPAWN_POINT_SIZE = 200;
+    public static double SPAWN_POINT_DANGER = 80.;
+    public static int TICKS_TO_LEAVE_SPAWN = 80;
+    public static SpawnPoint[] SPAWN_POINTS = new SpawnPoint[]{new SpawnPoint(3200, 800), new SpawnPoint(3000, 200), new SpawnPoint(3800, 1000)};
+
     public static int[] STEP_X_HELP = new int[]{0, 0, -1, 1};
     public static int[] STEP_Y_HELP = new int[]{-1, 1, 0, 0};
 

@@ -73,6 +73,7 @@ public class StrategyImplement {
 		target = null;
 		this.world = world;
 		this.self = self;
+		SpawnPoint.updateTick(world.getTickIndex());
 
 		switch (world.getTickIndex()) {
 			case 0:
@@ -588,6 +589,14 @@ public class StrategyImplement {
 				double distanceTo = Utils.calcLineDistanceOtherDanger(item, myLineCalc);
 				if (distanceTo > 0.) {
 					item.addOtherDanger(distanceTo);
+				}
+
+				if (SpawnPoint.checkSpawnPoints()) {
+					for (SpawnPoint spawnPoint : Constants.SPAWN_POINTS) {
+						if (spawnPoint.isPointInDanger(item.getX(), item.getY())) {
+							item.addOtherDanger(Constants.SPAWN_POINT_DANGER);
+						}
+					}
 				}
 
 				if (!enemyFound) {
