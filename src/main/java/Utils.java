@@ -198,6 +198,16 @@ public class Utils {
 		return matrix;
 	}
 
+	public static double normalizeAngle(Double angle) {
+		while (angle > Math.PI) {
+			angle -= Math.PI * 2;
+		}
+		while (angle < -Math.PI) {
+			angle += Math.PI * 2;
+		}
+		return angle;
+	}
+
 	public static double distancePointToSegment(Point point, Point segA, Point segB) {
 		return point.norm(nearestSegmentPoint(point, segA, segB));
 	}
@@ -277,7 +287,8 @@ public class Utils {
 		}
 	}
 
-	public static void calcTileScore(ScanMatrixItem item, FilteredWorld filteredWorld, BaseLine myLineCalc, Wizard self) {
+	public static void
+	calcTileScore(ScanMatrixItem item, FilteredWorld filteredWorld, BaseLine myLineCalc, Wizard self) {
 		item.setAvailable(Utils.isAvailableTile(filteredWorld.getAllBlocksList(), item.getX(), item.getY()));
 		if (!item.isAvailable()) {
 			return;
@@ -322,7 +333,7 @@ public class Utils {
 			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
 			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + minion.getRadius());
 			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
-			structure.applyScores(item, FastMath.hypot(minion.getX(), minion.getY()));
+			structure.applyScores(item, FastMath.hypot(minion.getX() - item.getX(), minion.getY() - item.getY()));
 		}
 
 		for (Wizard wizard : filteredWorld.getWizards()) {
@@ -359,7 +370,7 @@ public class Utils {
 			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
 			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
 
-			structure.applyScores(item, FastMath.hypot(wizard.getX(), wizard.getY()));
+			structure.applyScores(item, FastMath.hypot(wizard.getX() - item.getX(), wizard.getY() - item.getY()));
 		}
 
 		for (Building building : filteredWorld.getBuildings()) {
@@ -386,7 +397,7 @@ public class Utils {
 			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + building.getRadius());
 			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
 
-			structure.applyScores(item, FastMath.hypot(building.getX(), building.getY()));
+			structure.applyScores(item, FastMath.hypot(building.getX() - item.getX(), building.getY() - item.getY()));
 		}
 	}
 

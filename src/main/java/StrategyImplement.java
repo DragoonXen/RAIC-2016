@@ -357,46 +357,46 @@ public class StrategyImplement {
 		move.setSpeed(accAndStrafe.getSpeed());
 		move.setStrafeSpeed(accAndStrafe.getStrafe());
 
-		if (accAndStrafe.getFix() < 1.) { //not enought speed, what if I have more points to move, but run from enemy?
-			double minAngle = angle;
-			double maxAngle = angle;
-			double lastAngle = angle;
+		if (pointIdx <= 3 && wayPoints.size() > pointIdx + 1) { //maybe we can find better micro step
+			double minAngle = 0.;
+			double maxAngle = 0.;
+			double lastAngle = 0.;
 			while (pointIdx < wayPoints.size()) {
 				Point wayPoint = wayPoints.get(pointIdx++).getPoint();
-				lastAngle = self.getAngleTo(wayPoint.getX(), wayPoint.getY());
+				lastAngle = Utils.normalizeAngle(self.getAngleTo(wayPoint.getX(), wayPoint.getY()) - angle);
 				if (lastAngle < minAngle) {
 					minAngle = lastAngle;
 				} else if (lastAngle > maxAngle) {
 					maxAngle = lastAngle;
 				}
 			}
-			if (angle < lastAngle) {
+			if (lastAngle < 0) { // from min to up
+				maxAngle = Utils.normalizeAngle(angle + minAngle);
+				minAngle = angle;
+				lastAngle = Constants.MOVE_ANGLE_PRECISE;
+			} else {
+				maxAngle = Utils.normalizeAngle(angle + maxAngle);
 				minAngle = angle;
 				lastAngle = -Constants.MOVE_ANGLE_PRECISE;
-			} else {
-				maxAngle = angle;
-				//swap max and min, calc from max to min
-				lastAngle = maxAngle;
-				maxAngle = minAngle;
-				minAngle = lastAngle;
-
-				lastAngle = Constants.MOVE_ANGLE_PRECISE;
 			}
 			double bestDanger = point.getAllDangers();
+			double bestScore = point.getTotalScore(self);
 			Point bestPosition = point;
 			AccAndSpeedWithFix bestMove = accAndStrafe;
 
-			while (minAngle + Constants.MOVE_ANGLE_PRECISE < maxAngle) {
+			while (Math.abs(Utils.normalizeAngle(maxAngle - minAngle)) > Constants.MOVE_ANGLE_PRECISE) {
 				accAndStrafe = getAccAndSpeedByAngle(maxAngle, 100.);
 				testScanItem.setPoint(self.getX() + Math.cos(self.getAngle() + maxAngle) * accAndStrafe.getSpeed() + Math.cos(self.getAngle() + Math.PI / 2. + maxAngle) * accAndStrafe.getStrafe(),
 									  self.getY() + Math.sin(self.getAngle() + maxAngle) * accAndStrafe.getSpeed() + Math.sin(self.getAngle() + Math.PI / 2. + maxAngle) * accAndStrafe.getStrafe());
 				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self);
-				if (testScanItem.isAvailable() && testScanItem.getAllDangers() <= bestDanger) {
+				if (testScanItem.isAvailable() && (testScanItem.getAllDangers() < bestDanger ||
+						testScanItem.getAllDangers() == bestDanger && bestScore < testScanItem.getTotalScore(self))) {
 					bestPosition = new Point(testScanItem.getX(), testScanItem.getY());
 					bestMove = accAndStrafe;
 					bestDanger = testScanItem.getAllDangers();
+					bestScore = testScanItem.getTotalScore(self);
 				}
-				maxAngle += lastAngle;
+				maxAngle = Utils.normalizeAngle(maxAngle + lastAngle);
 			}
 			moveToPoint = bestPosition;
 			move.setSpeed(bestMove.getSpeed());
