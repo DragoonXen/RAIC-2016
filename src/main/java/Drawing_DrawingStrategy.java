@@ -287,9 +287,11 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			while (iterator.hasNext()) {
 				prev = curr;
 				curr = iterator.next();
-				drawLine(drawPanel, prev.getPoint(), curr.getPoint(), Color.BLUE);
+				drawLine(prev.getPoint(), curr.getPoint(), Color.BLUE);
 			}
-			drawLine(drawPanel, wayPoints.get(0).getPoint(), moveToPoint, Color.orange);
+			if (moveToPoint != null) {
+				drawLine(wayPoints.get(0).getPoint(), moveToPoint, Color.orange);
+			}
 		}
 
 		if (target != null) {
@@ -322,13 +324,33 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 											self.getSpeedY(),
 											FastMath.hypot(self.getSpeedX(), self.getSpeedY())),
 							  4);
+
+
+		Point selfPoint = scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y];
+		if (maxAngle - minAngle > Constants.MOVE_ANGLE_PRECISE) {
+			drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + angle + minAngle), 70., Color.black);
+			drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + targetAngle), 70., Color.magenta);
+			drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + angle + maxAngle), 70., Color.black);
+		}
+		if (moveToPoint != null) {
+			drawLine(selfPoint, Utils.normalizeAngle(self.getAngleTo(moveToPoint.getX(), moveToPoint.getY()) + self.getAngle()), 50., Color.red);
+		}
 	}
 
-	private void drawLine(Drawing_DrawPanel drawPanel, Point pointA, Point pointB, Color color) {
+	private void drawLine(Point pointA, Point pointB, Color color) {
 		drawPanel.addFigure(new Drawing_Line(pointA.getX(),
 											 pointA.getY(),
 											 pointB.getX(),
 											 pointB.getY(),
+											 color));
+
+	}
+
+	private void drawLine(Point pointFrom, double angle, double distance, Color color) {
+		drawPanel.addFigure(new Drawing_Line(pointFrom.getX(),
+											 pointFrom.getY(),
+											 pointFrom.getX() + Math.cos(angle) * distance,
+											 pointFrom.getY() + Math.sin(angle) * distance,
 											 color));
 
 	}

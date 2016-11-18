@@ -15,6 +15,7 @@ public abstract class Constants {
     public static double MOVE_SCAN_FIGURE_CENTER = (MOVE_FWD_DISTANCE - MOVE_BACK_DISTANCE) / 2.;
 
     public static double STUCK_FIX_RADIUS_ADD = .001;
+
     public static double MOVE_SCAN_STEP = 3.;
     public static int CURRENT_PT_X = (int) Math.round(MOVE_BACK_DISTANCE / MOVE_SCAN_STEP + .1);
     public static int CURRENT_PT_Y = (int) Math.round(MOVE_SIDE_DISTANCE / MOVE_SCAN_STEP + .1);
@@ -28,6 +29,7 @@ public abstract class Constants {
     public static double DANGER_AT_START_MULT_RUN = .9;
 
     public static double MOVE_ANGLE_PRECISE = Math.PI / 180.;
+	public static double RUN_ANGLE_EXPAND = MOVE_ANGLE_PRECISE * 45.;
 
     public static int[] STEP_X_HELP = new int[]{0, 0, -1, 1};
     public static int[] STEP_Y_HELP = new int[]{-1, 1, 0, 0};

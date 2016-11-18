@@ -45,4 +45,8 @@ public class Point {
 	public Point negate(Point other) {
 		return new Point(x - other.x, y - other.y);
 	}
+
+	public Point clonePoint() {
+		return new Point(x, y);
+	}
 }
