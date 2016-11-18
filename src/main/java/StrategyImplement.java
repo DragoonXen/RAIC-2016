@@ -681,10 +681,10 @@ public class StrategyImplement {
 			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage);
 			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
 
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
-			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
-
+//			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
+//			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
+//			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+//
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				applyScoreForLine(scan_matrix[i], structure, wizard);
 			}
