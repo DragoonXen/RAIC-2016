@@ -4,6 +4,7 @@ import model.Faction;
 import model.LaneType;
 import model.LivingUnit;
 import model.Minion;
+import model.Projectile;
 import model.SkillType;
 import model.Status;
 import model.StatusType;
@@ -19,6 +20,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by dragoon on 11/9/16.
@@ -59,6 +61,16 @@ public class Utils {
 	}
 
 	public static FilteredWorld filterWorld(World world, Point point, Building[] buildings) {
+		List<Projectile> projectiles = new ArrayList<>();
+		for (Projectile projectile : world.getProjectiles()) {
+			if (projectile.getOwnerUnitId() == Variables.self.getId()) {
+				continue;
+			}
+			projectiles.add(projectile);
+		}
+		Projectile[] filteredProjectiles = new Projectile[projectiles.size()];
+		projectiles.toArray(filteredProjectiles);
+
 		return new FilteredWorld(
 				world.getTickIndex(),
 				world.getTickCount(),
@@ -67,7 +79,7 @@ public class Utils {
 				world.getPlayers(),
 				removeMe(filterUnit(world.getWizards(), point, FilteredWorld.FilterType.FIGHT)),
 				filterUnit(world.getMinions(), point, FilteredWorld.FilterType.FIGHT),
-				filterUnit(world.getProjectiles(), point, FilteredWorld.FilterType.FIGHT),
+				filterUnit(filteredProjectiles, point, FilteredWorld.FilterType.FIGHT),
 				filterUnit(world.getBonuses(), point, FilteredWorld.FilterType.FIGHT),
 				filterUnit(buildings, point, FilteredWorld.FilterType.FIGHT),
 				filterUnit(world.getTrees(), point, FilteredWorld.FilterType.MOVE),
@@ -209,12 +221,12 @@ public class Utils {
 	}
 
 	public static double distancePointToSegment(Point point, Point segA, Point segB) {
-		return point.norm(nearestSegmentPoint(point, segA, segB));
+		return point.segmentNorm(nearestSegmentPoint(point, segA, segB));
 	}
 
 	public static Point nearestSegmentPoint(Point point, Point segA, Point segB) {
-		Point vectorV = segA.negate(segB);
-		Point vectorW = point.negate(segB);
+		Point vectorV = segA.negateCopy(segB);
+		Point vectorW = point.negateCopy(segB);
 
 		double c1 = vectorV.scalarMult(vectorW);
 		if (c1 <= 0)
@@ -224,7 +236,7 @@ public class Utils {
 		if (c2 <= c1)
 			return segA;
 
-		return segB.add(vectorV.mult(c1 / c2));
+		return segB.addWithCopy(vectorV.mult(c1 / c2));
 	}
 
 	private static CircularUnit blockUnit;
@@ -287,8 +299,11 @@ public class Utils {
 		}
 	}
 
-	public static void
-	calcTileScore(ScanMatrixItem item, FilteredWorld filteredWorld, BaseLine myLineCalc, Wizard self) {
+	public static void calcTileScore(ScanMatrixItem item, FilteredWorld filteredWorld, BaseLine myLineCalc, Wizard self) {
+		calcTileScore(item, filteredWorld, myLineCalc, self, 0L);
+	}
+
+	public static void calcTileScore(ScanMatrixItem item, FilteredWorld filteredWorld, BaseLine myLineCalc, Wizard self, long addTicks) {
 		item.setAvailable(Utils.isAvailableTile(filteredWorld.getAllBlocksList(), item.getX(), item.getY()));
 		if (!item.isAvailable()) {
 			return;
@@ -298,10 +313,12 @@ public class Utils {
 			item.addOtherDanger(distanceTo);
 		}
 		double myDamage = 12.;
-		if (Utils.wizardHasStatus(self, StatusType.EMPOWERED)) {
+		if (Utils.wizardStatusTicks(self, StatusType.EMPOWERED) >= addTicks) {
 			myDamage *= 2;
 		}
-		double shieldBonus = Utils.wizardHasStatus(self, StatusType.SHIELDED) ? Constants.getGame().getShieldedDirectDamageAbsorptionFactor() : 1.;
+		double shieldBonus = Utils.wizardStatusTicks(self, StatusType.SHIELDED) >= addTicks ?
+				Constants.getGame().getShieldedDirectDamageAbsorptionFactor() :
+				1.;
 		ScoreCalcStructure structure = new ScoreCalcStructure();
 		for (Minion minion : filteredWorld.getMinions()) {
 			if (minion.getFaction() != Constants.getEnemyFaction() &&
@@ -310,28 +327,37 @@ public class Utils {
 			}
 			structure.clear();
 			double expBonus = ScanMatrixItem.calcExpBonus(minion.getLife(), minion.getMaxLife(), 1.);
+			double movePenalty = Constants.getGame().getMinionSpeed() * addTicks;
 			if (expBonus > 0.) {
+				ScoreCalcStructure.EXP_BONUS_APPLYER.setDistance(Constants.EXPERIENCE_DISTANCE - movePenalty);
 				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
 				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
 			}
 			switch (minion.getType()) {
 				case ORC_WOODCUTTER:
 					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(minion.getDamage() * shieldBonus);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Constants.getGame().getOrcWoodcutterAttackRange() + self.getRadius() + Constants.getGame().getMinionSpeed() + 1);
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Constants.getGame().getOrcWoodcutterAttackRange() +
+																				 self.getRadius() +
+																				 Constants.getGame().getMinionSpeed() +
+																				 movePenalty +
+																				 1);
 					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 					break;
 				case FETISH_BLOWDART:
+					// TODO: add cooldown measure
 					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(Constants.getGame().getDartDirectDamage() * shieldBonus);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Constants.getGame().getFetishBlowdartAttackRange() + Constants.getGame().getMinionSpeed());
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Constants.getGame().getFetishBlowdartAttackRange() +
+																				 Constants.getGame().getMinionSpeed() +
+																				 movePenalty);
 					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 					break;
 			}
 			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
+			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange() - movePenalty);
 			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
 
 			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + minion.getRadius());
+			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + minion.getRadius() - movePenalty);
 			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
 			structure.applyScores(item, FastMath.hypot(minion.getX() - item.getX(), minion.getY() - item.getY()));
 		}
@@ -341,9 +367,11 @@ public class Utils {
 				continue;
 			}
 			structure.clear();
+			double movePenalty = Constants.getGame().getWizardForwardSpeed() * addTicks;
 			double expBonus = ScanMatrixItem.calcExpBonus(wizard.getLife(), wizard.getMaxLife(), 4.);
 			if (expBonus > 0.) {
 				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
+				ScoreCalcStructure.EXP_BONUS_APPLYER.setDistance(Constants.EXPERIENCE_DISTANCE - movePenalty);
 				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
 			}
 			double wizardDamage = 12.;
@@ -351,24 +379,28 @@ public class Utils {
 				wizardDamage *= 2;
 			}
 			if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2);
+				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() +
+																					self.getRadius() +
+																					Constants.getGame().getWizardForwardSpeed() * 2 +
+																					movePenalty);
 				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(wizardDamage * 3. * shieldBonus);
 			} else {
 				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(
 						wizard.getCastRange() +
-								Constants.getGame().getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() + 4));
+								Constants.getGame().getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() + 4 + addTicks) +
+								movePenalty);
 				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(wizardDamage * shieldBonus);
 			}
 
 			structure.putItem(ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER);
 
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
+			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange() - movePenalty);
 			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage);
 			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
 
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
-			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+//			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage - movePenalty);
+//			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
+//			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
 
 			structure.applyScores(item, FastMath.hypot(wizard.getX() - item.getX(), wizard.getY() - item.getY()));
 		}
@@ -390,7 +422,7 @@ public class Utils {
 
 			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER.setScore(building.getDamage() * shieldBonus);
 			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER
-					.setDistance(building.getAttackRange() + Math.min(2, -building.getRemainingActionCooldownTicks() + 4) * 1.5);
+					.setDistance(building.getAttackRange() + Math.min(2, -building.getRemainingActionCooldownTicks() + 4 + addTicks) * 1.5);
 			structure.putItem(ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER);
 
 			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
@@ -638,5 +670,76 @@ public class Utils {
 			}
 		}
 		return response;
+	}
+
+	public static double getProjectileSpeed(Projectile projectile) {
+		switch (projectile.getType()) {
+			case MAGIC_MISSILE:
+				return Constants.getGame().getMagicMissileSpeed();
+			case FROST_BOLT:
+				return Constants.getGame().getFrostBoltSpeed();
+			case FIREBALL:
+				return Constants.getGame().getFireballSpeed();
+			case DART:
+				return Constants.getGame().getDartSpeed();
+		}
+		return 0.;
+	}
+
+	public static double getProjectileDamage(Projectile projectile) {
+		switch (projectile.getType()) {
+			case MAGIC_MISSILE:
+				return Constants.getGame().getMagicMissileDirectDamage();
+			case FROST_BOLT:
+				return Constants.getGame().getFrostBoltDirectDamage();
+			case FIREBALL:
+				return Constants.getGame().getFireballExplosionMaxDamage();
+			case DART:
+				return Constants.getGame().getDartDirectDamage();
+		}
+		return 0.;
+	}
+
+	public static void fillProjectilesSim(FilteredWorld filteredWorld, TreeMap<Long, Double> projectilesDTL) {
+		Variables.projectilesSim.clear();
+		for (Projectile projectile : filteredWorld.getProjectiles()) {
+			Variables.projectilesSim.add(new AbstractMap.SimpleEntry<Projectile, Double>(projectile, projectilesDTL.get(projectile.getId())));
+		}
+	}
+
+	public static double checkProjectiveCollistion(Point point, int ticks) {
+		double selfRadius = Variables.self.getRadius();
+		double damage = 0.;
+		Iterator<AbstractMap.SimpleEntry<Projectile, Double>> iterator = Variables.projectilesSim.iterator();
+		while (iterator.hasNext()) {
+			AbstractMap.SimpleEntry<Projectile, Double> next = iterator.next();
+			Projectile projectile = next.getKey();
+			Point projectileVector = new Point(projectile.getSpeedX(), projectile.getSpeedY());
+			Point startProjectilePoint = new Point(projectile.getX() + projectile.getSpeedX() * ticks, projectile.getY() + projectile.getSpeedY() * ticks);
+			boolean remove = false;
+			if (projectileVector.vectorNorm() >= next.getValue() - .0001) {
+				projectileVector.fixVectorLength(next.getValue());
+				remove = true;
+			} else {
+				next.setValue(next.getValue() - Utils.getProjectileSpeed(next.getKey()));
+			}
+			projectileVector.add(startProjectilePoint);
+			if (Utils.distancePointToSegment(point, startProjectilePoint, projectileVector) < projectile.getRadius() + selfRadius + .001) {
+				damage += getProjectileDamage(projectile);
+				remove = true;
+			}
+			if (remove) {
+				iterator.remove();
+			}
+		}
+		return damage;
+	}
+
+
+	public static double updateMaxModule(double value, double maxModule) {
+		if (Math.abs(value) <= maxModule) {
+			return value;
+		}
+		return value > 0. ? maxModule : -maxModule;
 	}
 }

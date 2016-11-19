@@ -31,6 +31,9 @@ public abstract class Constants {
     public static double MOVE_ANGLE_PRECISE = Math.PI / 180. * .2; // 0.2 per calc
     public static double RUN_ANGLE_EXPAND = Math.PI / 180. * 45.; // 45 degrees
 
+	public static int EVADE_CALCULATIONS_COUNT = 90;
+	public static double EVADE_DEGREE_STEP = Math.PI * 2. / EVADE_CALCULATIONS_COUNT; // 360 / 90 = 4
+
     public static int SPAWN_POINT_SIZE = 200;
     public static double SPAWN_POINT_DANGER = 80.;
     public static int TICKS_TO_LEAVE_SPAWN = 80;

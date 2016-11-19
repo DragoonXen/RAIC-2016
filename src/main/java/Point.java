@@ -22,6 +22,11 @@ public class Point {
 		return y;
 	}
 
+	public void update(double x, double y) {
+		this.x = x;
+		this.y = y;
+	}
+
 	public double scalarMult(Point other) {
 		return x * other.x + y * other.y;
 	}
@@ -30,23 +35,39 @@ public class Point {
 		return new Point(x * value, y * value);
 	}
 
-	public Point add(Point other) {
+	public Point addWithCopy(Point other) {
 		return new Point(x + other.x, y + other.y);
 	}
 
-	public double norm() {
-		return Math.sqrt(scalarMult(this));
+	public void add(Point other) {
+		this.x += other.x;
+		this.y += other.y;
 	}
 
-	public double norm(Point other) {
-		return negate(other).norm();
+	public double vectorNorm() {
+		return FastMath.hypot(x, y);
 	}
 
-	public Point negate(Point other) {
+	public double segmentNorm(Point other) {
+		return negateCopy(other).vectorNorm();
+	}
+
+	public Point negateCopy(Point other) {
 		return new Point(x - other.x, y - other.y);
+	}
+
+	public void negate(Point other) {
+		this.x -= other.x;
+		this.y -= other.y;
 	}
 
 	public Point clonePoint() {
 		return new Point(x, y);
+	}
+
+	public void fixVectorLength(double newLength) {
+		double multiplyValue = newLength / FastMath.hypot(x, y);
+		x *= multiplyValue;
+		y *= multiplyValue;
 	}
 }

@@ -9,6 +9,7 @@ import model.LivingUnit;
 import model.Minion;
 import model.MinionType;
 import model.Move;
+import model.Projectile;
 import model.StatusType;
 import model.Tree;
 import model.Wizard;
@@ -21,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.TreeMap;
 
 /**
  * Created by by.dragoon on 11/8/16.
@@ -66,14 +68,24 @@ public class StrategyImplement {
 	protected double angle = 0.;
 	protected double targetAngle = 0.;
 
+	protected TreeMap<Long, Double> projectilesDTL = new TreeMap<>(); //store
+	protected CurrentAction currentAction = new CurrentAction();
+	protected double[] castRange = new double[]{500., 500., 500., 500., 500., 500., 500., 500., 500., 500., 500.};
+
 	public void move(Wizard self, World world, Game game, Move move) {
-		Variables.self = self;
 		enemyFound = false;
 		moveToPoint = null;
 		target = null;
+		minAngle = 0.;
+		maxAngle = 0.;
+		angle = 0.;
+		targetAngle = 0.;
+
+		Variables.self = self;
 		this.world = world;
 		this.self = self;
 		SpawnPoint.updateTick(world.getTickIndex());
+		updateCastRange(world.getWizards());
 
 		switch (world.getTickIndex()) {
 			case 0:
@@ -110,47 +122,254 @@ public class StrategyImplement {
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
 										  BUILDING_PHANTOMS);
+		updateProjectilesDTL(filteredWorld.getProjectiles());
 
 		Utils.calcCurrentSkillBonuses(self, filteredWorld);
-		enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||
-				Utils.hasEnemy(filteredWorld.getWizards()) ||
-				Utils.hasEnemy(filteredWorld.getBuildings());
+		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
+		evade(move, checkHitByProjectilePossible());
 
-		calcMatrixDanger(game);
-		findAWay();
-		if (!wayPoints.isEmpty()) {
-			int lastPointGoTo = 1;
-			double dangerAtStart = wayPoints.get(0).getPoint().getAllDangers() * Constants.DANGER_AT_START_MULT_RUN;
-			while (lastPointGoTo < wayPoints.size() &&
-					wayPoints.get(lastPointGoTo).getPoint().getAllDangers() >= dangerAtStart) {
-				++lastPointGoTo;
-			}
-			boolean run = lastPointGoTo != wayPoints.size();
-			if (lastPointGoTo == wayPoints.size()) {
-				--lastPointGoTo;
-			}
+		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+			enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||
+					Utils.hasEnemy(filteredWorld.getWizards()) ||
+					Utils.hasEnemy(filteredWorld.getBuildings());
 
-			if (testPointDirectAvailable(lastPointGoTo)) {
-				moveTo(lastPointGoTo, move, run);
-			} else {
-				int whichPointGoTo = 0;
-				while (whichPointGoTo + 1 < lastPointGoTo) {
-					int currentPointGoTo = (lastPointGoTo + whichPointGoTo) / 2;
-					if (testPointDirectAvailable(currentPointGoTo)) {
-						whichPointGoTo = currentPointGoTo;
-					} else {
-						lastPointGoTo = currentPointGoTo;
+			calcMatrixDanger(game);
+			findAWay();
+			if (!wayPoints.isEmpty()) {
+				int lastPointGoTo = 1;
+				double dangerAtStart = wayPoints.get(0).getPoint().getAllDangers() * Constants.DANGER_AT_START_MULT_RUN;
+				while (lastPointGoTo < wayPoints.size() &&
+						wayPoints.get(lastPointGoTo).getPoint().getAllDangers() >= dangerAtStart) {
+					++lastPointGoTo;
+				}
+				boolean run = lastPointGoTo != wayPoints.size();
+				if (lastPointGoTo == wayPoints.size()) {
+					--lastPointGoTo;
+				}
+
+				if (testPointDirectAvailable(lastPointGoTo)) {
+					moveTo(lastPointGoTo, move, run);
+				} else {
+					int whichPointGoTo = 0;
+					while (whichPointGoTo + 1 < lastPointGoTo) {
+						int currentPointGoTo = (lastPointGoTo + whichPointGoTo) / 2;
+						if (testPointDirectAvailable(currentPointGoTo)) {
+							whichPointGoTo = currentPointGoTo;
+						} else {
+							lastPointGoTo = currentPointGoTo;
+						}
 					}
+					if (whichPointGoTo == 0 && wayPoints.size() > 1) {
+						whichPointGoTo = 1;
+					}
+					moveTo(whichPointGoTo, move, run);
 				}
-				if (whichPointGoTo == 0 && wayPoints.size() > 1) {
-					whichPointGoTo = 1;
-				}
-				moveTo(whichPointGoTo, move, run);
+			}
+		}
+		findTargets();
+		shotAndTurn(move);
+	}
+
+	private void updateCastRange(Wizard[] wizards) {
+		for (Wizard wizard : wizards) {
+			castRange[(int) wizard.getId()] = wizard.getCastRange();
+		}
+	}
+
+	private void updateProjectilesDTL(Projectile[] projectiles) {
+		Variables.projectiles.clear();
+		for (Projectile projectile : projectiles) {
+			Variables.projectiles.add(projectile.getId());
+		}
+		for (Long projectileId : new ArrayList<>(projectilesDTL.keySet())) {
+			if (!Variables.projectiles.contains(projectileId)) {
+				projectilesDTL.remove(projectileId);
 			}
 		}
 
-		findTargets();
-		shotAndTurn(move);
+		for (Projectile projectile : projectiles) {
+			if (projectilesDTL.containsKey(projectile.getId())) {
+				projectilesDTL.put(projectile.getId(),
+								   projectilesDTL.get(projectile.getId()) - Utils.getProjectileSpeed(projectile));
+				continue;
+			}
+			long castUnit = projectile.getOwnerUnitId();
+			double castRange = castUnit <= 10 ?
+					this.castRange[(int) castUnit] - Utils.getProjectileSpeed(projectile)
+					: Constants.getGame().getFetishBlowdartAttackRange() - Utils.getProjectileSpeed(projectile);
+			projectilesDTL.put(projectile.getId(), castRange);
+		}
+	}
+
+	protected double checkHitByProjectilePossible() {
+		double maxStep = Variables.moveFactor * Constants.getGame().getWizardForwardSpeed();
+		Point self = new Point(this.self.getX(), this.self.getY());
+		double distance;
+		double sumDamage = 0.;
+		for (Projectile projectile : filteredWorld.getProjectiles()) {
+			Point projectileStart = new Point(projectile.getX(), projectile.getY());
+			Point projectileDestination = new Point(projectile.getSpeedX(), projectile.getSpeedY());
+			projectileDestination.fixVectorLength(projectilesDTL.get(projectile.getId()));
+			projectileDestination.add(projectileStart);
+			distance = Utils.distancePointToSegment(self, projectileStart, projectileDestination);
+			if (distance < maxStep + this.self.getRadius() + projectile.getRadius()) {
+				sumDamage += Utils.getProjectileDamage(projectile);
+			}
+		}
+		return sumDamage;
+	}
+
+	protected void evade(Move move, double maxDamageToRecieve) {
+		if (maxDamageToRecieve <= .001) {
+			return;
+		}
+		int bestActionType = -1; // stay
+		double bestScore = 0.;
+		double bestDamage = 0.;
+		double bestDangerOnWay = 0.;
+		Point position = new Point(self.getX(), self.getY());
+		Point bestPosition = position;
+
+		Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
+		int ticks = 0;
+		while (!Variables.projectilesSim.isEmpty()) {
+			testScanItem.setPoint(self.getX(), self.getY());
+			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, ticks);
+			bestScore = testScanItem.getTotalScore(self);
+			bestDangerOnWay += testScanItem.getAllDangers();
+			bestDamage += Utils.checkProjectiveCollistion(position, ticks++);
+		}
+
+		double currScore;
+		double currDamage;
+		double currDangerOnWay;
+		int hastenedTicks = Utils.wizardStatusTicks(self, StatusType.HASTENED);
+		int currHastenedTicks;
+		double moveFactor = Variables.moveFactor;
+		double moveAngle;
+		Point moveVector;
+		boolean stuck;
+		for (int i = 0; i != Constants.EVADE_CALCULATIONS_COUNT; ++i) {
+			currScore = 0.;
+			currDamage = 0.;
+			currDangerOnWay = 0.;
+			position = new Point(self.getX(), self.getY());
+			Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
+			moveAngle = Utils.normalizeAngle(self.getAngle() + i * Constants.EVADE_DEGREE_STEP);
+			currHastenedTicks = hastenedTicks;
+			moveVector = new Point(Math.cos(moveAngle) * moveFactor * Constants.getGame().getWizardStrafeSpeed(),
+								   Math.sin(moveAngle) * moveFactor * Constants.getGame().getWizardStrafeSpeed());
+			ticks = 0;
+			stuck = false;
+			while (!Variables.projectilesSim.isEmpty()) {
+				if (!stuck) {
+					position.add(moveVector);
+					if (--currHastenedTicks == -1) {
+						moveVector.fixVectorLength((moveFactor - Constants.getGame().getHastenedMovementBonusFactor()) * Constants.getGame().getWizardStrafeSpeed());
+					}
+					testScanItem.setPoint(position.getX(), position.getY());
+					Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, ticks);
+					if (!testScanItem.isAvailable()) {
+						stuck = true;
+						position.negate(moveVector);
+					}
+					if (!stuck) {
+						currScore = testScanItem.getTotalScore(self);
+						currDangerOnWay += testScanItem.getAllDangers();
+					}
+				}
+				currDamage += Utils.checkProjectiveCollistion(position, ticks++);
+			}
+			if (bestDamage < currDamage) {
+				continue;
+			}
+			if (bestDamage == currDamage) {
+				if (currDangerOnWay > bestDangerOnWay) {
+					continue;
+				}
+				if (currDangerOnWay == bestDangerOnWay) {
+					if (currScore <= bestScore) {
+						continue;
+					}
+				}
+			}
+			bestActionType = i;
+			bestDamage = currDamage;
+			bestDangerOnWay = currDangerOnWay;
+			bestScore = currScore;
+			bestPosition = position;
+		}
+		if (bestDamage > 0.) {
+			double bestEvadeDamage = bestDamage;
+			double curentAngle;
+			double currMoveFactor;
+			AccAndSpeedWithFix accAndSpeed;
+			Point positionChange;
+			for (int i = 0; i != Constants.EVADE_CALCULATIONS_COUNT; ++i) {
+				currScore = 0.;
+				currDamage = 0.;
+				currDangerOnWay = 0.;
+				position = new Point(self.getX(), self.getY());
+				Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
+				moveAngle = Utils.normalizeAngle(self.getAngle() + i * Constants.EVADE_DEGREE_STEP);
+				curentAngle = Utils.normalizeAngle(self.getAngle());
+				currHastenedTicks = hastenedTicks;
+				currMoveFactor = moveFactor;
+				ticks = 0;
+				while (!Variables.projectilesSim.isEmpty()) {
+					accAndSpeed = getAccAndSpeedByAngle(Utils.normalizeAngle(moveAngle - curentAngle), 100., currMoveFactor);
+					positionChange = accAndSpeed.getCoordChange(curentAngle);
+					position.add(positionChange);
+					curentAngle += Utils.updateMaxModule(Utils.normalizeAngle(moveAngle - curentAngle), // angle to turn
+														 currHastenedTicks >= 0. ?
+																 Variables.turnFactor * Constants.getGame().getWizardMaxTurnAngle() :
+																 Constants.getGame().getWizardMaxTurnAngle());
+					if (--currHastenedTicks == -1) {
+						currMoveFactor -= Constants.getGame().getHastenedMovementBonusFactor();
+					}
+					testScanItem.setPoint(position.getX(), position.getY());
+					Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, ticks);
+					if (testScanItem.isAvailable()) {
+						currScore = testScanItem.getTotalScore(self);
+						currDangerOnWay += testScanItem.getAllDangers();
+					} else {
+						position.negate(positionChange);
+					}
+					currDamage += Utils.checkProjectiveCollistion(position, ticks++);
+				}
+				if (bestDamage < currDamage || currDamage >= bestEvadeDamage) {
+					continue;
+				}
+				if (bestDamage == currDamage) {
+					if (currDangerOnWay > bestDangerOnWay) {
+						continue;
+					}
+					if (currDangerOnWay == bestDangerOnWay) {
+						if (currScore <= bestScore) {
+							continue;
+						}
+					}
+				}
+				bestActionType = i + Constants.EVADE_CALCULATIONS_COUNT;
+				bestDamage = currDamage;
+				bestDangerOnWay = currDangerOnWay;
+				bestScore = currScore;
+				bestPosition = position;
+			}
+		}
+		if (bestDamage < maxDamageToRecieve) { // escape from projectile
+			moveAngle = self.getAngleTo(bestPosition.getX(), bestPosition.getY());
+			AccAndSpeedWithFix accAndSpeedByAngle = getAccAndSpeedByAngle(moveAngle,
+																		  FastMath.hypot(self.getX() - bestPosition.getX(), self.getY() - bestPosition.getY()));
+			move.setSpeed(accAndSpeedByAngle.getSpeed());
+			move.setStrafeSpeed(accAndSpeedByAngle.getStrafe());
+			if (bestActionType < Constants.EVADE_CALCULATIONS_COUNT) {
+				currentAction.setActionType(CurrentAction.ActionType.EVADE_PROJECTILE); // block move
+			} else {
+				turnTo(moveAngle, Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor, move);
+				currentAction.setActionType(CurrentAction.ActionType.RUN_FROM_PROJECTILE); // block move and turn
+			}
+		}
 	}
 
 	private void shotAndTurn(Move move) {
@@ -260,25 +479,27 @@ public class StrategyImplement {
 		return (int) ((maxTurnAngle - .001 + Math.abs(currentAngle)) / maxTurnAngle);
 	}
 
-	private boolean turnTo(Point point, Move move) {
+	private void turnTo(Point point, Move move) {
+		if (currentAction.getActionType() == CurrentAction.ActionType.RUN_FROM_PROJECTILE) {
+			return;
+		}
 		if (point == null) {
-			return false;
+			return;
 		}
 		if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
 			point = pointToReach;
 		}
 		if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
-			return false;
+			return;
 		}
 		turnTo(self.getAngleTo(point.getX(), point.getY()), Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor, move);
-		return true;
 	}
 
 	private void turnTo(double angle, double maxAngle, Move move) {
-		if (Math.abs(angle) > maxAngle) {
-			angle /= Math.abs(angle) / maxAngle;
+		if (currentAction.getActionType() == CurrentAction.ActionType.RUN_FROM_PROJECTILE) {
+			return;
 		}
-		move.setTurn(angle);
+		move.setTurn(Utils.updateMaxModule(angle, maxAngle));
 	}
 
 	private void findTargets() {
@@ -402,10 +623,10 @@ public class StrategyImplement {
 			}
 			targetAngle = angle;
 		}
-
+		Point changePosition;
 		if (Math.abs(Utils.normalizeAngle(maxAngle - minAngle)) > Constants.MOVE_ANGLE_PRECISE) {
-			testScanItem.setPoint(self.getX() + Math.cos(self.getAngle()) * accAndStrafe.getSpeed() + Math.cos(self.getAngle() + Math.PI / 2.) * accAndStrafe.getStrafe(),
-								  self.getY() + Math.sin(self.getAngle()) * accAndStrafe.getSpeed() + Math.sin(self.getAngle() + Math.PI / 2.) * accAndStrafe.getStrafe());
+			changePosition = accAndStrafe.getCoordChange(self.getAngle());
+			testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
 			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self);
 
 			double bestDanger = testScanItem.getAllDangers();
@@ -418,8 +639,8 @@ public class StrategyImplement {
 			for (; maxAngle - itAngle > Constants.MOVE_ANGLE_PRECISE; itAngle += Constants.MOVE_ANGLE_PRECISE) {
 				newAngle = Utils.normalizeAngle(angle + itAngle);
 				accAndStrafe = getAccAndSpeedByAngle(newAngle, 100.);
-				testScanItem.setPoint(self.getX() + Math.cos(self.getAngle()) * accAndStrafe.getSpeed() + Math.cos(self.getAngle() + Math.PI / 2.) * accAndStrafe.getStrafe(),
-									  self.getY() + Math.sin(self.getAngle()) * accAndStrafe.getSpeed() + Math.sin(self.getAngle() + Math.PI / 2.) * accAndStrafe.getStrafe());
+				changePosition = accAndStrafe.getCoordChange(self.getAngle());
+				testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
 				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self);
 				if (!testScanItem.isAvailable() || bestDanger < testScanItem.getAllDangers() || run) {
 					continue;
@@ -444,18 +665,21 @@ public class StrategyImplement {
 	}
 
 	public AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance) {
+		return getAccAndSpeedByAngle(angle, distance, Variables.moveFactor);
+	}
+
+	public AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance, double moveFactor) {
 		double strafe = Math.sin(angle) * distance;
 		double acc = Math.cos(angle) * distance;
-		double fwdLimit = (acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed()) * Variables.moveFactor;
+		double fwdLimit = (acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed()) * moveFactor;
 
-		double fix = Math.hypot(acc / fwdLimit, strafe / Constants.getGame().getWizardStrafeSpeed() * Variables.moveFactor);
+		double fix = Math.hypot(acc / fwdLimit, strafe / Constants.getGame().getWizardStrafeSpeed() * moveFactor);
 		if (fix > 1.) {
 			return new AccAndSpeedWithFix(acc / fix, strafe / fix, fix);
 		} else {
 			return new AccAndSpeedWithFix(acc, strafe, fix);
 		}
 	}
-
 
 	private boolean testPointDirectAvailable(Point point) {
 		double distance;
@@ -615,6 +839,8 @@ public class StrategyImplement {
 		double shieldBonus = Utils.wizardHasStatus(self, StatusType.SHIELDED) ? Constants.getGame().getShieldedDirectDamageAbsorptionFactor() : 1.;
 		ScoreCalcStructure structure = new ScoreCalcStructure();
 
+		ScoreCalcStructure.EXP_BONUS_APPLYER.setDistance(Constants.EXPERIENCE_DISTANCE);
+
 		for (Minion minion : filteredWorld.getMinions()) {
 			if (minion.getFaction() != Constants.getEnemyFaction() &&
 					(minion.getFaction() != Faction.NEUTRAL || minion.getLife() >= minion.getMaxLife())) {
@@ -634,7 +860,7 @@ public class StrategyImplement {
 					break;
 				case FETISH_BLOWDART:
 					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(game.getDartDirectDamage() * shieldBonus);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(game.getFetishBlowdartAttackRange() + game.getMinionSpeed() + 1);
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(game.getFetishBlowdartAttackRange() + self.getRadius());
 					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 					break;
 			}

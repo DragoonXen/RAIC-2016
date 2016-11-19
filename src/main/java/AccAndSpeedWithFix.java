@@ -24,4 +24,9 @@ public class AccAndSpeedWithFix {
 	public double getFix() {
 		return fix;
 	}
+
+	public Point getCoordChange(double selfAngle) {
+		return new Point(Math.cos(selfAngle) * speed + Math.cos(selfAngle + Math.PI / 2.) * strafe,
+						 Math.sin(selfAngle) * speed + Math.sin(selfAngle + Math.PI / 2.) * strafe);
+	}
 }

@@ -2,7 +2,6 @@ import model.ActionType;
 import model.Building;
 import model.CircularUnit;
 import model.Game;
-import model.LaneType;
 import model.LivingUnit;
 import model.Minion;
 import model.MinionType;
@@ -70,15 +69,27 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 				// empty body is ok
 			}
 			this.lastTick = tick;
-            LaneType laneTypeMem = this.myLine;
-            this.myLine = drawingData.getMyLine();
-			BuildingPhantom[] mem = this.BUILDING_PHANTOMS;
-			this.BUILDING_PHANTOMS = drawingData.getBuildingPhantoms();
+			Drawing_DrawingData currentData = applyData(drawingData, true);
 			move(drawingData.getSelf(), drawingData.getWorld(), game, new Move(), true);
-			this.BUILDING_PHANTOMS = mem;
-			this.myLine = laneTypeMem;
-            this.lastTick = lastTickMem;
+			this.lastTick = lastTickMem;
+			applyData(currentData, false);
 		}
+	}
+
+	private Drawing_DrawingData applyData(Drawing_DrawingData dataToApply, boolean receiveCurrent) {
+		Drawing_DrawingData storedData = null;
+		if (receiveCurrent) {
+			storedData = new Drawing_DrawingData(self, world, this.myLine, this.BUILDING_PHANTOMS, castRange, currentAction, projectilesDTL);
+		}
+		Drawing_DrawingData currentDrawingData = dataToApply.clone();
+		this.self = currentDrawingData.getSelf();
+		this.BUILDING_PHANTOMS = currentDrawingData.getBuildingPhantoms();
+		this.currentAction = currentDrawingData.getCurrentAction();
+		this.castRange = currentDrawingData.getMaxCastRange();
+		this.myLine = currentDrawingData.getMyLine();
+		this.world = currentDrawingData.getWorld();
+		this.projectilesDTL = currentDrawingData.getProjectilesDTL();
+		return storedData;
 	}
 
     @Override
@@ -93,7 +104,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			while (drawingDataList.size() < world.getTickIndex()) {
 				drawingDataList.add(null);
 			}
-			drawingDataList.add(new Drawing_DrawingData(self, world, this.myLine, this.BUILDING_PHANTOMS));
+			drawingDataList.add(new Drawing_DrawingData(self, world, this.myLine, this.BUILDING_PHANTOMS, castRange, currentAction, projectilesDTL));
 			mainFrame.getSlider().setMaximum(Math.max(world.getTickIndex(), mainFrame.getSlider().getMaximum()));
 			move(self, world, game, move, false);
 		}
@@ -235,32 +246,34 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			}
 		}
 
-		double maxScore = Double.MIN_VALUE;
-		double minScore = Double.MAX_VALUE;
-		for (int i = 0; i != scan_matrix.length; ++i) {
-			for (int j = 0; j != scan_matrix[0].length; ++j) {
-				if (!scan_matrix[i][j].isAvailable()) {
-					continue;
-				}
-				double score = scan_matrix[i][j].getTotalScore(self);
-				if (minScore > score) {
-					minScore = score;
-				}
-				if (maxScore < score) {
-					maxScore = score;
+		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+			double maxScore = Double.MIN_VALUE;
+			double minScore = Double.MAX_VALUE;
+			for (int i = 0; i != scan_matrix.length; ++i) {
+				for (int j = 0; j != scan_matrix[0].length; ++j) {
+					if (!scan_matrix[i][j].isAvailable()) {
+						continue;
+					}
+					double score = scan_matrix[i][j].getTotalScore(self);
+					if (minScore > score) {
+						minScore = score;
+					}
+					if (maxScore < score) {
+						maxScore = score;
+					}
 				}
 			}
-		}
-		for (int i = 0; i != scan_matrix.length; ++i) {
-			for (int j = 0; j != scan_matrix[0].length; ++j) {
-				ScanMatrixItem item = scan_matrix[i][j];
-				if (!item.isAvailable()) {
-					continue;
-				}
+			for (int i = 0; i != scan_matrix.length; ++i) {
+				for (int j = 0; j != scan_matrix[0].length; ++j) {
+					ScanMatrixItem item = scan_matrix[i][j];
+					if (!item.isAvailable()) {
+						continue;
+					}
 
-				drawPanel.addFigure(new Drawing_Circle(item.getX(),
-													   item.getY(),
-													   getColor(item.getTotalScore(self), minScore, maxScore)));
+					drawPanel.addFigure(new Drawing_Circle(item.getX(),
+														   item.getY(),
+														   getColor(item.getTotalScore(self), minScore, maxScore)));
+				}
 			}
 		}
 
@@ -319,21 +332,26 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			}
 		}
 		textInfoPanel.putText(sb.toString(), 3);
+		textInfoPanel.putText(String.valueOf(currentAction.getActionType()), 4);
 		textInfoPanel.putText(String.format("SpeedX: %s, SpeedY: %s, speed: %s",
 											self.getSpeedX(),
 											self.getSpeedY(),
 											FastMath.hypot(self.getSpeedX(), self.getSpeedY())),
-							  4);
+							  5);
 
-
-		Point selfPoint = scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y];
-		if (maxAngle - minAngle > Constants.MOVE_ANGLE_PRECISE) {
-			drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + angle + minAngle), 70., Color.black);
-			drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + targetAngle), 70., Color.magenta);
-			drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + angle + maxAngle), 70., Color.black);
+		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+			Point selfPoint = scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y];
+			if (maxAngle - minAngle > Constants.MOVE_ANGLE_PRECISE) {
+				drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + angle + minAngle), 70., Color.black);
+				drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + targetAngle), 70., Color.magenta);
+				drawLine(selfPoint, Utils.normalizeAngle(self.getAngle() + angle + maxAngle), 70., Color.black);
+			}
 		}
 		if (moveToPoint != null) {
-			drawLine(selfPoint, Utils.normalizeAngle(self.getAngleTo(moveToPoint.getX(), moveToPoint.getY()) + self.getAngle()), 50., Color.red);
+			drawLine(new Point(self.getX(), self.getY()),
+					 Utils.normalizeAngle(self.getAngleTo(moveToPoint.getX(), moveToPoint.getY()) + self.getAngle()),
+					 50.,
+					 Color.red);
 		}
 	}
 
