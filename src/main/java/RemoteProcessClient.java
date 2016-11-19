@@ -1,12 +1,18 @@
 import model.*;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class RemoteProcessClient implements Closeable {
     private static final int BUFFER_SIZE_BYTES = 1 << 20;
@@ -21,7 +27,12 @@ public final class RemoteProcessClient implements Closeable {
     private final OutputStream outputStream;
     private final ByteArrayOutputStream outputStreamBuffer;
 
+    private Player[] previousPlayers;
+    private Building[] previousBuildings;
     private Tree[] previousTrees;
+
+    private final Map<Long, Player> previousPlayerById = new HashMap<>();
+    private final Map<Long, Unit> previousUnitById = new HashMap<>();
 
     public RemoteProcessClient(String host, int port) throws IOException {
         socket = new Socket(host, port);
@@ -42,7 +53,7 @@ public final class RemoteProcessClient implements Closeable {
 
     public void writeProtocolVersion() throws IOException {
         writeEnum(MessageType.PROTOCOL_VERSION);
-        writeInt(1);
+        writeInt(3);
         flush();
     }
 
@@ -128,15 +139,26 @@ public final class RemoteProcessClient implements Closeable {
     }
 
     private Player[] readPlayers() throws IOException {
-        return readArray(Player.class, this::readPlayer);
+        Player[] players = readArray(Player.class, this::readPlayer);
+        return players == null ? previousPlayers : (previousPlayers = players);
     }
 
     private Player readPlayer() throws IOException {
-        if (!readBoolean()) {
+        byte flag = readBytes(1)[0];
+
+        if (flag == 0) {
             return null;
         }
 
-        return new Player(readLong(), readBoolean(), readString(), readBoolean(), readInt(), readEnum(Faction.class));
+        if (flag == 100) {
+            return previousPlayerById.get(readLong());
+        }
+
+        Player player = new Player(
+                readLong(), readBoolean(), readString(), readBoolean(), readInt(), readEnum(Faction.class)
+        );
+        previousPlayerById.put(player.getId(), player);
+        return player;
     }
 
     private Wizard[] readWizards() throws IOException {
@@ -161,15 +183,23 @@ public final class RemoteProcessClient implements Closeable {
     }
 
     private Minion readMinion() throws IOException {
-        if (!readBoolean()) {
+        byte flag = readBytes(1)[0];
+
+        if (flag == 0) {
             return null;
         }
 
-        return new Minion(
+        if (flag == 100) {
+            return (Minion) previousUnitById.get(readLong());
+        }
+
+        Minion minion = new Minion(
                 readLong(), readDouble(), readDouble(), readDouble(), readDouble(), readDouble(),
                 readEnum(Faction.class), readDouble(), readInt(), readInt(), readStatuses(), readEnum(MinionType.class),
                 readDouble(), readInt(), readInt(), readInt()
         );
+        previousUnitById.put(minion.getId(), minion);
+        return minion;
     }
 
     private Projectile[] readProjectiles() throws IOException {
@@ -203,19 +233,28 @@ public final class RemoteProcessClient implements Closeable {
     }
 
     private Building[] readBuildings() throws IOException {
-        return readArray(Building.class, this::readBuilding);
+        Building[] buildings = readArray(Building.class, this::readBuilding);
+        return buildings == null ? previousBuildings : (previousBuildings = buildings);
     }
 
     private Building readBuilding() throws IOException {
-        if (!readBoolean()) {
+        byte flag = readBytes(1)[0];
+
+        if (flag == 0) {
             return null;
         }
 
-        return new Building(
+        if (flag == 100) {
+            return (Building) previousUnitById.get(readLong());
+        }
+
+        Building building = new Building(
                 readLong(), readDouble(), readDouble(), readDouble(), readDouble(), readDouble(),
                 readEnum(Faction.class), readDouble(), readInt(), readInt(), readStatuses(),
                 readEnum(BuildingType.class), readDouble(), readDouble(), readInt(), readInt(), readInt()
         );
+        previousUnitById.put(building.getId(), building);
+        return building;
     }
 
     private Tree[] readTrees() throws IOException {
@@ -224,14 +263,22 @@ public final class RemoteProcessClient implements Closeable {
     }
 
     private Tree readTree() throws IOException {
-        if (!readBoolean()) {
+        byte flag = readBytes(1)[0];
+
+        if (flag == 0) {
             return null;
         }
 
-        return new Tree(
+        if (flag == 100) {
+            return (Tree) previousUnitById.get(readLong());
+        }
+
+        Tree tree = new Tree(
                 readLong(), readDouble(), readDouble(), readDouble(), readDouble(), readDouble(),
                 readEnum(Faction.class), readDouble(), readInt(), readInt(), readStatuses()
         );
+        previousUnitById.put(tree.getId(), tree);
+        return tree;
     }
 
     private Message[] readMessages() throws IOException {
