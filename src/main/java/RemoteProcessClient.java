@@ -15,8 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class RemoteProcessClient implements Closeable {
-    private static final int BUFFER_SIZE_BYTES = 1 << 20;
-    private static final ByteOrder PROTOCOL_BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
+	private static final int BUFFER_SIZE_BYTES = 1 << 21;
+	private static final ByteOrder PROTOCOL_BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
     private static final int INTEGER_SIZE_BYTES = Integer.SIZE / Byte.SIZE;
     private static final int LONG_SIZE_BYTES = Long.SIZE / Byte.SIZE;
 
