@@ -1,4 +1,5 @@
 import model.ActionType;
+import model.Bonus;
 import model.Building;
 import model.CircularUnit;
 import model.Game;
@@ -110,15 +111,15 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
     }
 
-	private void drawUnit(LivingUnit unit) {
+	private void drawUnit(CircularUnit unit) {
 		drawUnit(unit, null, null);
 	}
 
-	private void drawUnit(LivingUnit unit, Color color) {
+	private void drawUnit(CircularUnit unit, Color color) {
 		drawUnit(unit, null, color);
 	}
 
-	private void drawUnit(LivingUnit unit, Double visibleDistance, Color color) {
+	private void drawUnit(CircularUnit unit, Double visibleDistance, Color color) {
 		if (color == null) {
 			color = Constants.getCurrentFaction() == unit.getFaction() ?
 					Color.green :
@@ -154,19 +155,21 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 											 unit.getY() + (unit.getRadius() + 10.) * Math.sin(unit.getAngle()),
 											 Color.black));
 
-		double[] polygonX = new double[4];
-		polygonX[0] = polygonX[1] = unit.getX() - unit.getRadius();
-		polygonX[2] = polygonX[3] = unit.getX() + unit.getRadius();
-		double[] polygonY = new double[4];
-		double wide = unit.getRadius() / 10.;
-		polygonY[0] = polygonY[3] = unit.getY() - unit.getRadius() - wide;
-		polygonY[1] = polygonY[2] = unit.getY() - unit.getRadius() - wide * 2.;
+		if (unit instanceof LivingUnit) {
+			double[] polygonX = new double[4];
+			polygonX[0] = polygonX[1] = unit.getX() - unit.getRadius();
+			polygonX[2] = polygonX[3] = unit.getX() + unit.getRadius();
+			double[] polygonY = new double[4];
+			double wide = unit.getRadius() / 10.;
+			polygonY[0] = polygonY[3] = unit.getY() - unit.getRadius() - wide;
+			polygonY[1] = polygonY[2] = unit.getY() - unit.getRadius() - wide * 2.;
 
-		drawPanel.addFigure(new Drawing_Polygon(polygonX, polygonY, true, Color.black));
-
-		polygonX = Arrays.copyOf(polygonX, polygonX.length);
-		polygonX[2] = polygonX[3] = polygonX[0] + (unit.getLife() / (double) unit.getMaxLife()) * unit.getRadius() * 2.;
-		drawPanel.addFigure(new Drawing_Polygon(polygonX, polygonY, true, Color.RED));
+			drawPanel.addFigure(new Drawing_Polygon(polygonX, polygonY, true, Color.black));
+			LivingUnit livingUnit = (LivingUnit) unit;
+			polygonX = Arrays.copyOf(polygonX, polygonX.length);
+			polygonX[2] = polygonX[3] = polygonX[0] + (livingUnit.getLife() / (double) livingUnit.getMaxLife()) * unit.getRadius() * 2.;
+			drawPanel.addFigure(new Drawing_Polygon(polygonX, polygonY, true, Color.RED));
+		}
 
 		if (visibleDistance != null) {
 			drawPanel.addFigure(new Drawing_Circle(unit.getX(),
@@ -486,6 +489,10 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
 
         for (Minion unit : world.getMinions()) {
+			drawUnit(unit);//, unit.getVisionRange()
+		}
+
+		for (Bonus unit : world.getBonuses()) {
 			drawUnit(unit);//, unit.getVisionRange()
 		}
 
