@@ -3,7 +3,7 @@ import model.Unit;
 /**
  * Created by by.dragoon on 11/8/16.
  */
-public class MiddleLine implements BaseLine {
+public class MiddleLine extends BaseLine {
 
 	private double centerLine;
 

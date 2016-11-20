@@ -3,7 +3,7 @@ import model.Unit;
 /**
  * Created by by.dragoon on 11/8/16.
  */
-public class TopLine implements BaseLine {
+public class TopLine extends BaseLine {
 
 	private final static double CRITICAL_MULT = Math.sqrt(1.5 * 1.5 * 2);
 

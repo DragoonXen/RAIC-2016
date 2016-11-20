@@ -333,11 +333,12 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
 		textInfoPanel.putText(sb.toString(), 3);
 		textInfoPanel.putText(String.valueOf(currentAction.getActionType()), 4);
+		textInfoPanel.putText("Cut trees: " + (treeCut ? "YES" : "NO"), 5);
 		textInfoPanel.putText(String.format("SpeedX: %s, SpeedY: %s, speed: %s",
 											self.getSpeedX(),
 											self.getSpeedY(),
 											FastMath.hypot(self.getSpeedX(), self.getSpeedY())),
-							  5);
+							  6);
 
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			Point selfPoint = scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y];

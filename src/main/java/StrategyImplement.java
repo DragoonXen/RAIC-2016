@@ -72,8 +72,11 @@ public class StrategyImplement {
 	protected CurrentAction currentAction = new CurrentAction();
 	protected double[] castRange = new double[]{500., 500., 500., 500., 500., 500., 500., 500., 500., 500., 500.};
 
+	protected boolean treeCut;
+
 	public void move(Wizard self, World world, Game game, Move move) {
 		enemyFound = false;
+		treeCut = false;
 		moveToPoint = null;
 		target = null;
 		minAngle = 0.;
@@ -117,7 +120,6 @@ public class StrategyImplement {
 		myLineCalc = Constants.getLine(myLine);
 		direction = myLineCalc.getMoveDirection(self);
 
-
 		filteredWorld = Utils.filterWorld(world,
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
@@ -127,6 +129,10 @@ public class StrategyImplement {
 		Utils.calcCurrentSkillBonuses(self, filteredWorld);
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
 		evade(move, checkHitByProjectilePossible());
+
+//		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+//
+//		}
 
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||
@@ -504,20 +510,30 @@ public class StrategyImplement {
 
 	private void findTargets() {
 		targets.clear();
-		boolean treeCut = myLineCalc.getDistanceTo(self) > (Constants.getTopLine().getLineDistance() * 1.5);
+		treeCut = Utils.unitsCountAtDistance(filteredWorld.getTrees(),
+											 self,
+											 Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
+				Utils.unitsCountCloseToDestination(filteredWorld.getAllBlocksList(), pointToReach) >= 2 && // can't go throught obstacles
+						Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), pointToReach) > 0; // one of them - tree
 		for (LivingUnit livingUnit : filteredWorld.getAimsList()) {
 			if (livingUnit.getFaction() != Constants.getEnemyFaction() &&
 					(livingUnit.getFaction() != Faction.NEUTRAL || livingUnit.getLife() >= livingUnit.getMaxLife()) &&
 					livingUnit.getFaction() != Faction.OTHER) {
 				continue;
 			}
+			double score;
 			if (livingUnit instanceof Tree) {
 				if (treeCut) {
-					targets.add(new AbstractMap.SimpleEntry<>(-Utils.calcLineDistanceOtherDanger(livingUnit, myLineCalc) * .0001, livingUnit));
+					// distance to destination
+					// distance to me
+					score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(pointToReach.getX() - livingUnit.getX(),
+																						 pointToReach.getY() - livingUnit.getY());
+					score += Constants.CUT_SELF_DISTANCE_PRIORITY / FastMath.hypot(self.getX() - livingUnit.getX(), self.getY() - livingUnit.getY());
+					targets.add(new AbstractMap.SimpleEntry<>(score - Constants.CUT_REACH_POINT_DISTANCE_PTIORITY, livingUnit));
 				}
 				continue;
 			}
-			double score = Constants.LOW_AIM_SCORE;
+			score = Constants.LOW_AIM_SCORE;
 			double tmp = (livingUnit.getMaxLife() - livingUnit.getLife()) / (double) livingUnit.getMaxLife();
 			score += tmp * tmp;
 			if (livingUnit instanceof Minion) {
@@ -810,7 +826,7 @@ public class StrategyImplement {
 					continue;
 				}
 
-				double distanceTo = Utils.calcLineDistanceOtherDanger(item, myLineCalc);
+				double distanceTo = myLineCalc.calcLineDistanceOtherDanger(item);
 				if (distanceTo > 0.) {
 					item.addOtherDanger(distanceTo);
 				}

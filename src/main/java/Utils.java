@@ -308,7 +308,7 @@ public class Utils {
 		if (!item.isAvailable()) {
 			return;
 		}
-		double distanceTo = Utils.calcLineDistanceOtherDanger(item, myLineCalc);
+		double distanceTo = myLineCalc.calcLineDistanceOtherDanger(item);
 		if (distanceTo > 0.) {
 			item.addOtherDanger(distanceTo);
 		}
@@ -431,20 +431,6 @@ public class Utils {
 
 			structure.applyScores(item, FastMath.hypot(building.getX() - item.getX(), building.getY() - item.getY()));
 		}
-	}
-
-	public static double calcLineDistanceOtherDanger(Unit unit, BaseLine myLineCalc) {
-		return calcLineDistanceOtherDanger(new Point(unit.getX(), unit.getY()), myLineCalc);
-	}
-
-	public static double calcLineDistanceOtherDanger(Point point, BaseLine myLineCalc) {
-		double distanceTo = myLineCalc.getDistanceTo(point.getX(), point.getY()) -
-				Constants.getTopLine().getLineDistance();
-		if (distanceTo > 0.) {
-			distanceTo /= Constants.getTopLine().getLineDistance();
-			return distanceTo * distanceTo * distanceTo;
-		}
-		return 0.;
 	}
 
 	public static boolean hasEnemy(LivingUnit[] units) {
@@ -741,5 +727,49 @@ public class Utils {
 			return value;
 		}
 		return value > 0. ? maxModule : -maxModule;
+	}
+
+	public static int unitsCountAtDistance(LivingUnit[] units, Unit unitCountFor, double distance) {
+		int result = 0;
+		for (LivingUnit unit : units) {
+			if (FastMath.hypot(unit.getX() - unitCountFor.getX(), unit.getY() - unitCountFor.getY()) < distance) {
+				++result;
+			}
+		}
+		return result;
+	}
+
+	public static int unitsCountCloseToDestination(LivingUnit[] units, Point destination) {
+		if (destination == null) {
+			return 0;
+		}
+		int result = 0;
+		// modify both this and bottom functions
+		for (LivingUnit unit : units) {
+			if (FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) <
+					Constants.getGame().getWizardRadius() +
+							unit.getRadius() +
+							Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
+				++result;
+			}
+		}
+		return result;
+	}
+
+	public static int unitsCountCloseToDestination(List<CircularUnit> units, Point destination) {
+		if (destination == null) {
+			return 0;
+		}
+		int result = 0;
+		// modify both this and upper functions
+		for (CircularUnit unit : units) {
+			if (FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) <
+					Constants.getGame().getWizardRadius() +
+							unit.getRadius() +
+							Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
+				++result;
+			}
+		}
+		return result;
 	}
 }

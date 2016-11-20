@@ -18,7 +18,7 @@ public class CurrentAction {
 	}
 
 	public enum ActionType {
-		EVADE_PROJECTILE, RUN_FROM_PROJECTILE, MOVE, FIGHT
+		EVADE_PROJECTILE, RUN_FROM_PROJECTILE, MOVE_TO_POSITION, FIGHT
 	}
 
 	public CurrentAction clone() {

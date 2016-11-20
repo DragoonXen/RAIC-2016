@@ -17,6 +17,7 @@ public abstract class Constants {
     public static double STUCK_FIX_RADIUS_ADD = .001;
 
     public static double MOVE_SCAN_STEP = 3.;
+    public static double MOVE_SCAN_DIAGONAL_DISTANCE = FastMath.hypot(MOVE_SCAN_STEP, MOVE_SCAN_STEP);
     public static int CURRENT_PT_X = (int) Math.round(MOVE_BACK_DISTANCE / MOVE_SCAN_STEP + .1);
     public static int CURRENT_PT_Y = (int) Math.round(MOVE_SIDE_DISTANCE / MOVE_SCAN_STEP + .1);
 
@@ -60,6 +61,12 @@ public abstract class Constants {
     public static double EXPERIENCE_DISTANCE = 600.;
 
     public static double MOVE_DISTANCE_FILTER = Math.sqrt((MOVE_BACK_DISTANCE + MOVE_FWD_DISTANCE) * (MOVE_BACK_DISTANCE + MOVE_FWD_DISTANCE) / 4. + MOVE_SIDE_DISTANCE * MOVE_SIDE_DISTANCE);
+
+    public static int TREES_COUNT_TO_CUT = 6;
+    public static double TREES_DISTANCE_TO_CUT = 200.;
+
+    public static double CUT_SELF_DISTANCE_PRIORITY = 10.;
+    public static double CUT_REACH_POINT_DISTANCE_PTIORITY = 100.;
 
     private static Game game;
     private static Faction currentFaction;
