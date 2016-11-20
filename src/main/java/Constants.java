@@ -72,6 +72,8 @@ public abstract class Constants {
 
     public static PositionMoveLine POSITION_MOVE_LINE = new PositionMoveLine();
 
+    public static int ENEMY_MINIONS_LOST_TIME = 200;
+
     private static Game game;
     private static Faction currentFaction;
     private static Faction enemyFaction;

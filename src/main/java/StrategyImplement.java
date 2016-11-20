@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Random;
 import java.util.TreeMap;
 
 /**
@@ -74,11 +73,12 @@ public class StrategyImplement {
 	protected CurrentAction currentAction = new CurrentAction();
 	protected double[] castRange = new double[]{500., 500., 500., 500., 500., 500., 500., 500., 500., 500., 500.};
 
+	protected EnemyPositionCalc enemyPositionCalc = new EnemyPositionCalc();
+
 	protected boolean treeCut;
 
-	private Random rnd = new Random();
-
 	public void move(Wizard self, World world, Game game, Move move) {
+		enemyPositionCalc.updatePositions(world);
 		enemyFound = false;
 		treeCut = false;
 		moveToPoint = null;

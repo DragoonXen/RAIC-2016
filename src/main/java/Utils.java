@@ -626,32 +626,10 @@ public class Utils {
 				++hasBroken;
 				continue;
 			}
-
-			for (Wizard unit : world.getWizards()) {
-				if (unit.getFaction() != Constants.getCurrentFaction()) {
-					continue;
-				}
-				if (FastMath.hypot(unit.getX() - phantom.getX(), unit.getY() - phantom.getY()) + .1 < unit.getVisionRange()) {
-					++hasBroken;
-					phantom.setBroken(true);
-					break;
-				}
-			}
-			if (phantom.isBroken()) {
-				continue;
-			}
-
-			for (Minion unit : world.getMinions()) {
-				if (unit.getFaction() != Constants.getCurrentFaction()) {
-					continue;
-				}
-				if (FastMath.hypot(unit.getX() - phantom.getX(), unit.getY() - phantom.getY()) + .1 < unit.getVisionRange()) {
-					++hasBroken;
-					phantom.setBroken(true);
-					break;
-				}
-			}
-			if (!phantom.isBroken()) {
+			if (Utils.isUnitVisible(phantom.getPosition(), .1, world.getWizards(), world.getMinions(), null)) {
+				phantom.setBroken(true);
+				++hasBroken;
+			} else {
 				phantom.nextTick();
 			}
 		}
@@ -790,4 +768,35 @@ public class Utils {
 		}
 		return result;
 	}
+
+	public static boolean isUnitVisible(Point position, double additionalDistance, Wizard[] wizards, Minion[] minions, Building[] buildings) {
+		for (Wizard unit : wizards) {
+			if (unit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			if (FastMath.hypot(position.getX() - unit.getX(), position.getY() - unit.getY()) + additionalDistance < unit.getVisionRange()) {
+				return true;
+			}
+		}
+		for (Minion unit : minions) {
+			if (unit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			if (FastMath.hypot(position.getX() - unit.getX(), position.getY() - unit.getY()) + additionalDistance < unit.getVisionRange()) {
+				return true;
+			}
+		}
+		if (buildings != null) {
+			for (Building unit : buildings) {
+				if (unit.getFaction() != Constants.getCurrentFaction()) {
+					continue;
+				}
+				if (FastMath.hypot(position.getX() - unit.getX(), position.getY() - unit.getY()) + additionalDistance < unit.getVisionRange()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 }

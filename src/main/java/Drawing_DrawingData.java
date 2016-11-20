@@ -17,6 +17,7 @@ public class Drawing_DrawingData {
     private double[] maxCastRange;
     private CurrentAction currentAction;
     private TreeMap<Long, Double> projectilesDTL;
+    private EnemyPositionCalc enemyPositionCalc;
 
     public Drawing_DrawingData(Wizard self,
                                World world,
@@ -24,7 +25,8 @@ public class Drawing_DrawingData {
                                BuildingPhantom[] buildingPhantoms,
                                double[] maxCastRange,
                                CurrentAction currentAction,
-                               TreeMap<Long, Double> projectilesDT) {
+                               TreeMap<Long, Double> projectilesDT,
+                               EnemyPositionCalc enemyPositionCalc) {
         this.self = self;
         this.world = world;
         this.myLine = myLine;
@@ -35,6 +37,7 @@ public class Drawing_DrawingData {
         this.maxCastRange = Arrays.copyOf(maxCastRange, maxCastRange.length);
         this.currentAction = currentAction.clone();
         this.projectilesDTL = new TreeMap<>(projectilesDT);
+        this.enemyPositionCalc = enemyPositionCalc.clone();
     }
 
     public Wizard getSelf() {
@@ -66,6 +69,6 @@ public class Drawing_DrawingData {
     }
 
     public Drawing_DrawingData clone() {
-        return new Drawing_DrawingData(self, world, myLine, buildingPhantoms, maxCastRange, currentAction, projectilesDTL);
+        return new Drawing_DrawingData(self, world, myLine, buildingPhantoms, maxCastRange, currentAction, projectilesDTL, enemyPositionCalc);
     }
 }

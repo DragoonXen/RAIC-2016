@@ -70,4 +70,12 @@ public class Point {
 		x *= multiplyValue;
 		y *= multiplyValue;
 	}
+
+	@Override
+	public String toString() {
+		return "Point{" +
+				"x=" + x +
+				", y=" + y +
+				'}';
+	}
 }

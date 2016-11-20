@@ -80,7 +80,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	private Drawing_DrawingData applyData(Drawing_DrawingData dataToApply, boolean receiveCurrent) {
 		Drawing_DrawingData storedData = null;
 		if (receiveCurrent) {
-			storedData = new Drawing_DrawingData(self, world, this.myLine, this.BUILDING_PHANTOMS, castRange, currentAction, projectilesDTL);
+			storedData = new Drawing_DrawingData(self, world, this.myLine, this.BUILDING_PHANTOMS, castRange, currentAction, projectilesDTL, enemyPositionCalc);
 		}
 		Drawing_DrawingData currentDrawingData = dataToApply.clone();
 		this.self = currentDrawingData.getSelf();
@@ -105,7 +105,14 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			while (drawingDataList.size() < world.getTickIndex()) {
 				drawingDataList.add(null);
 			}
-			drawingDataList.add(new Drawing_DrawingData(self, world, this.myLine, this.BUILDING_PHANTOMS, castRange, currentAction, projectilesDTL));
+			drawingDataList.add(new Drawing_DrawingData(self,
+														world,
+														this.myLine,
+														this.BUILDING_PHANTOMS,
+														castRange,
+														currentAction,
+														projectilesDTL,
+														enemyPositionCalc));
 			mainFrame.getSlider().setMaximum(Math.max(world.getTickIndex(), mainFrame.getSlider().getMaximum()));
 			move(self, world, game, move, false);
 		}
@@ -227,6 +234,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
         }
 		moveToPoint = null;
 		long time = System.nanoTime();
+		foundScanMatrixItems.clear();
 		super.move(self, world, game, move);
 		time = System.nanoTime() - time;
 		System.out.println("Call took " + nanosToMsec(time) + "ms");

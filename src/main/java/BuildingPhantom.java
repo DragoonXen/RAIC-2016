@@ -34,6 +34,7 @@ public class BuildingPhantom extends Building {
 	private int remainingActionCooldownTicks;
 	private boolean updated;
 	private boolean broken;
+	private Point position;
 
 	public BuildingPhantom(Building building, boolean enemy) {
 		super(enemy ? ID_MAPPING.get(building.getId()) : building.getId(),
@@ -55,6 +56,7 @@ public class BuildingPhantom extends Building {
 			  building.getRemainingActionCooldownTicks());
 		this.life = building.getLife();
 		this.remainingActionCooldownTicks = building.getRemainingActionCooldownTicks();
+		this.position = new Point(getX(), getY());
 	}
 
 	public void updateInfo(Building building) {
@@ -81,6 +83,10 @@ public class BuildingPhantom extends Building {
 
 	public void setBroken(boolean broken) {
 		this.broken = broken;
+	}
+
+	public Point getPosition() {
+		return position;
 	}
 
 	@Override
