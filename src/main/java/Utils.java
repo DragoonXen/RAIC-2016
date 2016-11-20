@@ -5,6 +5,7 @@ import model.LaneType;
 import model.LivingUnit;
 import model.Minion;
 import model.Projectile;
+import model.ProjectileType;
 import model.SkillType;
 import model.Status;
 import model.StatusType;
@@ -161,9 +162,13 @@ public class Utils {
 		ScanMatrixItem[][] matrix = new ScanMatrixItem[(int) Math.round((Constants.MOVE_FWD_DISTANCE + Constants.MOVE_BACK_DISTANCE) / Constants.MOVE_SCAN_STEP + 1.01)]
 				[(int) Math.round((Constants.MOVE_SIDE_DISTANCE + Constants.MOVE_SIDE_DISTANCE) / Constants.MOVE_SCAN_STEP + 1.01)];
 
+		double maxBonus = Math.pow(FastMath.hypot(-matrix.length - 30, -Constants.CURRENT_PT_Y), Constants.FORWARD_MOVE_FROM_DISTANCE_POWER);
 		for (int i = 0; i != matrix.length; ++i) {
 			for (int j = 0; j != matrix[0].length; ++j) {
-				matrix[i][j] = new ScanMatrixItem(i, j);
+				matrix[i][j] = new ScanMatrixItem(i,
+												  j,
+												  maxBonus - Math.pow(FastMath.hypot(i - matrix.length - 30, j - Constants.CURRENT_PT_Y),
+																	  Constants.FORWARD_MOVE_FROM_DISTANCE_POWER));
 			}
 		}
 
@@ -590,6 +595,11 @@ public class Utils {
 			Variables.turnFactor += Constants.getGame().getHastenedRotationBonusFactor();
 			Variables.moveFactor += Constants.getGame().getHastenedMovementBonusFactor();
 		}
+		Variables.staffDamage = Constants.getGame().getStaffDamage() +
+				Constants.getGame().getStaffDamageBonusPerSkillLevel() * (aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] + skillsCount[SkillFork.STAFF_DAMAGE.ordinal()]);
+		Variables.magicDamageBonus = Constants.getGame().getMagicalDamageBonusPerSkillLevel() *
+				(aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] + skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()]);
+
 	}
 
 	public static BuildingPhantom[] updateBuildingPhantoms(World world, BuildingPhantom[] phantoms) {
@@ -672,8 +682,12 @@ public class Utils {
 		return 0.;
 	}
 
-	public static double getProjectileDamage(Projectile projectile) {
-		switch (projectile.getType()) {
+	public static int getProjectileDamage(Projectile projectile) {
+		return getProjectileDamage(projectile.getType());
+	}
+
+	public static int getProjectileDamage(ProjectileType projectileType) {
+		switch (projectileType) {
 			case MAGIC_MISSILE:
 				return Constants.getGame().getMagicMissileDirectDamage();
 			case FROST_BOLT:
@@ -683,7 +697,11 @@ public class Utils {
 			case DART:
 				return Constants.getGame().getDartDirectDamage();
 		}
-		return 0.;
+		return 0;
+	}
+
+	public static int getSelfProjectileDamage(ProjectileType projectileType) {
+		return (getProjectileDamage(projectileType) + Variables.magicDamageBonus) * (wizardHasStatus(Variables.self, StatusType.EMPOWERED) ? 2 : 1);
 	}
 
 	public static void fillProjectilesSim(FilteredWorld filteredWorld, TreeMap<Long, Double> projectilesDTL) {

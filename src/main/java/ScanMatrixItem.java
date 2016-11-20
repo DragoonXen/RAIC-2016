@@ -25,9 +25,12 @@ public class ScanMatrixItem extends Point {
 	private double totalScore;
 	private boolean available;
 
-	public ScanMatrixItem(int i, int j) {
+	private double forwardDistanceDivision;
+
+	public ScanMatrixItem(int i, int j, double forwardDistanceDivision) {
 		this.i = i;
 		this.j = j;
+		this.forwardDistanceDivision = forwardDistanceDivision;
 	}
 
 	public void setDistance(int distance) {
@@ -200,6 +203,10 @@ public class ScanMatrixItem extends Point {
 
 	public int getJ() {
 		return j;
+	}
+
+	public double getForwardDistanceDivision() {
+		return forwardDistanceDivision;
 	}
 
 	public ScanMatrixItem[] getNeighbours() {

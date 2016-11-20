@@ -246,7 +246,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			}
 		}
 
-		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+		if (currentAction.getActionType().moveCalc) {
 			double maxScore = Double.MIN_VALUE;
 			double minScore = Double.MAX_VALUE;
 			for (int i = 0; i != scan_matrix.length; ++i) {

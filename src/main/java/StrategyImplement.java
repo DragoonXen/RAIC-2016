@@ -10,6 +10,7 @@ import model.Minion;
 import model.MinionType;
 import model.Move;
 import model.Projectile;
+import model.ProjectileType;
 import model.StatusType;
 import model.Tree;
 import model.Wizard;
@@ -22,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Random;
 import java.util.TreeMap;
 
 /**
@@ -48,7 +50,7 @@ public class StrategyImplement {
 
 	protected ScanMatrixItem pointToReach;
 
-	private ScanMatrixItem testScanItem = new ScanMatrixItem(0, 0);
+	private ScanMatrixItem testScanItem = new ScanMatrixItem(0, 0, 1.);
 
 	protected ArrayList<WayPoint> wayPoints = new ArrayList<>();
 
@@ -74,12 +76,15 @@ public class StrategyImplement {
 
 	protected boolean treeCut;
 
+	private Random rnd = new Random();
+
 	public void move(Wizard self, World world, Game game, Move move) {
 		enemyFound = false;
 		treeCut = false;
 		moveToPoint = null;
 		target = null;
 		minAngle = 0.;
+		wayPoints.clear();
 		maxAngle = 0.;
 		angle = 0.;
 		targetAngle = 0.;
@@ -130,11 +135,25 @@ public class StrategyImplement {
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
 		evade(move, checkHitByProjectilePossible());
 
-//		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+//		if (world.getTickIndex() > 80 && currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+//			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+//			Constants.POSITION_MOVE_LINE.updatePointToMove(currentAction.getMovePoint());
+//			myLineCalc = Constants.POSITION_MOVE_LINE;
+//			if (FastMath.hypot(self.getX() - Constants.POSITION_MOVE_LINE.getPositionToMove().getX(),
+//							   self.getY() - Constants.POSITION_MOVE_LINE.getPositionToMove().getY()) < 150.) {
+//				int nx = rnd.nextInt(4001);
+//				int ny = nx + rnd.nextInt(4001 - nx);
+//				currentAction.setMovePoint(nx, ny);
+//			}
+//			direction = myLineCalc.getMoveDirection(self);
 //
+//			filteredWorld = Utils.filterWorld(world,
+//											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
+//														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
+//											  BUILDING_PHANTOMS);
 //		}
 
-		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+		if (currentAction.getActionType().moveCalc) {
 			enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||
 					Utils.hasEnemy(filteredWorld.getWizards()) ||
 					Utils.hasEnemy(filteredWorld.getBuildings());
@@ -510,6 +529,7 @@ public class StrategyImplement {
 
 	private void findTargets() {
 		targets.clear();
+		double missileDamage = Utils.getSelfProjectileDamage(ProjectileType.MAGIC_MISSILE);
 		treeCut = Utils.unitsCountAtDistance(filteredWorld.getTrees(),
 											 self,
 											 Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
@@ -529,6 +549,7 @@ public class StrategyImplement {
 					score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(pointToReach.getX() - livingUnit.getX(),
 																						 pointToReach.getY() - livingUnit.getY());
 					score += Constants.CUT_SELF_DISTANCE_PRIORITY / FastMath.hypot(self.getX() - livingUnit.getX(), self.getY() - livingUnit.getY());
+					score /= (livingUnit.getLife() + missileDamage - 1) / missileDamage;
 					targets.add(new AbstractMap.SimpleEntry<>(score - Constants.CUT_REACH_POINT_DISTANCE_PTIORITY, livingUnit));
 				}
 				continue;
@@ -839,8 +860,10 @@ public class StrategyImplement {
 					}
 				}
 
-				if (!enemyFound) {
-					item.setOtherBonus((scan_matrix.length + scan_matrix[0].length - getIntDistanceFromForwardPoint(i, j)) * .0001);
+				if (currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION) {
+					item.setOtherBonus(item.getForwardDistanceDivision() * 17.5); //up to 2
+				} else if (!enemyFound) {
+					item.setOtherBonus(item.getForwardDistanceDivision() * .0001);
 				}
 			}
 		}

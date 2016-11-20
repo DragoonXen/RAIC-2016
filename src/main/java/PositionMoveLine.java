@@ -20,6 +20,10 @@ public class PositionMoveLine extends BaseLine {
 		this.positionToMove.update(x, y);
 	}
 
+	public Point getPositionToMove() {
+		return positionToMove;
+	}
+
 	@Override
 	public double getDistanceTo(Unit unit) {
 		return 0;

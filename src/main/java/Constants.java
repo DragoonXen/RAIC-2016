@@ -35,7 +35,7 @@ public abstract class Constants {
 	public static int EVADE_CALCULATIONS_COUNT = 90;
 	public static double EVADE_DEGREE_STEP = Math.PI * 2. / EVADE_CALCULATIONS_COUNT; // 360 / 90 = 4
 
-    public static int SPAWN_POINT_SIZE = 200;
+    public static int SPAWN_POINT_SIZE = 250;
     public static double SPAWN_POINT_DANGER = 80.;
     public static int TICKS_TO_LEAVE_SPAWN = 80;
     public static SpawnPoint[] SPAWN_POINTS = new SpawnPoint[]{new SpawnPoint(3200, 800), new SpawnPoint(3000, 200), new SpawnPoint(3800, 1000)};
@@ -49,6 +49,8 @@ public abstract class Constants {
     public static double ORC_AIM_PROIRITY = 1.;
     public static double LOW_AIM_SCORE = .5;
     public static double NEUTRAL_FACTION_AIM_PROIRITY = 0.2;
+
+    public static double FORWARD_MOVE_FROM_DISTANCE_POWER = 1 / 8.;
 
     public static double SHIELDENED_AIM_PRIORITY = 0.1;
     public static double EMPOWERED_AIM_PRIORITY = 1.2;
@@ -67,6 +69,8 @@ public abstract class Constants {
 
     public static double CUT_SELF_DISTANCE_PRIORITY = 10.;
     public static double CUT_REACH_POINT_DISTANCE_PTIORITY = 100.;
+
+    public static PositionMoveLine POSITION_MOVE_LINE = new PositionMoveLine();
 
     private static Game game;
     private static Faction currentFaction;
