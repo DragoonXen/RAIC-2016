@@ -78,4 +78,10 @@ public class MinionPhantom extends Minion {
 	public Point getPosition() {
 		return position;
 	}
+
+	public MinionPhantom clone() {
+		MinionPhantom mp = new MinionPhantom(this, lastSeenTick, line);
+		mp.position = new Point(position.getX(), position.getY());
+		return mp;
+	}
 }

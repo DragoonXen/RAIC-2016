@@ -68,6 +68,10 @@ public class Drawing_DrawingData {
         return projectilesDTL;
     }
 
+    public EnemyPositionCalc getEnemyPositionCalc() {
+        return enemyPositionCalc;
+    }
+
     public Drawing_DrawingData clone() {
         return new Drawing_DrawingData(self, world, myLine, buildingPhantoms, maxCastRange, currentAction, projectilesDTL, enemyPositionCalc);
     }

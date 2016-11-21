@@ -42,6 +42,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
     private static Drawing_DrawingStrategy instance;
 	protected TreeMap<Double, ScanMatrixItem> foundScanMatrixItems = new TreeMap<>();
 
+	private final static Color FOUND_DISTACE_COLOR = new Color(100, 0, 0);
+
     public Drawing_DrawingStrategy() {
 		drawingDataList = Collections.synchronizedList(new ArrayList<>());
 		Drawing_DrawingStrategy.instance = this;
@@ -90,6 +92,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		this.myLine = currentDrawingData.getMyLine();
 		this.world = currentDrawingData.getWorld();
 		this.projectilesDTL = currentDrawingData.getProjectilesDTL();
+		this.enemyPositionCalc = currentDrawingData.getEnemyPositionCalc();
 		return storedData;
 	}
 
@@ -119,14 +122,25 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
     }
 
 	private void drawUnit(CircularUnit unit) {
-		drawUnit(unit, null, null);
+		drawUnit(unit, null, null, null);
 	}
 
 	private void drawUnit(CircularUnit unit, Color color) {
-		drawUnit(unit, null, color);
+		drawUnit(unit, null, null, color);
 	}
 
 	private void drawUnit(CircularUnit unit, Double visibleDistance, Color color) {
+		drawUnit(unit, null, visibleDistance, color);
+	}
+
+	private void drawUnit(CircularUnit unit, Point position, Color color) {
+		drawUnit(unit, position, null, color);
+	}
+
+	private void drawUnit(CircularUnit unit, Point position, Double visibleDistance, Color color) {
+		if (position == null) {
+			position = new Point(unit.getX(), unit.getY());
+		}
 		if (color == null) {
 			color = Constants.getCurrentFaction() == unit.getFaction() ?
 					Color.green :
@@ -134,8 +148,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 							Color.red :
 							Color.blue;
 		}
-		drawPanel.addFigure(new Drawing_Circle(unit.getX(),
-											   unit.getY(),
+		drawPanel.addFigure(new Drawing_Circle(position.getX(),
+											   position.getY(),
 											   unit.getRadius(),
 											   true,
 											   color));
@@ -143,33 +157,33 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		if (unit instanceof Minion && ((Minion) unit).getType() == MinionType.FETISH_BLOWDART) {
 			double angle = unit.getAngle();
 			angle += Math.PI / 2.;
-			drawPanel.addFigure(new Drawing_Line(unit.getX() + Math.cos(angle) * unit.getRadius(),
-												 unit.getY() + Math.sin(angle) * unit.getRadius(),
-												 unit.getX() - Math.cos(angle) * unit.getRadius(),
-												 unit.getY() - Math.sin(angle) * unit.getRadius(),
+			drawPanel.addFigure(new Drawing_Line(position.getX() + Math.cos(angle) * unit.getRadius(),
+												 position.getY() + Math.sin(angle) * unit.getRadius(),
+												 position.getX() - Math.cos(angle) * unit.getRadius(),
+												 position.getY() - Math.sin(angle) * unit.getRadius(),
 												 Color.black));
 		}
 
-		drawPanel.addFigure(new Drawing_Circle(unit.getX(),
-											   unit.getY(),
+		drawPanel.addFigure(new Drawing_Circle(position.getX(),
+											   position.getY(),
 											   2.,
 											   true,
 											   Color.yellow));
 
-		drawPanel.addFigure(new Drawing_Line(unit.getX(),
-											 unit.getY(),
-											 unit.getX() + (unit.getRadius() + 10.) * Math.cos(unit.getAngle()),
-											 unit.getY() + (unit.getRadius() + 10.) * Math.sin(unit.getAngle()),
+		drawPanel.addFigure(new Drawing_Line(position.getX(),
+											 position.getY(),
+											 position.getX() + (unit.getRadius() + 10.) * Math.cos(unit.getAngle()),
+											 position.getY() + (unit.getRadius() + 10.) * Math.sin(unit.getAngle()),
 											 Color.black));
 
 		if (unit instanceof LivingUnit) {
 			double[] polygonX = new double[4];
-			polygonX[0] = polygonX[1] = unit.getX() - unit.getRadius();
-			polygonX[2] = polygonX[3] = unit.getX() + unit.getRadius();
+			polygonX[0] = polygonX[1] = position.getX() - unit.getRadius();
+			polygonX[2] = polygonX[3] = position.getX() + unit.getRadius();
 			double[] polygonY = new double[4];
 			double wide = unit.getRadius() / 10.;
-			polygonY[0] = polygonY[3] = unit.getY() - unit.getRadius() - wide;
-			polygonY[1] = polygonY[2] = unit.getY() - unit.getRadius() - wide * 2.;
+			polygonY[0] = polygonY[3] = position.getY() - unit.getRadius() - wide;
+			polygonY[1] = polygonY[2] = position.getY() - unit.getRadius() - wide * 2.;
 
 			drawPanel.addFigure(new Drawing_Polygon(polygonX, polygonY, true, Color.black));
 			LivingUnit livingUnit = (LivingUnit) unit;
@@ -179,8 +193,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
 
 		if (visibleDistance != null) {
-			drawPanel.addFigure(new Drawing_Circle(unit.getX(),
-												   unit.getY(),
+			drawPanel.addFigure(new Drawing_Circle(position.getX(),
+												   position.getY(),
 												   visibleDistance,
 												   Color.YELLOW));
 		}
@@ -365,6 +379,32 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 					 50.,
 					 Color.red);
 		}
+
+		for (MinionPhantom minionPhantom : enemyPositionCalc.getDetectedMinions().values()) {
+			if (minionPhantom.isUpdated()) {
+				continue;
+			}
+			drawUnit(minionPhantom, minionPhantom.getPosition(), Color.pink);
+			drawPanel.addFigure(new Drawing_Circle(minionPhantom.getPosition().getX(),
+												   minionPhantom.getPosition().getY(),
+												   Constants.getGame().getMinionSpeed() * (world.getTickIndex() - minionPhantom.getLastSeenTick()) + .1,
+												   FOUND_DISTACE_COLOR));
+		}
+
+		for (WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
+			if (wizardPhantom.isUpdated()) {
+				continue;
+			}
+			drawUnit(wizardPhantom, wizardPhantom.getPosition(), Color.pink);
+			double checkDistance = Constants.getGame().getWizardForwardSpeed() * 1.5 * (world.getTickIndex() - wizardPhantom.getLastSeenTick()) + 1.;
+			if (checkDistance < 600.) {
+				drawPanel.addFigure(new Drawing_Circle(wizardPhantom.getPosition().getX(),
+													   wizardPhantom.getPosition().getY(),
+													   checkDistance,
+													   FOUND_DISTACE_COLOR));
+			}
+		}
+
 	}
 
 	private void drawLine(Point pointA, Point pointB, Color color) {
