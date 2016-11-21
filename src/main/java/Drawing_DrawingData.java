@@ -13,7 +13,6 @@ public class Drawing_DrawingData {
     private Wizard self;
     private World world;
     private LaneType myLine;
-    private BuildingPhantom[] buildingPhantoms;
     private double[] maxCastRange;
     private CurrentAction currentAction;
     private TreeMap<Long, Double> projectilesDTL;
@@ -22,7 +21,6 @@ public class Drawing_DrawingData {
     public Drawing_DrawingData(Wizard self,
                                World world,
                                LaneType myLine,
-                               BuildingPhantom[] buildingPhantoms,
                                double[] maxCastRange,
                                CurrentAction currentAction,
                                TreeMap<Long, Double> projectilesDT,
@@ -30,10 +28,6 @@ public class Drawing_DrawingData {
         this.self = self;
         this.world = world;
         this.myLine = myLine;
-        this.buildingPhantoms = new BuildingPhantom[buildingPhantoms.length];
-        for (int i = 0; i != buildingPhantoms.length; ++i) {
-            this.buildingPhantoms[i] = new BuildingPhantom(buildingPhantoms[i], false);
-        }
         this.maxCastRange = Arrays.copyOf(maxCastRange, maxCastRange.length);
         this.currentAction = currentAction.clone();
         this.projectilesDTL = new TreeMap<>(projectilesDT);
@@ -50,10 +44,6 @@ public class Drawing_DrawingData {
 
     public LaneType getMyLine() {
         return myLine;
-    }
-
-    public BuildingPhantom[] getBuildingPhantoms() {
-        return buildingPhantoms;
     }
 
     public double[] getMaxCastRange() {
@@ -73,6 +63,6 @@ public class Drawing_DrawingData {
     }
 
     public Drawing_DrawingData clone() {
-        return new Drawing_DrawingData(self, world, myLine, buildingPhantoms, maxCastRange, currentAction, projectilesDTL, enemyPositionCalc);
+        return new Drawing_DrawingData(self, world, myLine, maxCastRange, currentAction, projectilesDTL, enemyPositionCalc);
     }
 }

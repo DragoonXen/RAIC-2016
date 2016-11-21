@@ -82,11 +82,10 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	private Drawing_DrawingData applyData(Drawing_DrawingData dataToApply, boolean receiveCurrent) {
 		Drawing_DrawingData storedData = null;
 		if (receiveCurrent) {
-			storedData = new Drawing_DrawingData(self, world, this.myLine, this.BUILDING_PHANTOMS, castRange, currentAction, projectilesDTL, enemyPositionCalc);
+			storedData = new Drawing_DrawingData(self, world, this.myLine, castRange, currentAction, projectilesDTL, enemyPositionCalc);
 		}
 		Drawing_DrawingData currentDrawingData = dataToApply.clone();
 		this.self = currentDrawingData.getSelf();
-		this.BUILDING_PHANTOMS = currentDrawingData.getBuildingPhantoms();
 		this.currentAction = currentDrawingData.getCurrentAction();
 		this.castRange = currentDrawingData.getMaxCastRange();
 		this.myLine = currentDrawingData.getMyLine();
@@ -111,7 +110,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			drawingDataList.add(new Drawing_DrawingData(self,
 														world,
 														this.myLine,
-														this.BUILDING_PHANTOMS,
 														castRange,
 														currentAction,
 														projectilesDTL,
@@ -263,7 +261,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	}
 
 	private void drawUpdatedData(Wizard self) {
-		for (BuildingPhantom buildingPhantom : BUILDING_PHANTOMS) {
+		for (BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
 			if (buildingPhantom.isUpdated()) {
 				drawUnit(buildingPhantom);
 			} else {

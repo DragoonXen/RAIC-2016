@@ -1,3 +1,4 @@
+import model.Building;
 import model.Minion;
 import model.Wizard;
 import model.World;
@@ -15,6 +16,7 @@ public class EnemyPositionCalc {
 
 	private HashMap<Long, MinionPhantom> detectedMinions;
 	private HashMap<Long, WizardPhantom> detectedWizards;
+	private BuildingPhantom[] buildingPhantoms = new BuildingPhantom[0];
 	private static List<Long> visibleIds = new ArrayList<>();
 
 	private int[] minionsOnLine;
@@ -25,7 +27,10 @@ public class EnemyPositionCalc {
 		minionsOnLine = new int[]{0, 0, 0};
 	}
 
-	public EnemyPositionCalc(HashMap<Long, MinionPhantom> detectedMinions, HashMap<Long, WizardPhantom> detectedWizards, int[] minionsOnLine) {
+	public EnemyPositionCalc(HashMap<Long, MinionPhantom> detectedMinions,
+							 HashMap<Long, WizardPhantom> detectedWizards,
+							 int[] minionsOnLine,
+							 BuildingPhantom[] buildingPhantoms) {
 		this.detectedMinions = new HashMap<>();
 		for (Map.Entry<Long, MinionPhantom> entry : detectedMinions.entrySet()) {
 			this.detectedMinions.put(entry.getKey(), entry.getValue().clone());
@@ -35,11 +40,30 @@ public class EnemyPositionCalc {
 			this.detectedWizards.put(entry.getKey(), entry.getValue().clone());
 		}
 		this.minionsOnLine = Arrays.copyOf(minionsOnLine, minionsOnLine.length);
+
+		this.buildingPhantoms = new BuildingPhantom[buildingPhantoms.length];
+		for (int i = 0; i != buildingPhantoms.length; ++i) {
+			this.buildingPhantoms[i] = new BuildingPhantom(buildingPhantoms[i], false);
+		}
 	}
 
 	public void updatePositions(World world) {
 		updateMinions(world);
 		updateWizards(world);
+		updateBuildings(world);
+	}
+
+	private void updateBuildings(World world) {
+		if (world.getTickIndex() == 0) {
+			int phantomIdx = 0;
+			buildingPhantoms = new BuildingPhantom[14];
+			for (Building building : world.getBuildings()) {
+				buildingPhantoms[phantomIdx++] = new BuildingPhantom(building, false);
+				buildingPhantoms[phantomIdx++] = new BuildingPhantom(building, true);
+			}
+		} else {
+			this.buildingPhantoms = Utils.updateBuildingPhantoms(world, buildingPhantoms);
+		}
 	}
 
 	private void updateWizards(World world) {
@@ -130,8 +154,12 @@ public class EnemyPositionCalc {
 		return detectedWizards;
 	}
 
+	public BuildingPhantom[] getBuildingPhantoms() {
+		return buildingPhantoms;
+	}
+
 	public EnemyPositionCalc clone() {
-		return new EnemyPositionCalc(detectedMinions, detectedWizards, minionsOnLine);
+		return new EnemyPositionCalc(detectedMinions, detectedWizards, minionsOnLine, buildingPhantoms);
 	}
 
 

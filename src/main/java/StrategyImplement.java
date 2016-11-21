@@ -62,8 +62,6 @@ public class StrategyImplement {
 
 	private List<Map.Entry<Double, CircularUnit>> targets = new ArrayList<>();
 
-	protected BuildingPhantom[] BUILDING_PHANTOMS = new BuildingPhantom[0];
-
 	protected double minAngle = 0.;
 	protected double maxAngle = 0.;
 	protected double angle = 0.;
@@ -98,16 +96,8 @@ public class StrategyImplement {
 		switch (world.getTickIndex()) {
 			case 0:
 				myLine = Utils.getDefaultMyLine((int) self.getId());
-				int phantomIdx = 0;
-				BUILDING_PHANTOMS = new BuildingPhantom[14];
-				for (Building building : world.getBuildings()) {
-					BUILDING_PHANTOMS[phantomIdx++] = new BuildingPhantom(building, false);
-					BUILDING_PHANTOMS[phantomIdx++] = new BuildingPhantom(building, true);
-				}
 				break;
 		}
-
-		BUILDING_PHANTOMS = Utils.updateBuildingPhantoms(world, BUILDING_PHANTOMS);
 
 		if (world.getTickIndex() > lastTick + 1) { //I'm was dead
 			calcLinesScore();
@@ -128,7 +118,7 @@ public class StrategyImplement {
 		filteredWorld = Utils.filterWorld(world,
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
-										  BUILDING_PHANTOMS);
+										  enemyPositionCalc.getBuildingPhantoms());
 		updateProjectilesDTL(filteredWorld.getProjectiles());
 
 		Utils.calcCurrentSkillBonuses(self, filteredWorld);
