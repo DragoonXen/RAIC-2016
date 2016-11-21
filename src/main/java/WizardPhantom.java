@@ -37,7 +37,40 @@ public class WizardPhantom extends Wizard {
 			  wizard.getRemainingCooldownTicksByAction(),
 			  wizard.isMaster(),
 			  wizard.getMessages());
-		this.position = new Point(wizard.getX(), wizard.getY());
+		this.position = new Point(getX(), getY());
+		this.remainingActionCooldownTicks = wizard.getRemainingActionCooldownTicks();
+		this.lastSeenTick = tick;
+		this.updated = true;
+		this.life = wizard.getLife();
+		this.maxLife = wizard.getMaxLife();
+	}
+
+	public WizardPhantom(Wizard wizard, int tick, boolean enemy) {
+		super(wizard.getId() + (enemy ? (wizard.getId() > 5 ? -5 : 5) : 0),
+			  enemy ? Constants.getGame().getMapSize() - wizard.getX() : wizard.getX(),
+			  enemy ? Constants.getGame().getMapSize() - wizard.getY() : wizard.getY(),
+			  wizard.getSpeedX(),
+			  wizard.getSpeedY(),
+			  wizard.getAngle(),
+			  wizard.getFaction(),
+			  wizard.getRadius(),
+			  wizard.getLife(),
+			  wizard.getMaxLife(),
+			  wizard.getStatuses(),
+			  wizard.getOwnerPlayerId(),
+			  wizard.isMe(),
+			  wizard.getMana(),
+			  wizard.getMaxMana(),
+			  wizard.getVisionRange(),
+			  wizard.getCastRange(),
+			  wizard.getXp(),
+			  wizard.getLevel(),
+			  wizard.getSkills(),
+			  wizard.getRemainingActionCooldownTicks(),
+			  wizard.getRemainingCooldownTicksByAction(),
+			  wizard.isMaster(),
+			  wizard.getMessages());
+		this.position = new Point(getX(), getY());
 		this.remainingActionCooldownTicks = wizard.getRemainingActionCooldownTicks();
 		this.lastSeenTick = tick;
 		this.updated = true;
@@ -87,6 +120,11 @@ public class WizardPhantom extends Wizard {
 
 	public Point getPosition() {
 		return position;
+	}
+
+	public void reborn(int tick) {
+		this.position.update(getX(), getY());
+		this.lastSeenTick = tick - 100;
 	}
 
 	public WizardPhantom clone() {

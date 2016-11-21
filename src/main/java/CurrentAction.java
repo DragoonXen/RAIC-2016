@@ -8,7 +8,7 @@ public class CurrentAction {
 
 	public CurrentAction() {
 		actionType = ActionType.FIGHT;
-		movePoint = new Point(1300, 1300);
+		movePoint = new Point(100, 100);
 	}
 
 	public ActionType getActionType() {

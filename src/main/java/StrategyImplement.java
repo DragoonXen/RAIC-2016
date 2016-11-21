@@ -125,22 +125,24 @@ public class StrategyImplement {
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
 		evade(move, checkHitByProjectilePossible());
 
-//		if (world.getTickIndex() > 80 && currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
-//			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+//		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+////			int ticksToBonusSpawn = world.getTickCount() - 2500;
+////			double distanceToBonusA = FastMath.hypot(self.getX() - 1200, self.getY() - 1200);
+////			double distanceToBonusB = FastMath.hypot(self.getX() - 1200, self.getY() - 1200);
+////			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
 //			Constants.POSITION_MOVE_LINE.updatePointToMove(currentAction.getMovePoint());
 //			myLineCalc = Constants.POSITION_MOVE_LINE;
 //			if (FastMath.hypot(self.getX() - Constants.POSITION_MOVE_LINE.getPositionToMove().getX(),
-//							   self.getY() - Constants.POSITION_MOVE_LINE.getPositionToMove().getY()) < 150.) {
-//				int nx = rnd.nextInt(4001);
-//				int ny = nx + rnd.nextInt(4001 - nx);
-//				currentAction.setMovePoint(nx, ny);
+//							   self.getY() - Constants.POSITION_MOVE_LINE.getPositionToMove().getY()) < Constants.getGame().getBonusRadius()) {
+//
+//				currentAction.setMovePoint(1100, 1100);
 //			}
 //			direction = myLineCalc.getMoveDirection(self);
 //
 //			filteredWorld = Utils.filterWorld(world,
 //											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 //														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
-//											  BUILDING_PHANTOMS);
+//											  enemyPositionCalc.getBuildingPhantoms());
 //		}
 
 		if (currentAction.getActionType().moveCalc) {

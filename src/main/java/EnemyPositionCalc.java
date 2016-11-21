@@ -6,8 +6,10 @@ import model.World;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by dragoon on 11/20/16.
@@ -19,18 +21,25 @@ public class EnemyPositionCalc {
 	private BuildingPhantom[] buildingPhantoms = new BuildingPhantom[0];
 	private static List<Long> visibleIds = new ArrayList<>();
 
+	private List<WizardPhantom> deadEnemyWizards;
+	private TreeMap<Long, Integer> lastBornTime;
+
 	private int[] minionsOnLine;
 
 	public EnemyPositionCalc() {
 		detectedMinions = new HashMap<>();
 		detectedWizards = new HashMap<>();
+		deadEnemyWizards = new ArrayList<>();
+		lastBornTime = new TreeMap<>();
 		minionsOnLine = new int[]{0, 0, 0};
 	}
 
 	public EnemyPositionCalc(HashMap<Long, MinionPhantom> detectedMinions,
 							 HashMap<Long, WizardPhantom> detectedWizards,
 							 int[] minionsOnLine,
-							 BuildingPhantom[] buildingPhantoms) {
+							 BuildingPhantom[] buildingPhantoms,
+							 List<WizardPhantom> deadEnemyWizards,
+							 TreeMap<Long, Integer> lastBornTime) {
 		this.detectedMinions = new HashMap<>();
 		for (Map.Entry<Long, MinionPhantom> entry : detectedMinions.entrySet()) {
 			this.detectedMinions.put(entry.getKey(), entry.getValue().clone());
@@ -45,6 +54,12 @@ public class EnemyPositionCalc {
 		for (int i = 0; i != buildingPhantoms.length; ++i) {
 			this.buildingPhantoms[i] = new BuildingPhantom(buildingPhantoms[i], false);
 		}
+		this.deadEnemyWizards = new ArrayList<>(deadEnemyWizards.size());
+		for (WizardPhantom w : deadEnemyWizards) {
+			this.deadEnemyWizards.add(w.clone());
+		}
+
+		this.lastBornTime = new TreeMap<>(lastBornTime);
 	}
 
 	public void updatePositions(World world) {
@@ -67,6 +82,24 @@ public class EnemyPositionCalc {
 	}
 
 	private void updateWizards(World world) {
+		if (world.getTickIndex() == 0) {
+			for (Wizard wizard : world.getWizards()) {
+				WizardPhantom phantom = new WizardPhantom(wizard, 0, true);
+				detectedWizards.put(phantom.getId(), phantom);
+				lastBornTime.put(phantom.getId(), 0);
+			}
+		} else {
+			Iterator<WizardPhantom> iterator = deadEnemyWizards.iterator();
+			while (iterator.hasNext()) {
+				WizardPhantom deadEnemyWizard = iterator.next();
+				if (world.getTickIndex() - lastBornTime.get(deadEnemyWizard.getId()) >= 2400 && world.getTickIndex() - deadEnemyWizard.getLastSeenTick() >= 1200) {
+					lastBornTime.put(deadEnemyWizard.getId(), world.getTickIndex());
+					iterator.remove();
+					detectedWizards.put(deadEnemyWizard.getId(), deadEnemyWizard);
+					deadEnemyWizard.reborn(world.getTickIndex());
+				}
+			}
+		}
 		visibleIds.clear();
 		visibleIds.addAll(detectedWizards.keySet());
 
@@ -79,8 +112,17 @@ public class EnemyPositionCalc {
 				continue;
 			}
 			WizardPhantom wizardPhantom = detectedWizards.get(wizard.getId());
-			if (wizardPhantom == null) {
-				detectedWizards.put(wizard.getId(), new WizardPhantom(wizard, world.getTickIndex()));
+			if (wizardPhantom == null) { // unexpected, but... why not
+				Iterator<WizardPhantom> iterator = deadEnemyWizards.iterator();
+				while (iterator.hasNext()) {
+					WizardPhantom deadEnemyWizard = iterator.next();
+					if (deadEnemyWizard.getId() == wizard.getId()) {
+						iterator.remove();
+						detectedWizards.put(wizard.getId(), deadEnemyWizard);
+						deadEnemyWizard.updateInfo(wizard, world.getTickIndex());
+						break;
+					}
+				}
 				continue;
 			}
 			wizardPhantom.updateInfo(wizard, world.getTickIndex());
@@ -99,6 +141,7 @@ public class EnemyPositionCalc {
 															world.getMinions(),
 															world.getBuildings())) {
 				detectedWizards.remove(visibleId); // yay, dead!
+				deadEnemyWizards.add(wizardPhantom);
 			} else {
 				wizardPhantom.nextTick();
 			}
@@ -159,7 +202,7 @@ public class EnemyPositionCalc {
 	}
 
 	public EnemyPositionCalc clone() {
-		return new EnemyPositionCalc(detectedMinions, detectedWizards, minionsOnLine, buildingPhantoms);
+		return new EnemyPositionCalc(detectedMinions, detectedWizards, minionsOnLine, buildingPhantoms, deadEnemyWizards, lastBornTime);
 	}
 
 
