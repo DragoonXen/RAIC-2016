@@ -894,12 +894,14 @@ public class StrategyImplement {
 			switch (minion.getType()) {
 				case ORC_WOODCUTTER:
 					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(minion.getDamage() * shieldBonus);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(game.getOrcWoodcutterAttackRange() + self.getRadius() + game.getMinionSpeed() + 1);
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Utils.cooldownDistanceCalculation(game.getOrcWoodcutterAttackRange() + self.getRadius(),
+																										   minion.getRemainingActionCooldownTicks()));
 					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 					break;
 				case FETISH_BLOWDART:
 					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(game.getDartDirectDamage() * shieldBonus);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(game.getFetishBlowdartAttackRange() + self.getRadius());
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Utils.cooldownDistanceCalculation(game.getFetishBlowdartAttackRange() + self.getRadius(),
+																										   minion.getRemainingActionCooldownTicks()));
 					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 					break;
 			}

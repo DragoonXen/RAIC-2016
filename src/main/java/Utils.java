@@ -799,4 +799,7 @@ public class Utils {
 		return false;
 	}
 
+	public static double cooldownDistanceCalculation(double baseDistance, int coolDownRemaining) {
+		return baseDistance + Math.min(1, -coolDownRemaining + 3) * Constants.getGame().getWizardBackwardSpeed() * Variables.moveFactor * .66;
+	}
 }
