@@ -42,7 +42,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
     private static Drawing_DrawingStrategy instance;
 	protected TreeMap<Double, ScanMatrixItem> foundScanMatrixItems = new TreeMap<>();
 
-	private final static Color FOUND_DISTACE_COLOR = new Color(100, 0, 0);
+	private final static Color FOUND_DISTANCE_COLOR = new Color(100, 0, 0);
 
     public Drawing_DrawingStrategy() {
 		drawingDataList = Collections.synchronizedList(new ArrayList<>());
@@ -82,7 +82,14 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	private Drawing_DrawingData applyData(Drawing_DrawingData dataToApply, boolean receiveCurrent) {
 		Drawing_DrawingData storedData = null;
 		if (receiveCurrent) {
-			storedData = new Drawing_DrawingData(self, world, this.myLine, castRange, currentAction, projectilesDTL, enemyPositionCalc);
+			storedData = new Drawing_DrawingData(self,
+												 world,
+												 this.myLine,
+												 castRange,
+												 currentAction,
+												 projectilesDTL,
+												 enemyPositionCalc,
+												 bonusesPossibilityCalcs);
 		}
 		Drawing_DrawingData currentDrawingData = dataToApply.clone();
 		this.self = currentDrawingData.getSelf();
@@ -92,6 +99,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		this.world = currentDrawingData.getWorld();
 		this.projectilesDTL = currentDrawingData.getProjectilesDTL();
 		this.enemyPositionCalc = currentDrawingData.getEnemyPositionCalc();
+		this.bonusesPossibilityCalcs = currentDrawingData.getBonusesPossibilityCalcs();
 		return storedData;
 	}
 
@@ -113,7 +121,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 														castRange,
 														currentAction,
 														projectilesDTL,
-														enemyPositionCalc));
+														enemyPositionCalc,
+														bonusesPossibilityCalcs));
 			mainFrame.getSlider().setMaximum(Math.max(world.getTickIndex(), mainFrame.getSlider().getMaximum()));
 			move(self, world, game, move, false);
 		}
@@ -357,11 +366,12 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		textInfoPanel.putText(sb.toString(), 3);
 		textInfoPanel.putText(String.valueOf(currentAction.getActionType()), 4);
 		textInfoPanel.putText("Cut trees: " + (treeCut ? "YES" : "NO"), 5);
+		textInfoPanel.putText(String.format("bonuses possibility: %s %s", bonusesPossibilityCalcs.getScore()[0], bonusesPossibilityCalcs.getScore()[1]), 6);
 		textInfoPanel.putText(String.format("SpeedX: %s, SpeedY: %s, speed: %s",
 											self.getSpeedX(),
 											self.getSpeedY(),
 											FastMath.hypot(self.getSpeedX(), self.getSpeedY())),
-							  6);
+							  7);
 
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			Point selfPoint = scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y];
@@ -386,7 +396,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			drawPanel.addFigure(new Drawing_Circle(minionPhantom.getPosition().getX(),
 												   minionPhantom.getPosition().getY(),
 												   Constants.getGame().getMinionSpeed() * (world.getTickIndex() - minionPhantom.getLastSeenTick()) + .1,
-												   FOUND_DISTACE_COLOR));
+												   FOUND_DISTANCE_COLOR));
 		}
 
 		for (WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
@@ -399,7 +409,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 				drawPanel.addFigure(new Drawing_Circle(wizardPhantom.getPosition().getX(),
 													   wizardPhantom.getPosition().getY(),
 													   checkDistance,
-													   FOUND_DISTACE_COLOR));
+													   FOUND_DISTANCE_COLOR));
 			}
 		}
 

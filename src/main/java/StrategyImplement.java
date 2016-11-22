@@ -73,10 +73,13 @@ public class StrategyImplement {
 
 	protected EnemyPositionCalc enemyPositionCalc = new EnemyPositionCalc();
 
+	protected BonusesPossibilityCalcs bonusesPossibilityCalcs = new BonusesPossibilityCalcs();
+
 	protected boolean treeCut;
 
 	public void move(Wizard self, World world, Game game, Move move) {
 		enemyPositionCalc.updatePositions(world);
+		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
 		enemyFound = false;
 		treeCut = false;
 		moveToPoint = null;
@@ -125,25 +128,28 @@ public class StrategyImplement {
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
 		evade(move, checkHitByProjectilePossible());
 
-//		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
-////			int ticksToBonusSpawn = world.getTickCount() - 2500;
-////			double distanceToBonusA = FastMath.hypot(self.getX() - 1200, self.getY() - 1200);
-////			double distanceToBonusB = FastMath.hypot(self.getX() - 1200, self.getY() - 1200);
-////			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
-//			Constants.POSITION_MOVE_LINE.updatePointToMove(currentAction.getMovePoint());
-//			myLineCalc = Constants.POSITION_MOVE_LINE;
-//			if (FastMath.hypot(self.getX() - Constants.POSITION_MOVE_LINE.getPositionToMove().getX(),
-//							   self.getY() - Constants.POSITION_MOVE_LINE.getPositionToMove().getY()) < Constants.getGame().getBonusRadius()) {
-//
-//				currentAction.setMovePoint(1100, 1100);
-//			}
-//			direction = myLineCalc.getMoveDirection(self);
-//
-//			filteredWorld = Utils.filterWorld(world,
-//											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
-//														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
-//											  enemyPositionCalc.getBuildingPhantoms());
-//		}
+		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+			int ticksToBonusSpawn = Utils.getTicksToBonusSpawn(world.getTickCount());
+			double distanceToBonusA = FastMath.hypot(self.getX() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getX(),
+													 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getY());
+			double distanceToBonusB = FastMath.hypot(self.getX() - BonusesPossibilityCalcs.BONUSES_POINTS[1].getX(),
+													 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[1].getY());
+
+			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+			Constants.POSITION_MOVE_LINE.updatePointToMove(currentAction.getMovePoint());
+			myLineCalc = Constants.POSITION_MOVE_LINE;
+			if (FastMath.hypot(self.getX() - Constants.POSITION_MOVE_LINE.getPositionToMove().getX(),
+							   self.getY() - Constants.POSITION_MOVE_LINE.getPositionToMove().getY()) < Constants.getGame().getBonusRadius()) {
+
+				currentAction.setMovePoint(1100, 1100);
+			}
+			direction = myLineCalc.getMoveDirection(self);
+
+			filteredWorld = Utils.filterWorld(world,
+											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
+														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
+											  enemyPositionCalc.getBuildingPhantoms());
+		}
 
 		if (currentAction.getActionType().moveCalc) {
 			enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||

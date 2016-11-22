@@ -17,6 +17,7 @@ public class Drawing_DrawingData {
     private CurrentAction currentAction;
     private TreeMap<Long, Double> projectilesDTL;
     private EnemyPositionCalc enemyPositionCalc;
+    private BonusesPossibilityCalcs bonusesPossibilityCalcs;
 
     public Drawing_DrawingData(Wizard self,
                                World world,
@@ -24,7 +25,8 @@ public class Drawing_DrawingData {
                                double[] maxCastRange,
                                CurrentAction currentAction,
                                TreeMap<Long, Double> projectilesDT,
-                               EnemyPositionCalc enemyPositionCalc) {
+                               EnemyPositionCalc enemyPositionCalc,
+                               BonusesPossibilityCalcs bonusesPossibilityCalcs) {
         this.self = self;
         this.world = world;
         this.myLine = myLine;
@@ -32,6 +34,7 @@ public class Drawing_DrawingData {
         this.currentAction = currentAction.clone();
         this.projectilesDTL = new TreeMap<>(projectilesDT);
         this.enemyPositionCalc = enemyPositionCalc.clone();
+        this.bonusesPossibilityCalcs = bonusesPossibilityCalcs.clone();
     }
 
     public Wizard getSelf() {
@@ -62,7 +65,11 @@ public class Drawing_DrawingData {
         return enemyPositionCalc;
     }
 
+    public BonusesPossibilityCalcs getBonusesPossibilityCalcs() {
+        return bonusesPossibilityCalcs;
+    }
+
     public Drawing_DrawingData clone() {
-        return new Drawing_DrawingData(self, world, myLine, maxCastRange, currentAction, projectilesDTL, enemyPositionCalc);
+        return new Drawing_DrawingData(self, world, myLine, maxCastRange, currentAction, projectilesDTL, enemyPositionCalc, bonusesPossibilityCalcs);
     }
 }

@@ -802,4 +802,8 @@ public class Utils {
 	public static double cooldownDistanceCalculation(double baseDistance, int coolDownRemaining) {
 		return baseDistance + Math.min(1, -coolDownRemaining + 3) * Constants.getGame().getWizardBackwardSpeed() * Variables.moveFactor * .66;
 	}
+
+	public static int getTicksToBonusSpawn(int tickNo) {
+		return (tickNo - 1) - (tickNo - 1) % 2500;
+	}
 }
