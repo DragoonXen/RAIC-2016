@@ -28,15 +28,14 @@ public class BonusesPossibilityCalcs {
 		visible[0] = visible[1] = false;
 		if (world.getTickIndex() % 2500 == 1) {
 			score[0] = score[1] = 1.;
-		} else {
-			for (Bonus bonus : world.getBonuses()) {
-				if (bonus.getX() < 2000.) {
-					visible[0] = true;
-					score[0] = 1.;
-				} else {
-					visible[1] = true;
-					score[1] = 1.;
-				}
+		}
+		for (Bonus bonus : world.getBonuses()) {
+			if (bonus.getX() < 2000.) {
+				visible[0] = true;
+				score[0] = 1.;
+			} else {
+				visible[1] = true;
+				score[1] = 1.;
 			}
 		}
 
