@@ -45,8 +45,8 @@ public abstract class Constants {
 
     public static double WIZARD_AIM_PROIRITY = 5.;
     public static double BUILDING_AIM_PROIRITY = 6.;
-    public static double FETISH_AIM_PROIRITY = 1.;
-    public static double ORC_AIM_PROIRITY = 1.;
+    public static double FETISH_AIM_PROIRITY = 1.1;
+    public static double ORC_AIM_PROIRITY = 0.9;
     public static double LOW_AIM_SCORE = .5;
     public static double NEUTRAL_FACTION_AIM_PROIRITY = 0.2;
 

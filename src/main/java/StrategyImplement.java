@@ -980,18 +980,22 @@ public class StrategyImplement {
 			}
 			switch (minion.getType()) {
 				case ORC_WOODCUTTER:
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(minion.getDamage() * shieldBonus);
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(minion.getDamage() * shieldBonus * .5);
 					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Utils.cooldownDistanceCalculation(game.getOrcWoodcutterAttackRange() + self.getRadius(),
 																										   minion.getRemainingActionCooldownTicks()));
 					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 					break;
 				case FETISH_BLOWDART:
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(game.getDartDirectDamage() * shieldBonus);
+					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(game.getDartDirectDamage() * shieldBonus * .5);
 					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Utils.cooldownDistanceCalculation(game.getFetishBlowdartAttackRange() + self.getRadius(),
 																										   minion.getRemainingActionCooldownTicks()));
 					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 					break;
 			}
+			ScoreCalcStructure.MINION_DANGER_APPLYER_SECOND.setScore(ScoreCalcStructure.MINION_DANGER_APPLYER.getScore());
+			ScoreCalcStructure.MINION_DANGER_APPLYER_SECOND.setDistance(Utils.getDistanceToNearestAlly(minion, filteredWorld, minion.getVisionRange()));
+			structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER_SECOND);
+
 			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
 			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
 			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
@@ -1115,4 +1119,6 @@ public class StrategyImplement {
 		}
 		return true;
 	}
+
+
 }

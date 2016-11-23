@@ -32,6 +32,7 @@ public class BuildingPhantom extends Building {
 
 	private int life;
 	private int remainingActionCooldownTicks;
+	private boolean fixedRemainActionCooldownTicks;
 	private boolean updated;
 	private boolean broken;
 	private Point position;
@@ -63,6 +64,7 @@ public class BuildingPhantom extends Building {
 		this.life = building.getLife();
 		this.remainingActionCooldownTicks = building.getRemainingActionCooldownTicks();
 		updated = true;
+		fixedRemainActionCooldownTicks = false;
 	}
 
 	public void resetUpdate() {
@@ -87,6 +89,13 @@ public class BuildingPhantom extends Building {
 
 	public Point getPosition() {
 		return position;
+	}
+
+	public void fixRemainingActionCooldownTicks() {
+		if (!fixedRemainActionCooldownTicks) {
+			remainingActionCooldownTicks = getCooldownTicks() - 20;
+			fixedRemainActionCooldownTicks = true;
+		}
 	}
 
 	@Override

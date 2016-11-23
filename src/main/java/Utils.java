@@ -631,6 +631,9 @@ public class Utils {
 				phantom.setBroken(true);
 				++hasBroken;
 			} else {
+				if (phantom.getRemainingActionCooldownTicks() == 0 && Utils.hasAllyNearby(phantom, world, phantom.getAttackRange() + .1)) {
+					phantom.fixRemainingActionCooldownTicks();
+				}
 				phantom.nextTick();
 			}
 		}
@@ -863,5 +866,47 @@ public class Utils {
 			}
 		}
 		return Constants.getLines()[maxValue];
+	}
+
+	public static double getDistanceToNearestAlly(Unit unit, FilteredWorld filteredWorld, double startDistance) {
+		for (LivingUnit livingUnit : filteredWorld.getMinions()) {
+			if (livingUnit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			startDistance = Math.min(startDistance, FastMath.hypot(unit.getX() - livingUnit.getX(), unit.getY() - livingUnit.getY()));
+		}
+		for (LivingUnit livingUnit : filteredWorld.getBuildings()) {
+			if (livingUnit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			startDistance = Math.min(startDistance, FastMath.hypot(unit.getX() - livingUnit.getX(), unit.getY() - livingUnit.getY()));
+		}
+		for (Wizard livingUnit : filteredWorld.getWizards()) {
+			if (livingUnit.getFaction() != Constants.getCurrentFaction() || livingUnit.isMe()) {
+				continue;
+			}
+			startDistance = Math.min(startDistance, FastMath.hypot(unit.getX() - livingUnit.getX(), unit.getY() - livingUnit.getY()));
+		}
+		return startDistance;
+	}
+
+	public static boolean hasAllyNearby(Unit unit, World filteredWorld, double checkDistance) {
+		for (LivingUnit livingUnit : filteredWorld.getMinions()) {
+			if (livingUnit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			if (FastMath.hypot(unit.getX() - livingUnit.getX(), unit.getY() - livingUnit.getY()) < checkDistance) {
+				return true;
+			}
+		}
+		for (Wizard livingUnit : filteredWorld.getWizards()) {
+			if (livingUnit.getFaction() != Constants.getCurrentFaction() || livingUnit.isMe()) {
+				continue;
+			}
+			if (FastMath.hypot(unit.getX() - livingUnit.getX(), unit.getY() - livingUnit.getY()) < checkDistance) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

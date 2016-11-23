@@ -58,6 +58,14 @@ public class ScoreCalcStructure {
 		}
 	};
 
+	public final static ScoreItem MINION_DANGER_APPLYER_SECOND = new ScoreItem() {
+
+		@Override
+		public void applyScore(ScanMatrixItem item) {
+			item.addMinionsDanger(this.score);
+		}
+	};
+
 	public final static ScoreItem ATTACK_BONUS_APPLYER = new ScoreItem() {
 
 		@Override
@@ -125,6 +133,10 @@ public class ScoreCalcStructure {
 
 		public void setScore(double score) {
 			this.score = score;
+		}
+
+		public double getScore() {
+			return score;
 		}
 
 		public abstract void applyScore(ScanMatrixItem item);
