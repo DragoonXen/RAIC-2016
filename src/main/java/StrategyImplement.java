@@ -920,6 +920,9 @@ public class StrategyImplement {
 
 		for (Bonus bonus : filteredWorld.getBonuses()) {
 			structure.clear();
+			if (FastMath.hypot(self.getX() - bonus.getX(), self.getY() - bonus.getY()) > Constants.getFightDistanceFilter()) {
+				continue;
+			}
 
 			ScoreCalcStructure.OTHER_BONUS_APPLYER.setScore(200.);
 			ScoreCalcStructure.OTHER_BONUS_APPLYER.setDistance(self.getRadius() + bonus.getRadius());
@@ -933,6 +936,9 @@ public class StrategyImplement {
 		if (Utils.getTicksToBonusSpawn(world.getTickIndex()) < 250) {
 			for (Point bonusesPoint : BonusesPossibilityCalcs.BONUSES_POINTS) {
 				structure.clear();
+				if (FastMath.hypot(self.getX() - bonusesPoint.getX(), self.getY() - bonusesPoint.getY()) > Constants.getFightDistanceFilter()) {
+					continue;
+				}
 
 				ScoreCalcStructure.OTHER_DANGER_APPLYER.setScore(200.);
 				ScoreCalcStructure.OTHER_DANGER_APPLYER.setDistance(self.getRadius() + game.getBonusRadius() + .1);
