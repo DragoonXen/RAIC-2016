@@ -75,6 +75,11 @@ public class StrategyImplement {
 	protected boolean goToBonusActivated = false;
 	protected boolean moveToLineActivated = false;
 
+	public StrategyImplement() {
+		myLineCalc = Constants.getLine(Utils.getDefaultMyLine((int) self.getId()));
+		lastFightLine = myLineCalc;
+	}
+
 	public void move(Wizard self, World world, Game game, Move move) {
 		enemyPositionCalc.updatePositions(world);
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
@@ -98,17 +103,9 @@ public class StrategyImplement {
 			baseLine.updateFightPoint(world, enemyPositionCalc);
 		}
 
-		switch (world.getTickIndex()) {
-			case 0:
-				myLineCalc = Constants.getLine(Utils.getDefaultMyLine((int) self.getId()));
-				lastFightLine = myLineCalc;
-				break;
-		}
+		myLineCalc = Utils.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
+		lastFightLine = myLineCalc;
 
-		if (world.getTickIndex() > lastTick + 1195) { //I'm was dead
-			myLineCalc = Utils.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
-			lastFightLine = myLineCalc;
-		}
 		lastTick = world.getTickIndex();
 
 		direction = myLineCalc.getMoveDirection(self);
@@ -961,7 +958,7 @@ public class StrategyImplement {
 		}
 		double myDamage = 12.;
 		if (Utils.wizardHasStatus(self, StatusType.EMPOWERED)) {
-			myDamage *= 2;
+			myDamage *= Constants.getGame().getEmpoweredDamageFactor();
 		}
 		double shieldBonus = Utils.wizardHasStatus(self, StatusType.SHIELDED) ? (1. - Constants.getGame().getShieldedDirectDamageAbsorptionFactor()) : 1.;
 
@@ -1021,7 +1018,7 @@ public class StrategyImplement {
 			}
 			double wizardDamage = 12.;
 			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
-				wizardDamage *= 2;
+				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();
 			}
 			if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
 				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() + self.getRadius() + game.getWizardForwardSpeed() * 2);

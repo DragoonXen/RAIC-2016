@@ -52,7 +52,7 @@ public abstract class Constants {
 
     public static double FORWARD_MOVE_FROM_DISTANCE_POWER = 1 / 8.;
 
-    public static double SHIELDENED_AIM_PRIORITY = 0.1;
+    public static double SHIELDENED_AIM_PRIORITY = 0.3;
     public static double EMPOWERED_AIM_PRIORITY = 1.2;
     public static double HASTENED_AIM_PRIORITY = 0.7;
 

@@ -320,10 +320,10 @@ public class Utils {
 		}
 		double myDamage = 12.;
 		if (Utils.wizardStatusTicks(self, StatusType.EMPOWERED) >= addTicks) {
-			myDamage *= 2;
+			myDamage *= Constants.getGame().getEmpoweredDamageFactor();
 		}
 		double shieldBonus = Utils.wizardStatusTicks(self, StatusType.SHIELDED) >= addTicks ?
-				Constants.getGame().getShieldedDirectDamageAbsorptionFactor() :
+				(1. - Constants.getGame().getShieldedDirectDamageAbsorptionFactor()) :
 				1.;
 		ScoreCalcStructure structure = new ScoreCalcStructure();
 		for (Minion minion : filteredWorld.getMinions()) {
@@ -382,7 +382,7 @@ public class Utils {
 			}
 			double wizardDamage = 12.;
 			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
-				wizardDamage *= 2;
+				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();
 			}
 			if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
 				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() +
@@ -682,8 +682,9 @@ public class Utils {
 		return 0;
 	}
 
-	public static int getSelfProjectileDamage(ProjectileType projectileType) {
-		return (getProjectileDamage(projectileType) + Variables.magicDamageBonus) * (wizardHasStatus(Variables.self, StatusType.EMPOWERED) ? 2 : 1);
+	public static double getSelfProjectileDamage(ProjectileType projectileType) {
+		return (getProjectileDamage(projectileType) + Variables.magicDamageBonus) * (wizardHasStatus(Variables.self, StatusType.EMPOWERED) ?
+				Constants.getGame().getEmpoweredDamageFactor() : 1);
 	}
 
 	public static void fillProjectilesSim(FilteredWorld filteredWorld, TreeMap<Long, Double> projectilesDTL) {
