@@ -124,14 +124,17 @@ public class StrategyImplement {
 		evade(move, checkHitByProjectilePossible());
 
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+			int ticksToBonusSpawn = Utils.getTicksToBonusSpawn(world.getTickIndex());
 			if (goToBonusActivated) {
 				if (PositionMoveLine.INSTANCE.getPositionToMove().getX() > 2000) {
-					if (bonusesPossibilityCalcs.getScore()[1] < .1 || !isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[1], false)) {
+					if ((bonusesPossibilityCalcs.getScore()[1] < .1 && ticksToBonusSpawn > Constants.MAX_TICKS_RUN_TO_BONUS) ||
+							!isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[1], false)) {
 						goToBonusActivated = false;
 						moveToLineActivated = true;
 					}
 				} else {
-					if (bonusesPossibilityCalcs.getScore()[0] < .1 || !isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[0], false)) {
+					if ((bonusesPossibilityCalcs.getScore()[0] < .1 && ticksToBonusSpawn > Constants.MAX_TICKS_RUN_TO_BONUS) ||
+							!isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[0], false)) {
 						goToBonusActivated = false;
 						moveToLineActivated = true;
 					}
@@ -139,14 +142,13 @@ public class StrategyImplement {
 			}
 
 			if (!goToBonusActivated) {
-				int ticksToBonusSpawn = Utils.getTicksToBonusSpawn(world.getTickIndex());
 				double distanceToBonusA = FastMath.hypot(self.getX() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getX(),
 														 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getY()) -
 						self.getRadius() -
 						game.getBonusRadius();
 				double ticksRunToBonusA = distanceToBonusA / (Constants.getGame().getWizardForwardSpeed() * Variables.moveFactor) *
 						Constants.TICKS_BUFFER_RUN_TO_BONUS;
-				if (ticksRunToBonusA < 400. &&
+				if (ticksRunToBonusA < Constants.MAX_TICKS_RUN_TO_BONUS &&
 						(ticksRunToBonusA >= ticksToBonusSpawn || bonusesPossibilityCalcs.getScore()[0] > Constants.BONUS_POSSIBILITY_RUN) &&
 						isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[0], true)) { // goto bonus 1
 					goToBonusActivated = true;
@@ -162,7 +164,7 @@ public class StrategyImplement {
 				double ticksRunToBonusB = distanceToBonusB / (Constants.getGame().getWizardForwardSpeed() * Variables.moveFactor) *
 						Constants.TICKS_BUFFER_RUN_TO_BONUS;
 
-				if (ticksRunToBonusB < 400. &&
+				if (ticksRunToBonusB < Constants.MAX_TICKS_RUN_TO_BONUS &&
 						(ticksRunToBonusB >= ticksToBonusSpawn || bonusesPossibilityCalcs.getScore()[1] > Constants.BONUS_POSSIBILITY_RUN) &&
 						isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[1], true)) { // goto bonus 1
 					goToBonusActivated = true;

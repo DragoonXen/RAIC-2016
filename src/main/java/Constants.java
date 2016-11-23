@@ -77,6 +77,8 @@ public abstract class Constants {
     public static double CUT_SELF_DISTANCE_PRIORITY = 10.;
     public static double CUT_REACH_POINT_DISTANCE_PTIORITY = 100.;
 
+    public static int MAX_TICKS_RUN_TO_BONUS = 400;
+
     public static int ENEMY_MINIONS_LOST_TIME = 750;
 
     private static Game game;
