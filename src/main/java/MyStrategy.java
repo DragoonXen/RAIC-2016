@@ -3,6 +3,10 @@ import model.Move;
 import model.Wizard;
 import model.World;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 public final class MyStrategy implements Strategy {
 
     private boolean draw;
@@ -27,7 +31,16 @@ public final class MyStrategy implements Strategy {
             strategy.move(self, world, game, move);
         } catch (Throwable e) {
             System.out.println(e.getMessage());
-            e.printStackTrace();
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            System.out.println(sw.toString());
+            pw.close();
+            try {
+                sw.close();
+            } catch (IOException e1) {
+                System.out.println(e1.getMessage());
+            }
         }
     }
 }

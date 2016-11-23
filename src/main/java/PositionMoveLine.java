@@ -1,6 +1,5 @@
 import model.Unit;
 import model.World;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by dragoon on 11/20/16.
@@ -46,7 +45,7 @@ public class PositionMoveLine extends BaseLine {
 
 	@Override
 	public double getMoveDirection(Point point) {
-		throw new NotImplementedException();
+		return 0; // nothing to do
 	}
 
 	@Override
