@@ -175,6 +175,10 @@ public class StrategyImplement {
 
 			if (goToBonusActivated) {
 				currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+			} else if (!moveToLineActivated) {
+				if (myLineCalc.getDistanceTo(self) > 300.) {
+					moveToLineActivated = true;
+				}
 			}
 
 			if (moveToLineActivated) {
@@ -939,11 +943,11 @@ public class StrategyImplement {
 					continue;
 				}
 
-				ScoreCalcStructure.OTHER_DANGER_APPLYER.setScore(200.);
-				ScoreCalcStructure.OTHER_DANGER_APPLYER.setDistance(self.getRadius() + game.getBonusRadius() + .1);
-				structure.putItem(ScoreCalcStructure.OTHER_BONUS_APPLYER);
+				ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(100.);
+				ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(self.getRadius() + game.getBonusRadius() + .1);
+				structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
 
-				ScoreCalcStructure.OTHER_BONUS_APPLYER.setScore((250 - Utils.getTicksToBonusSpawn(world.getTickIndex())) * .75);
+				ScoreCalcStructure.OTHER_BONUS_APPLYER.setScore((350 - Utils.getTicksToBonusSpawn(world.getTickIndex())) * .75);
 				ScoreCalcStructure.OTHER_BONUS_APPLYER.setDistance(self.getRadius() + game.getBonusRadius() +
 																		   Constants.getGame().getWizardBackwardSpeed() * Variables.moveFactor);
 				structure.putItem(ScoreCalcStructure.OTHER_BONUS_APPLYER);
