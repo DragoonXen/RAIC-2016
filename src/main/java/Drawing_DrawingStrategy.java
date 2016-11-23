@@ -96,7 +96,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		this.lastFightLine = currentDrawingData.getLastFightLine();
 		this.goToBonusActivated = currentDrawingData.isGoToBonusActivated();
 		this.moveToLineActivated = currentDrawingData.isMoveToLineActivated();
-		Constants.POSITION_MOVE_LINE.updatePointToMove(currentDrawingData.getMoveToLinePoint());
+		PositionMoveLine.INSTANCE.updatePointToMove(currentDrawingData.getMoveToLinePoint());
 		for (int i = 0; i != Constants.getLines().length; ++i) {
 			Constants.getLines()[i].fightPoint.update(currentDrawingData.getLinesFightPoints()[i]);
 		}
@@ -115,7 +115,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   moveToLineActivated,
 									   lastFightLine,
 									   myLineCalc,
-									   Constants.POSITION_MOVE_LINE.getPositionToMove().clonePoint(),
+									   PositionMoveLine.INSTANCE.getPositionToMove().clonePoint(),
 									   new Point[]{Constants.getLines()[0].fightPoint, Constants.getLines()[1].fightPoint, Constants.getLines()[2].fightPoint});
 	}
 

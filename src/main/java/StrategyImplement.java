@@ -125,7 +125,7 @@ public class StrategyImplement {
 
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			if (goToBonusActivated) {
-				if (Constants.POSITION_MOVE_LINE.getPositionToMove().getX() > 2000) {
+				if (PositionMoveLine.INSTANCE.getPositionToMove().getX() > 2000) {
 					if (bonusesPossibilityCalcs.getScore()[1] < .1 || !isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[1], false)) {
 						goToBonusActivated = false;
 						moveToLineActivated = true;
@@ -152,7 +152,7 @@ public class StrategyImplement {
 					goToBonusActivated = true;
 					moveToLineActivated = false;
 					currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
-					Constants.POSITION_MOVE_LINE.updatePointToMove(BonusesPossibilityCalcs.BONUSES_POINTS[0]);
+					PositionMoveLine.INSTANCE.updatePointToMove(BonusesPossibilityCalcs.BONUSES_POINTS[0]);
 				}
 
 				double distanceToBonusB = FastMath.hypot(self.getX() - BonusesPossibilityCalcs.BONUSES_POINTS[1].getX(),
@@ -168,7 +168,7 @@ public class StrategyImplement {
 					goToBonusActivated = true;
 					moveToLineActivated = false;
 					if (!(currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION && ticksRunToBonusA < ticksRunToBonusB)) {
-						Constants.POSITION_MOVE_LINE.updatePointToMove(BonusesPossibilityCalcs.BONUSES_POINTS[1]);
+						PositionMoveLine.INSTANCE.updatePointToMove(BonusesPossibilityCalcs.BONUSES_POINTS[1]);
 					}
 					currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
 				}
@@ -184,14 +184,14 @@ public class StrategyImplement {
 				if (FastMath.hypot(myLineCalc.getFightPoint().getX() - self.getX(), myLineCalc.getFightPoint().getY() - self.getY()) > 500. &&
 						myLineCalc.getDistanceTo(self) > Constants.getTopLine().getLineDistance()) {
 					currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
-					Constants.POSITION_MOVE_LINE.updatePointToMove(myLineCalc.getPreFightPoint());
+					PositionMoveLine.INSTANCE.updatePointToMove(myLineCalc.getPreFightPoint());
 				} else {
 					moveToLineActivated = false;
 				}
 			}
 
 			if (currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION) {
-				myLineCalc = Constants.POSITION_MOVE_LINE;
+				myLineCalc = PositionMoveLine.INSTANCE;
 				direction = myLineCalc.getMoveDirection(self);
 
 				filteredWorld = Utils.filterWorld(world,

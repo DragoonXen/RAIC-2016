@@ -10,6 +10,8 @@ public class PositionMoveLine extends BaseLine {
 	private Point positionToMove;
 	private double minDistanceTo;
 
+	public final static PositionMoveLine INSTANCE = new PositionMoveLine();
+
 	public PositionMoveLine() {
 		this.minDistanceTo = 0.;
 		this.positionToMove = new Point();
