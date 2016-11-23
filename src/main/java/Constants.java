@@ -62,6 +62,13 @@ public abstract class Constants {
 
     public static double EXPERIENCE_DISTANCE = 600.;
 
+    public static double MAX_WIZARDS_FORWARD_SPEED = 6.;
+    public static double BONUS_POSSIBILITY_RUN = .7;
+    public static double TICKS_BUFFER_RUN_TO_BONUS = 1.2;
+    public static double NEAREST_TO_BONUS_CALCULATION_OTHER_MULT = .8;
+
+    public static double PRE_POINT_DISTANCE = 500.;
+
     public static double MOVE_DISTANCE_FILTER = Math.sqrt((MOVE_BACK_DISTANCE + MOVE_FWD_DISTANCE) * (MOVE_BACK_DISTANCE + MOVE_FWD_DISTANCE) / 4. + MOVE_SIDE_DISTANCE * MOVE_SIDE_DISTANCE);
 
     public static int TREES_COUNT_TO_CUT = 6;
@@ -144,7 +151,10 @@ public abstract class Constants {
     }
 
     public final static int minionLineScore = 5;
-    public final static int wizardLineScore = 200;
-    public final static int towerLineScore = 15;
+    public final static int enemyWizardLineScore = 25;
+    public final static double wizardLineMult = .5;
+    public final static int towerLineScore = 20;
+
+    public final static double CURRENT_LINE_PRIORITY = 1.2;
 
 }

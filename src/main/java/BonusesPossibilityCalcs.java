@@ -60,7 +60,7 @@ public class BonusesPossibilityCalcs {
 						break;
 					}
 				} else {
-					double walkDistance = Constants.getGame().getWizardForwardSpeed() * 1.5 * (world.getTickIndex() - wizardPhantom.getLastSeenTick());
+					double walkDistance = Constants.MAX_WIZARDS_FORWARD_SPEED * (world.getTickIndex() - wizardPhantom.getLastSeenTick());
 					if (walkDistance >= distanceToBonus) {
 						walkDistance = distanceToBonus / 12.;
 						walkDistance = Math.pow(0.5, 1 / walkDistance);

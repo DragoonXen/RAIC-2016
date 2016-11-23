@@ -4,11 +4,9 @@
 public class CurrentAction {
 
 	private CurrentAction.ActionType actionType;
-	private Point movePoint;
 
 	public CurrentAction() {
 		actionType = ActionType.FIGHT;
-		movePoint = new Point(100, 100);
 	}
 
 	public ActionType getActionType() {
@@ -17,14 +15,6 @@ public class CurrentAction {
 
 	public void setActionType(ActionType actionType) {
 		this.actionType = actionType;
-	}
-
-	public void setMovePoint(double x, double y) {
-		this.movePoint.update(x, y);
-	}
-
-	public Point getMovePoint() {
-		return movePoint;
 	}
 
 	public enum ActionType {
@@ -40,7 +30,13 @@ public class CurrentAction {
 	public CurrentAction clone() {
 		CurrentAction instance = new CurrentAction();
 		instance.actionType = actionType;
-		instance.setMovePoint(movePoint.getX(), movePoint.getY());
 		return instance;
+	}
+
+	@Override
+	public String toString() {
+		return "CurrentAction{" +
+				"actionType=" + actionType +
+				'}';
 	}
 }

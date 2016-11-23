@@ -6,6 +6,8 @@ public class Point {
 	protected double x;
 	protected double y;
 
+	public final static Point EMPTY_POINT = new Point();
+
 	public Point() {
 	}
 
@@ -25,6 +27,10 @@ public class Point {
 	public void update(double x, double y) {
 		this.x = x;
 		this.y = y;
+	}
+
+	public void update(Point point) {
+		update(point.getX(), point.getY());
 	}
 
 	public double scalarMult(Point other) {

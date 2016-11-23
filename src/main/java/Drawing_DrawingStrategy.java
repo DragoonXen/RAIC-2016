@@ -82,25 +82,41 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	private Drawing_DrawingData applyData(Drawing_DrawingData dataToApply, boolean receiveCurrent) {
 		Drawing_DrawingData storedData = null;
 		if (receiveCurrent) {
-			storedData = new Drawing_DrawingData(self,
-												 world,
-												 this.myLine,
-												 castRange,
-												 currentAction,
-												 projectilesDTL,
-												 enemyPositionCalc,
-												 bonusesPossibilityCalcs);
+			storedData = getCurrentData();
 		}
 		Drawing_DrawingData currentDrawingData = dataToApply.clone();
 		this.self = currentDrawingData.getSelf();
 		this.currentAction = currentDrawingData.getCurrentAction();
 		this.castRange = currentDrawingData.getMaxCastRange();
-		this.myLine = currentDrawingData.getMyLine();
 		this.world = currentDrawingData.getWorld();
 		this.projectilesDTL = currentDrawingData.getProjectilesDTL();
 		this.enemyPositionCalc = currentDrawingData.getEnemyPositionCalc();
 		this.bonusesPossibilityCalcs = currentDrawingData.getBonusesPossibilityCalcs();
+		this.myLineCalc = currentDrawingData.getCurrentCalcLine();
+		this.lastFightLine = currentDrawingData.getLastFightLine();
+		this.goToBonusActivated = currentDrawingData.isGoToBonusActivated();
+		this.moveToLineActivated = currentDrawingData.isMoveToLineActivated();
+		Constants.POSITION_MOVE_LINE.updatePointToMove(currentDrawingData.getMoveToLinePoint());
+		for (int i = 0; i != Constants.getLines().length; ++i) {
+			Constants.getLines()[i].fightPoint.update(currentDrawingData.getLinesFightPoints()[i]);
+		}
 		return storedData;
+	}
+
+	public Drawing_DrawingData getCurrentData() {
+		return new Drawing_DrawingData(self,
+									   world,
+									   castRange,
+									   currentAction,
+									   projectilesDTL,
+									   enemyPositionCalc,
+									   bonusesPossibilityCalcs,
+									   goToBonusActivated,
+									   moveToLineActivated,
+									   lastFightLine,
+									   myLineCalc,
+									   Constants.POSITION_MOVE_LINE.getPositionToMove().clonePoint(),
+									   new Point[]{Constants.getLines()[0].fightPoint, Constants.getLines()[1].fightPoint, Constants.getLines()[2].fightPoint});
 	}
 
     @Override
@@ -115,14 +131,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			while (drawingDataList.size() < world.getTickIndex()) {
 				drawingDataList.add(null);
 			}
-			drawingDataList.add(new Drawing_DrawingData(self,
-														world,
-														this.myLine,
-														castRange,
-														currentAction,
-														projectilesDTL,
-														enemyPositionCalc,
-														bonusesPossibilityCalcs));
+			drawingDataList.add(getCurrentData());
 			mainFrame.getSlider().setMaximum(Math.max(world.getTickIndex(), mainFrame.getSlider().getMaximum()));
 			move(self, world, game, move, false);
 		}
@@ -210,8 +219,9 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
     private void move(Wizard self, World world, Game game, Move move, boolean draw) {
         this.draw = draw;
         if (draw) {
-            drawData(drawingDataList.get(world.getTickIndex()));
-            TopLine topLine = Constants.getTopLine();
+			drawPanel.clear();
+			drawData(self, world);
+			TopLine topLine = Constants.getTopLine();
             mainFrame.getDrawPanel().addFigure(new Drawing_Line(0,
                                                                 topLine.getLineDistance(),
                                                                 game.getMapSize(),
@@ -266,6 +276,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 
 		if (draw) {
 			drawUpdatedData(self);
+			mainFrame.repaint();
 		}
 	}
 
@@ -373,6 +384,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 											FastMath.hypot(self.getSpeedX(), self.getSpeedY())),
 							  7);
 
+		textInfoPanel.putText(String.format("To bonus: %s, To line: %s", goToBonusActivated, moveToLineActivated), 8);
+
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			Point selfPoint = scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y];
 			if (maxAngle - minAngle > Constants.MOVE_ANGLE_PRECISE) {
@@ -413,6 +426,13 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			}
 		}
 
+		for (BaseLine baseLine : Constants.getLines()) {
+			drawCross(baseLine.getFightPoint(), 50., Color.BLUE);
+		}
+
+		for (BaseLine baseLine : Constants.getLines()) {
+			drawCross(baseLine.getPreFightPoint(), 50., Color.BLACK);
+		}
 	}
 
 	private void drawLine(Point pointA, Point pointB, Color color) {
@@ -485,12 +505,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
 	}
 
-	private void drawData(Drawing_DrawingData drawingData) {
-		Wizard self = drawingData.getSelf();
-		World world = drawingData.getWorld();
-
-        Drawing_DrawPanel drawPanel = mainFrame.getDrawPanel();
-        drawPanel.clear();
+	private void drawData(Wizard self, World world) {
 		// paint FOW
 		double[] x = new double[]{0, 0, Constants.getGame().getMapSize(), Constants.getGame().getMapSize()};
 		double[] y = new double[]{0, Constants.getGame().getMapSize(), Constants.getGame().getMapSize(), 0};
@@ -564,8 +579,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 											   self.getCastRange(),
 											   false,
 											   Color.blue));
-
-		mainFrame.repaint();
 	}
 
     private Color getHpColor(int currLife, int maxLife) {

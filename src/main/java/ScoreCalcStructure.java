@@ -90,6 +90,23 @@ public class ScoreCalcStructure {
 		}
 	};
 
+	public final static ScoreItem OTHER_BONUS_APPLYER = new ScoreItem() {
+
+		@Override
+		public void applyScore(ScanMatrixItem item) {
+			item.addExpBonus(this.score);
+		}
+	};
+
+	public final static ScoreItem OTHER_DANGER_APPLYER = new ScoreItem() {
+
+		@Override
+		public void applyScore(ScanMatrixItem item) {
+			item.addExpBonus(this.score);
+		}
+	};
+
+
 	public abstract static class ScoreItem {
 		private double distance;
 

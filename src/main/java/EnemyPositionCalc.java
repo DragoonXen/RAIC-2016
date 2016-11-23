@@ -201,6 +201,10 @@ public class EnemyPositionCalc {
 		return buildingPhantoms;
 	}
 
+	public int[] getMinionsOnLine() {
+		return minionsOnLine;
+	}
+
 	public EnemyPositionCalc clone() {
 		return new EnemyPositionCalc(detectedMinions, detectedWizards, minionsOnLine, buildingPhantoms, deadEnemyWizards, lastBornTime);
 	}

@@ -1,4 +1,3 @@
-import model.LaneType;
 import model.Wizard;
 import model.World;
 
@@ -12,29 +11,52 @@ public class Drawing_DrawingData {
 
     private Wizard self;
     private World world;
-    private LaneType myLine;
     private double[] maxCastRange;
     private CurrentAction currentAction;
     private TreeMap<Long, Double> projectilesDTL;
     private EnemyPositionCalc enemyPositionCalc;
     private BonusesPossibilityCalcs bonusesPossibilityCalcs;
 
+    private boolean goToBonusActivated;
+    private boolean moveToLineActivated;
+    private BaseLine lastFightLine;
+    private BaseLine currentCalcLine;
+
+    private Point moveToLinePoint;
+    private Point[] linesFightPoints;
+
     public Drawing_DrawingData(Wizard self,
                                World world,
-                               LaneType myLine,
                                double[] maxCastRange,
                                CurrentAction currentAction,
                                TreeMap<Long, Double> projectilesDT,
                                EnemyPositionCalc enemyPositionCalc,
-                               BonusesPossibilityCalcs bonusesPossibilityCalcs) {
+                               BonusesPossibilityCalcs bonusesPossibilityCalcs,
+                               boolean goToBonusActivated,
+                               boolean moveToLineActivated,
+                               BaseLine lastFightLine,
+                               BaseLine currentCalcLine,
+                               Point moveToLinePoint,
+                               Point[] linesFightPoints) {
         this.self = self;
         this.world = world;
-        this.myLine = myLine;
         this.maxCastRange = Arrays.copyOf(maxCastRange, maxCastRange.length);
         this.currentAction = currentAction.clone();
         this.projectilesDTL = new TreeMap<>(projectilesDT);
         this.enemyPositionCalc = enemyPositionCalc.clone();
         this.bonusesPossibilityCalcs = bonusesPossibilityCalcs.clone();
+        this.goToBonusActivated = goToBonusActivated;
+        this.moveToLineActivated = moveToLineActivated;
+        this.lastFightLine = lastFightLine;
+
+        this.moveToLinePoint = moveToLinePoint.clonePoint();
+        this.linesFightPoints = new Point[linesFightPoints.length];
+        this.currentCalcLine = currentCalcLine;
+        for (int i = 0; i != linesFightPoints.length; ++i) {
+            if (linesFightPoints[i] != null) {
+                this.linesFightPoints[i] = linesFightPoints[i].clonePoint();
+            }
+        }
     }
 
     public Wizard getSelf() {
@@ -43,10 +65,6 @@ public class Drawing_DrawingData {
 
     public World getWorld() {
         return world;
-    }
-
-    public LaneType getMyLine() {
-        return myLine;
     }
 
     public double[] getMaxCastRange() {
@@ -69,7 +87,54 @@ public class Drawing_DrawingData {
         return bonusesPossibilityCalcs;
     }
 
+    public boolean isGoToBonusActivated() {
+        return goToBonusActivated;
+    }
+
+    public boolean isMoveToLineActivated() {
+        return moveToLineActivated;
+    }
+
+    public BaseLine getLastFightLine() {
+        return lastFightLine;
+    }
+
+    public BaseLine getCurrentCalcLine() {
+        return currentCalcLine;
+    }
+
+    public Point getMoveToLinePoint() {
+        return moveToLinePoint;
+    }
+
+    public Point[] getLinesFightPoints() {
+        return linesFightPoints;
+    }
+
     public Drawing_DrawingData clone() {
-        return new Drawing_DrawingData(self, world, myLine, maxCastRange, currentAction, projectilesDTL, enemyPositionCalc, bonusesPossibilityCalcs);
+        return new Drawing_DrawingData(self,
+                                       world,
+                                       maxCastRange,
+                                       currentAction,
+                                       projectilesDTL,
+                                       enemyPositionCalc,
+                                       bonusesPossibilityCalcs,
+                                       goToBonusActivated,
+                                       moveToLineActivated,
+                                       lastFightLine,
+                                       currentCalcLine,
+                                       moveToLinePoint,
+                                       linesFightPoints);
+    }
+
+    @Override
+    public String toString() {
+        return "Drawing_DrawingData{" +
+                String.format("self=(%s, %s)", self.getX(), self.getY()) +
+                ", " + String.format("world= (tick: %d)", world.getTickIndex()) +
+                ", currentAction=" + currentAction +
+                ", goToBonusActivated=" + goToBonusActivated +
+                ", moveToLineActivated=" + moveToLineActivated +
+                '}';
     }
 }

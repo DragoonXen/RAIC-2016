@@ -1,10 +1,9 @@
 import model.ActionType;
+import model.Bonus;
 import model.Building;
-import model.BuildingType;
 import model.CircularUnit;
 import model.Faction;
 import model.Game;
-import model.LaneType;
 import model.LivingUnit;
 import model.Minion;
 import model.MinionType;
@@ -18,7 +17,6 @@ import model.World;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +28,11 @@ import java.util.TreeMap;
  */
 public class StrategyImplement {
 
-	protected int[] score = new int[3];
-
 	protected World world;
 	protected Wizard self;
 
-	protected LaneType myLine;
 	protected BaseLine myLineCalc;
+	protected BaseLine lastFightLine;
 	protected double direction;
 
 	protected FilteredWorld filteredWorld;
@@ -76,6 +72,8 @@ public class StrategyImplement {
 	protected BonusesPossibilityCalcs bonusesPossibilityCalcs = new BonusesPossibilityCalcs();
 
 	protected boolean treeCut;
+	protected boolean goToBonusActivated = false;
+	protected boolean moveToLineActivated = false;
 
 	public void move(Wizard self, World world, Game game, Move move) {
 		enemyPositionCalc.updatePositions(world);
@@ -96,26 +94,23 @@ public class StrategyImplement {
 		SpawnPoint.updateTick(world.getTickIndex());
 		updateCastRange(world.getWizards());
 
+		for (BaseLine baseLine : Constants.getLines()) {
+			baseLine.updateFightPoint(world, enemyPositionCalc);
+		}
+
 		switch (world.getTickIndex()) {
 			case 0:
-				myLine = Utils.getDefaultMyLine((int) self.getId());
+				myLineCalc = Constants.getLine(Utils.getDefaultMyLine((int) self.getId()));
+				lastFightLine = myLineCalc;
 				break;
 		}
 
-		if (world.getTickIndex() > lastTick + 1) { //I'm was dead
-			calcLinesScore();
-			int currentLine = 0;
-			if (score[1] > score[currentLine]) {
-				currentLine = 1;
-			}
-			if (score[2] > score[currentLine]) {
-				currentLine = 2;
-			}
-			myLine = Constants.WHICH_LINE_NO[currentLine];
+		if (world.getTickIndex() > lastTick + 1195) { //I'm was dead
+			myLineCalc = Utils.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
+			lastFightLine = myLineCalc;
 		}
 		lastTick = world.getTickIndex();
 
-		myLineCalc = Constants.getLine(myLine);
 		direction = myLineCalc.getMoveDirection(self);
 
 		filteredWorld = Utils.filterWorld(world,
@@ -128,28 +123,83 @@ public class StrategyImplement {
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
 		evade(move, checkHitByProjectilePossible());
 
-//		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
-//			int ticksToBonusSpawn = Utils.getTicksToBonusSpawn(world.getTickCount());
-//			double distanceToBonusA = FastMath.hypot(self.getX() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getX(),
-//													 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getY());
-//			double distanceToBonusB = FastMath.hypot(self.getX() - BonusesPossibilityCalcs.BONUSES_POINTS[1].getX(),
-//													 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[1].getY());
-//
-//			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
-//			Constants.POSITION_MOVE_LINE.updatePointToMove(currentAction.getMovePoint());
-//			myLineCalc = Constants.POSITION_MOVE_LINE;
-//			if (FastMath.hypot(self.getX() - Constants.POSITION_MOVE_LINE.getPositionToMove().getX(),
-//							   self.getY() - Constants.POSITION_MOVE_LINE.getPositionToMove().getY()) < Constants.getGame().getBonusRadius()) {
-//
-//				currentAction.setMovePoint(1100, 1100);
-//			}
-//			direction = myLineCalc.getMoveDirection(self);
-//
-//			filteredWorld = Utils.filterWorld(world,
-//											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
-//														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
-//											  enemyPositionCalc.getBuildingPhantoms());
-//		}
+		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
+			if (goToBonusActivated) {
+				if (Constants.POSITION_MOVE_LINE.getPositionToMove().getX() > 2000) {
+					if (bonusesPossibilityCalcs.getScore()[1] < .1 || !isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[1], false)) {
+						goToBonusActivated = false;
+						moveToLineActivated = true;
+					}
+				} else {
+					if (bonusesPossibilityCalcs.getScore()[0] < .1 || !isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[0], false)) {
+						goToBonusActivated = false;
+						moveToLineActivated = true;
+					}
+				}
+			}
+
+			if (!goToBonusActivated) {
+				int ticksToBonusSpawn = Utils.getTicksToBonusSpawn(world.getTickIndex());
+				double distanceToBonusA = FastMath.hypot(self.getX() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getX(),
+														 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getY()) -
+						self.getRadius() -
+						game.getBonusRadius();
+				double ticksRunToBonusA = distanceToBonusA / (Constants.getGame().getWizardForwardSpeed() * Variables.moveFactor) *
+						Constants.TICKS_BUFFER_RUN_TO_BONUS;
+				if (ticksRunToBonusA < 400. &&
+						(ticksRunToBonusA >= ticksToBonusSpawn || bonusesPossibilityCalcs.getScore()[0] > Constants.BONUS_POSSIBILITY_RUN) &&
+						isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[0], true)) { // goto bonus 1
+					goToBonusActivated = true;
+					moveToLineActivated = false;
+					currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+					Constants.POSITION_MOVE_LINE.updatePointToMove(BonusesPossibilityCalcs.BONUSES_POINTS[0]);
+				}
+
+				double distanceToBonusB = FastMath.hypot(self.getX() - BonusesPossibilityCalcs.BONUSES_POINTS[1].getX(),
+														 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[1].getY()) -
+						self.getRadius() -
+						game.getBonusRadius();
+				double ticksRunToBonusB = distanceToBonusB / (Constants.getGame().getWizardForwardSpeed() * Variables.moveFactor) *
+						Constants.TICKS_BUFFER_RUN_TO_BONUS;
+
+				if (ticksRunToBonusB < 400. &&
+						(ticksRunToBonusB >= ticksToBonusSpawn || bonusesPossibilityCalcs.getScore()[1] > Constants.BONUS_POSSIBILITY_RUN) &&
+						isMeNearestWizard(BonusesPossibilityCalcs.BONUSES_POINTS[1], true)) { // goto bonus 1
+					goToBonusActivated = true;
+					moveToLineActivated = false;
+					if (!(currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION && ticksRunToBonusA < ticksRunToBonusB)) {
+						Constants.POSITION_MOVE_LINE.updatePointToMove(BonusesPossibilityCalcs.BONUSES_POINTS[1]);
+					}
+					currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+				}
+			}
+
+			if (goToBonusActivated) {
+				currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+			}
+
+			if (moveToLineActivated) {
+				myLineCalc = Utils.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
+				lastFightLine = myLineCalc;
+				if (FastMath.hypot(myLineCalc.getFightPoint().getX() - self.getX(), myLineCalc.getFightPoint().getY() - self.getY()) > 500. &&
+						myLineCalc.getDistanceTo(self) > Constants.getTopLine().getLineDistance()) {
+					currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+					Constants.POSITION_MOVE_LINE.updatePointToMove(myLineCalc.getPreFightPoint());
+				} else {
+					moveToLineActivated = false;
+				}
+			}
+
+			if (currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION) {
+				myLineCalc = Constants.POSITION_MOVE_LINE;
+				direction = myLineCalc.getMoveDirection(self);
+
+				filteredWorld = Utils.filterWorld(world,
+												  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
+															self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
+												  enemyPositionCalc.getBuildingPhantoms());
+			}
+		}
 
 		if (currentAction.getActionType().moveCalc) {
 			enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||
@@ -708,7 +758,7 @@ public class StrategyImplement {
 		double acc = Math.cos(angle) * distance;
 		double fwdLimit = (acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed()) * moveFactor;
 
-		double fix = Math.hypot(acc / fwdLimit, strafe / Constants.getGame().getWizardStrafeSpeed() * moveFactor);
+		double fix = Math.hypot(acc / fwdLimit, strafe / (Constants.getGame().getWizardStrafeSpeed() * moveFactor));
 		if (fix > 1.) {
 			return new AccAndSpeedWithFix(acc / fix, strafe / fix, fix);
 		} else {
@@ -859,9 +909,41 @@ public class StrategyImplement {
 				}
 
 				if (currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION) {
-					item.setOtherBonus(item.getForwardDistanceDivision() * 17.5); //up to 2
+					item.setOtherBonus(item.getForwardDistanceDivision() * 70); //up to 2
 				} else if (!enemyFound) {
 					item.setOtherBonus(item.getForwardDistanceDivision() * .0001);
+				}
+			}
+		}
+
+		ScoreCalcStructure structure = new ScoreCalcStructure();
+
+		for (Bonus bonus : filteredWorld.getBonuses()) {
+			structure.clear();
+
+			ScoreCalcStructure.OTHER_BONUS_APPLYER.setScore(200.);
+			ScoreCalcStructure.OTHER_BONUS_APPLYER.setDistance(self.getRadius() + bonus.getRadius());
+			structure.putItem(ScoreCalcStructure.OTHER_BONUS_APPLYER);
+
+			for (int i = 0; i != scan_matrix.length; ++i) {
+				applyScoreForLine(scan_matrix[i], structure, new Point(bonus.getX(), bonus.getY()));
+			}
+		}
+
+		if (Utils.getTicksToBonusSpawn(world.getTickIndex()) < 250) {
+			for (Point bonusesPoint : BonusesPossibilityCalcs.BONUSES_POINTS) {
+				structure.clear();
+
+				ScoreCalcStructure.OTHER_DANGER_APPLYER.setScore(200.);
+				ScoreCalcStructure.OTHER_DANGER_APPLYER.setDistance(self.getRadius() + game.getBonusRadius() + .1);
+				structure.putItem(ScoreCalcStructure.OTHER_BONUS_APPLYER);
+
+				ScoreCalcStructure.OTHER_BONUS_APPLYER.setScore((250 - Utils.getTicksToBonusSpawn(world.getTickIndex())) * .75);
+				ScoreCalcStructure.OTHER_BONUS_APPLYER.setDistance(self.getRadius() + game.getBonusRadius() +
+																		   Constants.getGame().getWizardBackwardSpeed() * Variables.moveFactor);
+				structure.putItem(ScoreCalcStructure.OTHER_BONUS_APPLYER);
+				for (int i = 0; i != scan_matrix.length; ++i) {
+					applyScoreForLine(scan_matrix[i], structure, bonusesPoint);
 				}
 			}
 		}
@@ -873,8 +955,7 @@ public class StrategyImplement {
 		if (Utils.wizardHasStatus(self, StatusType.EMPOWERED)) {
 			myDamage *= 2;
 		}
-		double shieldBonus = Utils.wizardHasStatus(self, StatusType.SHIELDED) ? Constants.getGame().getShieldedDirectDamageAbsorptionFactor() : 1.;
-		ScoreCalcStructure structure = new ScoreCalcStructure();
+		double shieldBonus = Utils.wizardHasStatus(self, StatusType.SHIELDED) ? (1. - Constants.getGame().getShieldedDirectDamageAbsorptionFactor()) : 1.;
 
 		ScoreCalcStructure.EXP_BONUS_APPLYER.setDistance(Constants.EXPERIENCE_DISTANCE);
 
@@ -912,7 +993,7 @@ public class StrategyImplement {
 			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
 
 			for (int i = 0; i != scan_matrix.length; ++i) {
-				applyScoreForLine(scan_matrix[i], structure, minion);
+				applyScoreForLine(scan_matrix[i], structure, new Point(minion.getX(), minion.getY()));
 			}
 		}
 
@@ -951,7 +1032,7 @@ public class StrategyImplement {
 //			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
 //
 			for (int i = 0; i != scan_matrix.length; ++i) {
-				applyScoreForLine(scan_matrix[i], structure, wizard);
+				applyScoreForLine(scan_matrix[i], structure, new Point(wizard.getX(), wizard.getY()));
 			}
 		}
 
@@ -980,13 +1061,13 @@ public class StrategyImplement {
 			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
 
 			for (int i = 0; i != scan_matrix.length; ++i) {
-				applyScoreForLine(scan_matrix[i], structure, building);
+				applyScoreForLine(scan_matrix[i], structure, new Point(building.getX(), building.getY()));
 			}
 		}
 	}
 
-	public void applyScoreForLine(ScanMatrixItem[] items, ScoreCalcStructure structure, CircularUnit unit) {
-		double distance = Utils.distancePointToSegment(new Point(unit.getX(), unit.getY()), items[0], items[items.length - 1]);
+	public void applyScoreForLine(ScanMatrixItem[] items, ScoreCalcStructure structure, Point point) {
+		double distance = Utils.distancePointToSegment(point, items[0], items[items.length - 1]);
 		if (distance > structure.getMaxScoreDistance()) {
 			return;
 		}
@@ -995,49 +1076,35 @@ public class StrategyImplement {
 			if (!items[i].isAvailable()) {
 				continue;
 			}
-			itemDistance = FastMath.hypot(items[i].getX() - unit.getX(), items[i].getY() - unit.getY());
+			itemDistance = FastMath.hypot(items[i].getX() - point.getX(), items[i].getY() - point.getY());
 			if (itemDistance <= structure.getMaxScoreDistance()) {
 				structure.applyScores(items[i], itemDistance);
 			}
 		}
 	}
 
-	public int getIntDistanceFromForwardPoint(int x, int y) {
-		return scan_matrix.length - 1 - x + Math.abs(y - Constants.CURRENT_PT_Y);
-	}
-
-	private void calcLinesScore() {
-		Arrays.fill(score, 0);
-
-		for (Minion minion : world.getMinions()) {
-			int line = Utils.whichLine(minion);
-			if (minion.getFaction() == Constants.getCurrentFaction()) {
-				score[line] -= Constants.minionLineScore;
-			} else if (minion.getFaction() == Constants.getEnemyFaction()) {
-				score[line] += Constants.minionLineScore;
+	public boolean isMeNearestWizard(Point point, boolean includeEnemies) {
+		double distanceToMe = FastMath.hypot(self.getX() - point.getX(), self.getY() - point.getY()) * Constants.NEAREST_TO_BONUS_CALCULATION_OTHER_MULT;
+		if (includeEnemies) {
+			for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
+				double distance = FastMath.hypot(phantom.getPosition().getX() - point.getX(), phantom.getPosition().getY() - point.getY());
+				if (!phantom.isUpdated()) {
+					distance -= (world.getTickIndex() - phantom.getLastSeenTick()) * Constants.MAX_WIZARDS_FORWARD_SPEED;
+				}
+				if (distanceToMe > distance) {
+					return false;
+				}
 			}
 		}
 
 		for (Wizard wizard : world.getWizards()) {
-			if (wizard.getId() == self.getId()) {
+			if (wizard.getFaction() != Constants.getCurrentFaction()) {
 				continue;
 			}
-			int line = Utils.whichLine(wizard);
-			if (wizard.getFaction() == Constants.getCurrentFaction()) {
-				score[line] -= Constants.wizardLineScore;
-			} else if (wizard.getFaction() == Constants.getEnemyFaction()) {
-				score[line] += Constants.wizardLineScore;
+			if (FastMath.hypot(wizard.getX() - point.getX(), wizard.getY() - point.getY()) < distanceToMe) {
+				return false;
 			}
 		}
-
-		// towers get only negative score
-		for (Building building : world.getBuildings()) {
-			if (building.getType() == BuildingType.FACTION_BASE ||
-					building.getFaction() != Constants.getCurrentFaction()) {
-				continue;
-			}
-			int line = Utils.whichLine(building);
-			score[line] -= Constants.towerLineScore;
-		}
+		return true;
 	}
 }

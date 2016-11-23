@@ -1,4 +1,5 @@
 import model.Building;
+import model.BuildingType;
 import model.CircularUnit;
 import model.Faction;
 import model.LaneType;
@@ -804,6 +805,63 @@ public class Utils {
 	}
 
 	public static int getTicksToBonusSpawn(int tickNo) {
-		return (tickNo - 1) - (tickNo - 1) % 2500;
+		if (tickNo > 17501) {
+			return 20000;
+		}
+		return 2500 - (tickNo - 1) % 2500;
+	}
+
+	private static int score[] = new int[3];
+
+	public static BaseLine fightLineSelect(BaseLine previousLine, World world, EnemyPositionCalc enemyPositionCalc, Wizard self) {
+		for (int i = 0; i != 3; ++i) {
+			int currScore = enemyPositionCalc.getMinionsOnLine()[i];
+			if (currScore < 4) {
+				score[i] = Constants.minionLineScore * 4;
+			} else {
+				score[i] = Constants.minionLineScore * currScore;
+			}
+		}
+
+		for (Building building : world.getBuildings()) {
+			if (building.getType() == BuildingType.FACTION_BASE ||
+					building.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+			int line = Utils.whichLine(building);
+			score[line] -= Constants.towerLineScore;
+		}
+		for (BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
+			score[Utils.whichLine(buildingPhantom)] += Constants.towerLineScore;
+		}
+
+		for (WizardPhantom wizard : enemyPositionCalc.getDetectedWizards().values()) {
+			int line = Utils.whichLine(wizard);
+			score[line] += Constants.enemyWizardLineScore;
+		}
+
+		for (Wizard wizard : world.getWizards()) {
+			if (wizard.isMe() || wizard.getFaction() == Constants.getEnemyFaction()) {
+				continue;
+			}
+			int line = Utils.whichLine(wizard);
+			if (wizard.getFaction() == Constants.getCurrentFaction()) {
+				score[line] *= Constants.wizardLineMult;
+			}
+		}
+		int maxValue = 0;
+		for (int i = 0; i != 3; ++i) {
+			double distancePenalty = FastMath.hypot(self.getX() - Constants.getLines()[i].getPreFightPoint().getX(),
+													self.getY() - Constants.getLines()[i].getPreFightPoint().getY());
+			distancePenalty = 1 / Math.max(1, distancePenalty / 700);
+			score[i] *= distancePenalty;
+			if (Constants.getLines()[i] == previousLine) {
+				score[i] *= Constants.CURRENT_LINE_PRIORITY;
+			}
+			if (score[maxValue] < score[i]) {
+				maxValue = i;
+			}
+		}
+		return Constants.getLines()[maxValue];
 	}
 }

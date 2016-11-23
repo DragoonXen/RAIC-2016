@@ -124,7 +124,7 @@ public class WizardPhantom extends Wizard {
 
 	public void reborn(int tick) {
 		this.position.update(getX(), getY());
-		this.lastSeenTick = tick - 100;
+		this.lastSeenTick = tick - 10;
 	}
 
 	public WizardPhantom clone() {

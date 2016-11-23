@@ -1,4 +1,5 @@
 import model.Unit;
+import model.World;
 
 /**
  * Created by by.dragoon on 11/8/16.
@@ -11,12 +12,20 @@ public class MiddleLine extends BaseLine {
 
 	private double sqrtOfTwo = 1. / Math.sqrt(2.); //ax + by + c = 0, a=1, b=1, c = -centerLine
 
+	private Point[] segmentPoints = new Point[]{new Point(0, 4000), new Point(4000, 0)};
+
 	public MiddleLine() {
 		centerLine = Constants.getGame().getMapSize();
+		fightPoint.update(2000, 2000);
 	}
 
 	public double getCenterLine() {
 		return centerLine;
+	}
+
+	@Override
+	public Point getNearestPoint(double x, double y) {
+		return Utils.nearestSegmentPoint(new Point(x, y), segmentPoints[0], segmentPoints[1]);
 	}
 
 	@Override
@@ -31,5 +40,29 @@ public class MiddleLine extends BaseLine {
 
 	public double getMoveDirection(Unit unit) {
 		return moveDirection;
+	}
+
+	@Override
+	public double getMoveDirection(Point point) {
+		return moveDirection;
+	}
+
+	@Override
+	public void updateFightPoint(World world, EnemyPositionCalc enemyPositionCalc) {
+		double minDistance = 1e6;
+		MinionPhantom closestMinionPhantom = null;
+		for (MinionPhantom minionPhantom : enemyPositionCalc.getDetectedMinions().values()) {
+			if (minionPhantom.getLine() != 1) {
+				continue;
+			}
+			double tmp = FastMath.hypot(minionPhantom.getPosition().getX(), 4000 - minionPhantom.getPosition().getY());
+			if (tmp < minDistance) {
+				minDistance = tmp;
+				closestMinionPhantom = minionPhantom;
+			}
+		}
+		if (closestMinionPhantom != null) {
+			fightPoint.update(getNearestPoint(closestMinionPhantom.getPosition().getX(), closestMinionPhantom.getPosition().getY()));
+		}
 	}
 }
