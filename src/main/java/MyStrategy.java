@@ -26,7 +26,7 @@ public final class MyStrategy implements Strategy {
         try {
             if (Constants.getGame() == null) {
                 Constants.init(game, self);
-                strategy = draw ? new Drawing_DrawingStrategy() : new StrategyImplement();
+                strategy = draw ? new Drawing_DrawingStrategy(self) : new StrategyImplement(self);
             }
             strategy.move(self, world, game, move);
         } catch (Throwable e) {

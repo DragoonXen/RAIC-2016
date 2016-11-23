@@ -44,7 +44,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 
 	private final static Color FOUND_DISTANCE_COLOR = new Color(100, 0, 0);
 
-    public Drawing_DrawingStrategy() {
+	public Drawing_DrawingStrategy(Wizard self) {
+		super(self);
 		drawingDataList = Collections.synchronizedList(new ArrayList<>());
 		Drawing_DrawingStrategy.instance = this;
     }

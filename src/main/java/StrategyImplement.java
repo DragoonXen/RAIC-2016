@@ -75,7 +75,7 @@ public class StrategyImplement {
 	protected boolean goToBonusActivated = false;
 	protected boolean moveToLineActivated = false;
 
-	public StrategyImplement() {
+	public StrategyImplement(Wizard self) {
 		myLineCalc = Constants.getLine(Utils.getDefaultMyLine((int) self.getId()));
 		lastFightLine = myLineCalc;
 	}
