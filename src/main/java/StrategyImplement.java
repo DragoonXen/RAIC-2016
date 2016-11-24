@@ -290,13 +290,12 @@ public class StrategyImplement {
 		for (Projectile projectile : projectiles) {
 			if (projectilesDTL.containsKey(projectile.getId())) {
 				projectilesDTL.put(projectile.getId(),
-								   projectilesDTL.get(projectile.getId()) - Utils.getProjectileSpeed(projectile));
-				continue;
+								   projectilesDTL.get(projectile.getId()) - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()]);
 			}
 			long castUnit = projectile.getOwnerUnitId();
 			double castRange = castUnit <= 10 ?
-					this.castRange[(int) castUnit] - Utils.getProjectileSpeed(projectile)
-					: Constants.getGame().getFetishBlowdartAttackRange() - Utils.getProjectileSpeed(projectile);
+					this.castRange[(int) castUnit] - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()]
+					: Constants.getGame().getFetishBlowdartAttackRange() - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()];
 			projectilesDTL.put(projectile.getId(), castRange);
 		}
 	}

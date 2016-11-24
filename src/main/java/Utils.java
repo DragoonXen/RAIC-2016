@@ -650,19 +650,11 @@ public class Utils {
 		return response;
 	}
 
-	public static double getProjectileSpeed(Projectile projectile) {
-		switch (projectile.getType()) {
-			case MAGIC_MISSILE:
-				return Constants.getGame().getMagicMissileSpeed();
-			case FROST_BOLT:
-				return Constants.getGame().getFrostBoltSpeed();
-			case FIREBALL:
-				return Constants.getGame().getFireballSpeed();
-			case DART:
-				return Constants.getGame().getDartSpeed();
-		}
-		return 0.;
-	}
+	public final static double[] PROJECTIVE_SPEED = new double[]
+			{Constants.getGame().getMagicMissileSpeed(),
+					Constants.getGame().getFrostBoltSpeed(),
+					Constants.getGame().getFireballSpeed(),
+					Constants.getGame().getDartSpeed()};
 
 	public static int getProjectileDamage(Projectile projectile) {
 		return getProjectileDamage(projectile.getType());
@@ -708,7 +700,7 @@ public class Utils {
 				projectileVector.fixVectorLength(next.getValue());
 				remove = true;
 			} else {
-				next.setValue(next.getValue() - Utils.getProjectileSpeed(next.getKey()));
+				next.setValue(next.getValue() - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()]);
 			}
 			projectileVector.add(startProjectilePoint);
 			if (Utils.distancePointToSegment(point, startProjectilePoint, projectileVector) < projectile.getRadius() + selfRadius + .001) {
