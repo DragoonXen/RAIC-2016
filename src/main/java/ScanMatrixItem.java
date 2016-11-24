@@ -193,8 +193,8 @@ public class ScanMatrixItem extends Point {
 		return wayPoint;
 	}
 
-	public void setOtherBonus(double otherBonus) {
-		this.otherBonus = otherBonus;
+	public void addOtherBonus(double otherBonus) {
+		this.otherBonus += otherBonus;
 	}
 
 	public int getI() {

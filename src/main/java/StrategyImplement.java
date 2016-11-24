@@ -202,6 +202,30 @@ public class StrategyImplement {
 															self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
 												  enemyPositionCalc.getBuildingPhantoms());
 			}
+
+			if (goToBonusActivated && FastMath.hypot(self, PositionMoveLine.INSTANCE.getPositionToMove()) <= self.getRadius() +
+					game.getBonusRadius() +
+					game.getWizardForwardSpeed() * Variables.moveFactor) {
+				boolean bonusOnPlace = bonusesPossibilityCalcs.getScore()[PositionMoveLine.INSTANCE.getPositionToMove().getX() > 2000 ? 1 : 0] > .9;
+				if (!bonusOnPlace) {
+					Point movePoint = PositionMoveLine.INSTANCE.getPositionToMove().negateCopy(self);
+					movePoint.update(-movePoint.getX(), -movePoint.getY());
+					currentAction.setActionType(CurrentAction.ActionType.EVADE_PROJECTILE);
+					double needDistance = game.getBonusRadius() + self.getRadius() - .5;
+					if (ticksToBonusSpawn < 2) {
+						needDistance += 1;
+					}
+					movePoint.fixVectorLength(needDistance);
+					movePoint.add(PositionMoveLine.INSTANCE.getPositionToMove());
+					AccAndSpeedWithFix accAndSpeedByAngle = getAccAndSpeedByAngle(Utils.normalizeAngle(self.getAngleTo(movePoint.getX(),
+																													   movePoint.getY()) - self.getAngle()),
+																				  self.getDistanceTo(movePoint.getX(), movePoint.getY()),
+																				  Variables.moveFactor);
+					move.setSpeed(accAndSpeedByAngle.getSpeed());
+					move.setStrafeSpeed(accAndSpeedByAngle.getStrafe());
+					moveToPoint = movePoint;
+				}
+			}
 		}
 
 		if (currentAction.getActionType().moveCalc) {
@@ -912,9 +936,11 @@ public class StrategyImplement {
 				}
 
 				if (currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION) {
-					item.setOtherBonus(item.getForwardDistanceDivision() * 70); //up to 2
+					if (FastMath.hypot(self.getX() - myLineCalc.getFightPoint().getX(), self.getY() - myLineCalc.getFightPoint().getY()) > 200) {
+						item.addOtherBonus(item.getForwardDistanceDivision() * 70);
+					}
 				} else if (!enemyFound) {
-					item.setOtherBonus(item.getForwardDistanceDivision() * .0001);
+					item.addOtherBonus(item.getForwardDistanceDivision() * .0001);
 				}
 			}
 		}

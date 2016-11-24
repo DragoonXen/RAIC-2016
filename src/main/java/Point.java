@@ -1,3 +1,5 @@
+import model.Unit;
+
 /**
  * Created by dragoon on 11/10/16.
  */
@@ -56,6 +58,10 @@ public class Point {
 
 	public double segmentNorm(Point other) {
 		return negateCopy(other).vectorNorm();
+	}
+
+	public Point negateCopy(Unit other) {
+		return new Point(x - other.getX(), y - other.getY());
 	}
 
 	public Point negateCopy(Point other) {

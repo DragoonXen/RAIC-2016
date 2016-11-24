@@ -102,7 +102,7 @@ public class ScoreCalcStructure {
 
 		@Override
 		public void applyScore(ScanMatrixItem item) {
-			item.addExpBonus(this.score);
+			item.addOtherBonus(this.score);
 		}
 	};
 
@@ -110,7 +110,7 @@ public class ScoreCalcStructure {
 
 		@Override
 		public void applyScore(ScanMatrixItem item) {
-			item.addExpBonus(this.score);
+			item.addOtherDanger(this.score);
 		}
 	};
 

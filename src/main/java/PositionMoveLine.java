@@ -61,6 +61,7 @@ public class PositionMoveLine extends BaseLine {
 	@Override
 	public void updateFightPoint(World world, EnemyPositionCalc enemyPositionCalc) {
 		// nothing to do
+		this.fightPoint.update(positionToMove);
 	}
 
 	@Override
