@@ -1,3 +1,4 @@
+import model.Bonus;
 import model.Building;
 import model.BuildingType;
 import model.CircularUnit;
@@ -305,11 +306,11 @@ public class Utils {
 		}
 	}
 
-	public static void calcTileScore(ScanMatrixItem item, FilteredWorld filteredWorld, BaseLine myLineCalc, Wizard self) {
-		calcTileScore(item, filteredWorld, myLineCalc, self, 0L);
-	}
-
-	public static void calcTileScore(ScanMatrixItem item, FilteredWorld filteredWorld, BaseLine myLineCalc, Wizard self, long addTicks) {
+	public static void calcTileScore(ScanMatrixItem item,
+									 FilteredWorld filteredWorld,
+									 BaseLine myLineCalc,
+									 Wizard self,
+									 UnitScoreCalculation unitScoreCalculation) {
 		item.setAvailable(Utils.isAvailableTile(filteredWorld.getAllBlocksList(), item.getX(), item.getY()));
 		if (!item.isAvailable()) {
 			return;
@@ -318,136 +319,71 @@ public class Utils {
 		if (distanceTo > 0.) {
 			item.addOtherDanger(distanceTo);
 		}
-		double myDamage = 12.;
-		if (Utils.wizardStatusTicks(self, StatusType.EMPOWERED) >= addTicks) {
-			myDamage *= Constants.getGame().getEmpoweredDamageFactor();
-		}
-		double shieldBonus = Utils.wizardStatusTicks(self, StatusType.SHIELDED) >= addTicks ?
-				(1. - Constants.getGame().getShieldedDirectDamageAbsorptionFactor()) :
-				1.;
-		ScoreCalcStructure structure = new ScoreCalcStructure();
-		for (Minion minion : filteredWorld.getMinions()) {
-			if (minion.getFaction() != Constants.getEnemyFaction() &&
-					(minion.getFaction() != Faction.NEUTRAL || minion.getLife() >= minion.getMaxLife())) {
+
+		for (Bonus bonus : filteredWorld.getBonuses()) {
+			if (FastMath.hypot(self, bonus) > Constants.getFightDistanceFilter()) {
 				continue;
 			}
-			structure.clear();
-			double expBonus = ScanMatrixItem.calcExpBonus(minion.getLife(), minion.getMaxLife(), 1.);
-			double movePenalty = Constants.getGame().getMinionSpeed() * addTicks;
-			if (expBonus > 0.) {
-				ScoreCalcStructure.EXP_BONUS_APPLYER.setDistance(Constants.EXPERIENCE_DISTANCE - movePenalty);
-				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
-				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
-			}
-			switch (minion.getType()) {
-				case ORC_WOODCUTTER:
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(minion.getDamage() * shieldBonus);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Constants.getGame().getOrcWoodcutterAttackRange() +
-																				 self.getRadius() +
-																				 Constants.getGame().getMinionSpeed() +
-																				 movePenalty +
-																				 1);
-					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
-					break;
-				case FETISH_BLOWDART:
-					// TODO: add cooldown measure
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(Constants.getGame().getDartDirectDamage() * shieldBonus);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Constants.getGame().getFetishBlowdartAttackRange() +
-																				 Constants.getGame().getMinionSpeed() +
-																				 movePenalty);
-					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
-					break;
-			}
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange() - movePenalty);
-			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
+			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(bonus.getId());
+			structure.applyScores(item, FastMath.hypot(bonus, item));
+		}
 
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + minion.getRadius() - movePenalty);
-			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
-			structure.applyScores(item, FastMath.hypot(minion.getX() - item.getX(), minion.getY() - item.getY()));
+		if (Utils.getTicksToBonusSpawn(filteredWorld.getTickIndex()) < 250) {
+			for (int i = 0; i != BonusesPossibilityCalcs.BONUSES_POINTS.length; ++i) {
+				if (FastMath.hypot(self, BonusesPossibilityCalcs.BONUSES_POINTS[i]) > Constants.getFightDistanceFilter()) {
+					continue;
+				}
+				ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(i - 5);
+				structure.applyScores(item, FastMath.hypot(BonusesPossibilityCalcs.BONUSES_POINTS[i], item));
+			}
+		}
+
+		for (Minion minion : filteredWorld.getMinions()) {
+			if (minion.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
+			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(minion.getId());
+			structure.applyScores(item, FastMath.hypot(minion, item));
 		}
 
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				continue;
 			}
-			structure.clear();
-			double movePenalty = Constants.getGame().getWizardForwardSpeed() * addTicks;
-			double expBonus = ScanMatrixItem.calcExpBonus(wizard.getLife(), wizard.getMaxLife(), 4.);
-			if (expBonus > 0.) {
-				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
-				ScoreCalcStructure.EXP_BONUS_APPLYER.setDistance(Constants.EXPERIENCE_DISTANCE - movePenalty);
-				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
-			}
-			double wizardDamage = 12.;
-			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
-				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();
-			}
-			if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() +
-																					self.getRadius() +
-																					Constants.getGame().getWizardForwardSpeed() * 2 +
-																					movePenalty);
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(wizardDamage * 3. * shieldBonus);
-			} else {
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(
-						wizard.getCastRange() +
-								Constants.getGame().getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() + 4 + addTicks) +
-								movePenalty);
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(wizardDamage * shieldBonus);
-			}
 
-			structure.putItem(ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER);
-
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange() - movePenalty);
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage);
-			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
-
-//			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage - movePenalty);
-//			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
-//			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
-
-			structure.applyScores(item, FastMath.hypot(wizard.getX() - item.getX(), wizard.getY() - item.getY()));
+			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(wizard.getId());
+			structure.applyScores(item, FastMath.hypot(wizard, item));
 		}
 
 		for (Building building : filteredWorld.getBuildings()) {
 			if (building.getFaction() == Constants.getCurrentFaction()) {
 				continue;
 			}
-			structure.clear();
-			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 1.);
-			if (expBonus > 0.) {
-				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
-				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
-			}
 
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage);
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange() + building.getRadius());
-			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
-
-			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER.setScore(building.getDamage() * shieldBonus);
-			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER
-					.setDistance(building.getAttackRange() + Math.min(2, -building.getRemainingActionCooldownTicks() + 4 + addTicks) * 1.5);
-			structure.putItem(ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER);
-
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + building.getRadius());
-			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
-
+			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(building.getId());
 			structure.applyScores(item, FastMath.hypot(building.getX() - item.getX(), building.getY() - item.getY()));
 		}
 	}
 
-	public static boolean hasEnemy(LivingUnit[] units) {
+	public static boolean hasEnemy(Minion[] units, AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
 		for (LivingUnit unit : units) {
 			if (unit.getFaction() == Constants.getEnemyFaction() ||
-					unit.getFaction() == Constants.getEnemyFaction() && unit.getLife() < unit.getMaxLife()) {
+					unit.getFaction() == Faction.NEUTRAL && agressiveNeutralsCalcs.isMinionAgressive(unit.getId())) {
 				return true;
 			}
 		}
 		return false;
 	}
+
+	public static boolean hasEnemy(LivingUnit[] units) {
+		for (LivingUnit unit : units) {
+			if (unit.getFaction() == Constants.getEnemyFaction()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 
 	public static boolean wizardHasStatus(Wizard wizard, StatusType statusType) {
 		for (Status status : wizard.getStatuses()) {
@@ -656,22 +592,18 @@ public class Utils {
 					Constants.getGame().getFireballSpeed(),
 					Constants.getGame().getDartSpeed()};
 
+	public final static int[] PROJECTIVE_DAMAGE = new int[]
+			{Constants.getGame().getMagicMissileDirectDamage(),
+					Constants.getGame().getFrostBoltDirectDamage(),
+					Constants.getGame().getFireballExplosionMaxDamage(),
+					Constants.getGame().getDartDirectDamage()};
+
 	public static int getProjectileDamage(Projectile projectile) {
 		return getProjectileDamage(projectile.getType());
 	}
 
 	public static int getProjectileDamage(ProjectileType projectileType) {
-		switch (projectileType) {
-			case MAGIC_MISSILE:
-				return Constants.getGame().getMagicMissileDirectDamage();
-			case FROST_BOLT:
-				return Constants.getGame().getFrostBoltDirectDamage();
-			case FIREBALL:
-				return Constants.getGame().getFireballExplosionMaxDamage();
-			case DART:
-				return Constants.getGame().getDartDirectDamage();
-		}
-		return 0;
+		return PROJECTIVE_DAMAGE[projectileType.ordinal()];
 	}
 
 	public static double getSelfProjectileDamage(ProjectileType projectileType) {
@@ -686,7 +618,7 @@ public class Utils {
 		}
 	}
 
-	public static double checkProjectiveCollistion(Point point, int ticks) {
+	public static double checkProjectiveCollision(Point point, int ticks) {
 		double selfRadius = Variables.self.getRadius();
 		double damage = 0.;
 		Iterator<AbstractMap.SimpleEntry<Projectile, Double>> iterator = Variables.projectilesSim.iterator();

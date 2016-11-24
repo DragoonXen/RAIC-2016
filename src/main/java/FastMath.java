@@ -5,8 +5,16 @@ import model.Unit;
  */
 public class FastMath {
 
+	public static double hypot(Unit unit, Unit pt) {
+		return hypot(unit.getX() - pt.getX(), unit.getY() - pt.getY());
+	}
+
 	public static double hypot(Unit unit, Point pt) {
 		return hypot(unit.getX() - pt.getX(), unit.getY() - pt.getY());
+	}
+
+	public static double hypot(Point pt1, Point pt2) {
+		return hypot(pt1.getX() - pt2.getX(), pt1.getY() - pt2.getY());
 	}
 
 	public static double hypot(Unit unit, double x, double y) {

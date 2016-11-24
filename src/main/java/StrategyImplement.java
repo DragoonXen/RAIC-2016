@@ -71,7 +71,8 @@ public class StrategyImplement {
 
 	protected BonusesPossibilityCalcs bonusesPossibilityCalcs = new BonusesPossibilityCalcs();
 
-	protected AgressiveNeutralsCalcs agressiveCalcs = new AgressiveNeutralsCalcs();
+	protected AgressiveNeutralsCalcs agressiveNeutralsCalcs = new AgressiveNeutralsCalcs();
+	protected UnitScoreCalculation unitScoreCalculation = new UnitScoreCalculation();
 
 	protected boolean treeCut;
 	protected boolean goToBonusActivated = false;
@@ -83,7 +84,7 @@ public class StrategyImplement {
 	}
 
 	public void move(Wizard self, World world, Game game, Move move) {
-		agressiveCalcs.updateMap(world);
+		agressiveNeutralsCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
 		enemyFound = false;
@@ -121,6 +122,10 @@ public class StrategyImplement {
 
 		Utils.calcCurrentSkillBonuses(self, filteredWorld);
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
+		enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
+				Utils.hasEnemy(filteredWorld.getWizards()) ||
+				Utils.hasEnemy(filteredWorld.getBuildings());
+		unitScoreCalculation.updateScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs);
 		evade(move, checkHitByProjectilePossible());
 
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
@@ -204,6 +209,10 @@ public class StrategyImplement {
 												  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 															self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
 												  enemyPositionCalc.getBuildingPhantoms());
+				enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
+						Utils.hasEnemy(filteredWorld.getWizards()) ||
+						Utils.hasEnemy(filteredWorld.getBuildings());
+				unitScoreCalculation.updateScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs);
 			}
 
 			if (goToBonusActivated && FastMath.hypot(self, PositionMoveLine.INSTANCE.getPositionToMove()) <= self.getRadius() +
@@ -231,11 +240,7 @@ public class StrategyImplement {
 		}
 
 		if (currentAction.getActionType().moveCalc) {
-			enemyFound = Utils.hasEnemy(filteredWorld.getMinions()) ||
-					Utils.hasEnemy(filteredWorld.getWizards()) ||
-					Utils.hasEnemy(filteredWorld.getBuildings());
-
-			calcMatrixDanger(game);
+			calcMatrixDanger();
 			findAWay();
 			if (!wayPoints.isEmpty()) {
 				int lastPointGoTo = 1;
@@ -331,14 +336,19 @@ public class StrategyImplement {
 		Point position = new Point(self.getX(), self.getY());
 		Point bestPosition = position;
 
+		UnitScoreCalculationTickSupport unitScoreCalculationTickSupport = new UnitScoreCalculationTickSupport(unitScoreCalculation);
 		Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
 		int ticks = 0;
 		while (!Variables.projectilesSim.isEmpty()) {
 			testScanItem.setPoint(self.getX(), self.getY());
-			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, ticks);
+			Utils.calcTileScore(testScanItem,
+								filteredWorld,
+								myLineCalc,
+								self,
+								unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks));
 			bestScore = testScanItem.getTotalScore(self);
 			bestDangerOnWay += testScanItem.getAllDangers();
-			bestDamage += Utils.checkProjectiveCollistion(position, ticks++);
+			bestDamage += Utils.checkProjectiveCollision(position, ticks++);
 		}
 
 		double currScore;
@@ -369,7 +379,11 @@ public class StrategyImplement {
 						moveVector.fixVectorLength((moveFactor - Constants.getGame().getHastenedMovementBonusFactor()) * Constants.getGame().getWizardStrafeSpeed());
 					}
 					testScanItem.setPoint(position.getX(), position.getY());
-					Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, ticks);
+					Utils.calcTileScore(testScanItem,
+										filteredWorld,
+										myLineCalc,
+										self,
+										unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks));
 					if (!testScanItem.isAvailable()) {
 						stuck = true;
 						position.negate(moveVector);
@@ -379,7 +393,7 @@ public class StrategyImplement {
 						currDangerOnWay += testScanItem.getAllDangers();
 					}
 				}
-				currDamage += Utils.checkProjectiveCollistion(position, ticks++);
+				currDamage += Utils.checkProjectiveCollision(position, ticks++);
 			}
 			if (bestDamage < currDamage) {
 				continue;
@@ -429,14 +443,18 @@ public class StrategyImplement {
 						currMoveFactor -= Constants.getGame().getHastenedMovementBonusFactor();
 					}
 					testScanItem.setPoint(position.getX(), position.getY());
-					Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, ticks);
+					Utils.calcTileScore(testScanItem,
+										filteredWorld,
+										myLineCalc,
+										self,
+										unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks));
 					if (testScanItem.isAvailable()) {
 						currScore = testScanItem.getTotalScore(self);
 						currDangerOnWay += testScanItem.getAllDangers();
 					} else {
 						position.negate(positionChange);
 					}
-					currDamage += Utils.checkProjectiveCollistion(position, ticks++);
+					currDamage += Utils.checkProjectiveCollision(position, ticks++);
 				}
 				if (bestDamage < currDamage || currDamage >= bestEvadeDamage) {
 					continue;
@@ -615,7 +633,7 @@ public class StrategyImplement {
 						Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), pointToReach) > 0; // one of them - tree
 		for (LivingUnit livingUnit : filteredWorld.getAimsList()) {
 			if (livingUnit.getFaction() != Constants.getEnemyFaction() &&
-					(livingUnit.getFaction() != Faction.NEUTRAL || !agressiveCalcs.isMinionAgressive(livingUnit.getId())) &&
+					(livingUnit.getFaction() != Faction.NEUTRAL || !agressiveNeutralsCalcs.isMinionAgressive(livingUnit.getId())) &&
 					livingUnit.getFaction() != Faction.OTHER) {
 				continue;
 			}
@@ -742,7 +760,7 @@ public class StrategyImplement {
 		if (Math.abs(Utils.normalizeAngle(maxAngle - minAngle)) > Constants.MOVE_ANGLE_PRECISE) {
 			changePosition = accAndStrafe.getCoordChange(self.getAngle());
 			testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
-			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self);
+			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation);
 
 			double bestDanger = testScanItem.getAllDangers();
 			double bestScore = testScanItem.getTotalScore(self);
@@ -756,7 +774,7 @@ public class StrategyImplement {
 				accAndStrafe = getAccAndSpeedByAngle(newAngle, 100.);
 				changePosition = accAndStrafe.getCoordChange(self.getAngle());
 				testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
-				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self);
+				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation);
 				if (!testScanItem.isAvailable() || bestDanger < testScanItem.getAllDangers() || run) {
 					continue;
 				}
@@ -907,7 +925,7 @@ public class StrategyImplement {
 		Collections.reverse(wayPoints);
 	}
 
-	private void calcMatrixDanger(Game game) {
+	private void calcMatrixDanger() {
 		double dxFwd = Math.cos(direction) * Constants.MOVE_SCAN_STEP;
 		double dyFwd = Math.sin(direction) * Constants.MOVE_SCAN_STEP;
 
@@ -948,17 +966,12 @@ public class StrategyImplement {
 			}
 		}
 
-		ScoreCalcStructure structure = new ScoreCalcStructure();
 
 		for (Bonus bonus : filteredWorld.getBonuses()) {
-			structure.clear();
 			if (FastMath.hypot(self.getX() - bonus.getX(), self.getY() - bonus.getY()) > Constants.getFightDistanceFilter()) {
 				continue;
 			}
-
-			ScoreCalcStructure.OTHER_BONUS_APPLYER.setScore(200.);
-			ScoreCalcStructure.OTHER_BONUS_APPLYER.setDistance(self.getRadius() + bonus.getRadius());
-			structure.putItem(ScoreCalcStructure.OTHER_BONUS_APPLYER);
+			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(bonus.getId());
 
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				applyScoreForLine(scan_matrix[i], structure, new Point(bonus.getX(), bonus.getY()));
@@ -966,22 +979,15 @@ public class StrategyImplement {
 		}
 
 		if (Utils.getTicksToBonusSpawn(world.getTickIndex()) < 250) {
-			for (Point bonusesPoint : BonusesPossibilityCalcs.BONUSES_POINTS) {
-				structure.clear();
-				if (FastMath.hypot(self.getX() - bonusesPoint.getX(), self.getY() - bonusesPoint.getY()) > Constants.getFightDistanceFilter()) {
+			for (int i = 0; i != BonusesPossibilityCalcs.BONUSES_POINTS.length; ++i) {
+				if (FastMath.hypot(self, BonusesPossibilityCalcs.BONUSES_POINTS[i]) > Constants.getFightDistanceFilter()) {
 					continue;
 				}
 
-				ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(100.);
-				ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(self.getRadius() + game.getBonusRadius() + .1);
-				structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
+				ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(i - 5);
 
-				ScoreCalcStructure.OTHER_BONUS_APPLYER.setScore((350 - Utils.getTicksToBonusSpawn(world.getTickIndex())) * .75);
-				ScoreCalcStructure.OTHER_BONUS_APPLYER.setDistance(self.getRadius() + game.getBonusRadius() +
-																		   Constants.getGame().getWizardBackwardSpeed() * Variables.moveFactor);
-				structure.putItem(ScoreCalcStructure.OTHER_BONUS_APPLYER);
-				for (int i = 0; i != scan_matrix.length; ++i) {
-					applyScoreForLine(scan_matrix[i], structure, bonusesPoint);
+				for (int j = 0; j != scan_matrix.length; ++j) {
+					applyScoreForLine(scan_matrix[j], structure, BonusesPossibilityCalcs.BONUSES_POINTS[i]);
 				}
 			}
 		}
@@ -989,50 +995,13 @@ public class StrategyImplement {
 		if (!enemyFound) {
 			return;
 		}
-		double myDamage = 12.;
-		if (Utils.wizardHasStatus(self, StatusType.EMPOWERED)) {
-			myDamage *= Constants.getGame().getEmpoweredDamageFactor();
-		}
-		double shieldBonus = Utils.wizardHasStatus(self, StatusType.SHIELDED) ? (1. - Constants.getGame().getShieldedDirectDamageAbsorptionFactor()) : 1.;
-
-		ScoreCalcStructure.EXP_BONUS_APPLYER.setDistance(Constants.EXPERIENCE_DISTANCE);
 
 		for (Minion minion : filteredWorld.getMinions()) {
-			if (minion.getFaction() != Constants.getEnemyFaction() &&
-					(minion.getFaction() != Faction.NEUTRAL || !agressiveCalcs.isMinionAgressive(minion.getId()))) {
+			if (minion.getFaction() == Constants.getCurrentFaction()) {
 				continue;
 			}
-			structure.clear();
-			double expBonus = ScanMatrixItem.calcExpBonus(minion.getLife(), minion.getMaxLife(), 1.);
-			if (expBonus > 0.) {
-				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
-				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
-			}
-			switch (minion.getType()) {
-				case ORC_WOODCUTTER:
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(minion.getDamage() * shieldBonus * .5);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Utils.cooldownDistanceCalculation(game.getOrcWoodcutterAttackRange() + self.getRadius(),
-																										   minion.getRemainingActionCooldownTicks()));
-					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
-					break;
-				case FETISH_BLOWDART:
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setScore(game.getDartDirectDamage() * shieldBonus * .5);
-					ScoreCalcStructure.MINION_DANGER_APPLYER.setDistance(Utils.cooldownDistanceCalculation(game.getFetishBlowdartAttackRange() + self.getRadius(),
-																										   minion.getRemainingActionCooldownTicks()));
-					structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER);
-					break;
-			}
-			ScoreCalcStructure.MINION_DANGER_APPLYER_SECOND.setScore(ScoreCalcStructure.MINION_DANGER_APPLYER.getScore());
-			ScoreCalcStructure.MINION_DANGER_APPLYER_SECOND.setDistance(Utils.getDistanceToNearestAlly(minion, filteredWorld, minion.getVisionRange()));
-			structure.putItem(ScoreCalcStructure.MINION_DANGER_APPLYER_SECOND);
 
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
-			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
-
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage * Constants.MINION_ATTACK_FACTOR);
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + minion.getRadius());
-			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(minion.getId());
 
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				applyScoreForLine(scan_matrix[i], structure, new Point(minion.getX(), minion.getY()));
@@ -1043,36 +1012,7 @@ public class StrategyImplement {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				continue;
 			}
-			structure.clear();
-			double expBonus = ScanMatrixItem.calcExpBonus(wizard.getLife(), wizard.getMaxLife(), 4.);
-			if (expBonus > 0.) {
-				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
-				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
-			}
-			double wizardDamage = 12.;
-			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
-				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();
-			}
-			if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(wizard.getCastRange() + self.getRadius() + game.getWizardForwardSpeed() * 2);
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(wizardDamage * 3. * shieldBonus);
-			} else {
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setDistance(
-						wizard.getCastRange() +
-								game.getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() + 4));
-				ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER.setScore(wizardDamage * shieldBonus);
-			}
-
-			structure.putItem(ScoreCalcStructure.WIZARDS_DANGER_BONUS_APPLYER);
-
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange());
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage);
-			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
-
-//			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
-//			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + wizard.getRadius());
-//			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
-//
+			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(wizard.getId());
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				applyScoreForLine(scan_matrix[i], structure, new Point(wizard.getX(), wizard.getY()));
 			}
@@ -1082,25 +1022,7 @@ public class StrategyImplement {
 			if (building.getFaction() == Constants.getCurrentFaction()) {
 				continue;
 			}
-			structure.clear();
-			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 1.);
-			if (expBonus > 0.) {
-				ScoreCalcStructure.EXP_BONUS_APPLYER.setScore(expBonus);
-				structure.putItem(ScoreCalcStructure.EXP_BONUS_APPLYER);
-			}
-
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setScore(myDamage);
-			ScoreCalcStructure.ATTACK_BONUS_APPLYER.setDistance(self.getCastRange() + building.getRadius());
-			structure.putItem(ScoreCalcStructure.ATTACK_BONUS_APPLYER);
-
-			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER.setScore(building.getDamage() * shieldBonus);
-			ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER
-					.setDistance(building.getAttackRange() + Math.min(2, -building.getRemainingActionCooldownTicks() + 4) * 1.5);
-			structure.putItem(ScoreCalcStructure.BUILDING_DANGER_BONUS_APPLYER);
-
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setScore(myDamage);
-			ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER.setDistance(Constants.getGame().getStaffRange() + building.getRadius());
-			structure.putItem(ScoreCalcStructure.MELEE_ATTACK_BONUS_APPLYER);
+			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(building.getId());
 
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				applyScoreForLine(scan_matrix[i], structure, new Point(building.getX(), building.getY()));

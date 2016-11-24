@@ -42,82 +42,91 @@ public class ScoreCalcStructure {
 		}
 	}
 
-	public final static ScoreItem EXP_BONUS_APPLYER = new ScoreItem(Constants.EXPERIENCE_DISTANCE) {
+	public static ScoreItem createExpBonusApplyer(double score) {
+		return new ScoreItem(Constants.EXPERIENCE_DISTANCE, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.addExpBonus(this.score);
+			}
+		};
+	}
 
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.addExpBonus(this.score);
-		}
-	};
+	public static ScoreItem createExpBonusApplyer(double distance, double score) {
+		return new ScoreItem(distance, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.addExpBonus(this.score);
+			}
+		};
+	}
 
-	public final static ScoreItem MINION_DANGER_APPLYER = new ScoreItem() {
+	public static ScoreItem createMinionDangerApplyer(double distance, double score) {
+		return new ScoreItem(distance, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.addMinionsDanger(this.score);
+			}
+		};
+	}
 
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.addMinionsDanger(this.score);
-		}
-	};
+	public static ScoreItem createAttackBonusApplyer(double distance, double score) {
+		return new ScoreItem(distance, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.putAttackBonus(this.score);
+			}
+		};
+	}
 
-	public final static ScoreItem MINION_DANGER_APPLYER_SECOND = new ScoreItem() {
+	public static ScoreItem createMeleeAttackBonusApplyer(double distance, double score) {
+		return new ScoreItem(distance, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.putMeleeAttackBonus(this.score);
+			}
+		};
+	}
 
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.addMinionsDanger(this.score);
-		}
-	};
+	public static ScoreItem createWizardsDangerApplyer(double distance, double score) {
+		return new ScoreItem(distance, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.addWizardsDanger(this.score);
+			}
+		};
+	}
 
-	public final static ScoreItem ATTACK_BONUS_APPLYER = new ScoreItem() {
+	public static ScoreItem createBuildingDangerApplyer(double distance, double score) {
+		return new ScoreItem(distance, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.addBuildingsDanger(this.score);
+			}
+		};
+	}
 
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.putAttackBonus(this.score);
-		}
-	};
+	public static ScoreItem createOtherBonusApplyer(double distance, double score) {
+		return new ScoreItem(distance, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.addOtherBonus(this.score);
+			}
+		};
+	}
 
-	public final static ScoreItem MELEE_ATTACK_BONUS_APPLYER = new ScoreItem() {
-
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.putMeleeAttackBonus(this.score);
-		}
-	};
-
-	public final static ScoreItem WIZARDS_DANGER_BONUS_APPLYER = new ScoreItem() {
-
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.addWizardsDanger(this.score);
-		}
-	};
-
-	public final static ScoreItem BUILDING_DANGER_BONUS_APPLYER = new ScoreItem() {
-
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.addBuildingsDanger(this.score);
-		}
-	};
-
-	public final static ScoreItem OTHER_BONUS_APPLYER = new ScoreItem() {
-
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.addOtherBonus(this.score);
-		}
-	};
-
-	public final static ScoreItem OTHER_DANGER_APPLYER = new ScoreItem() {
-
-		@Override
-		public void applyScore(ScanMatrixItem item) {
-			item.addOtherDanger(this.score);
-		}
-	};
+	public static ScoreItem createOtherDangerApplyer(double distance, double score) {
+		return new ScoreItem(distance, score) {
+			@Override
+			public void applyScore(ScanMatrixItem item) {
+				item.addOtherDanger(this.score);
+			}
+		};
+	}
 
 
 	public abstract static class ScoreItem {
-		private double distance;
 
+		private double distance;
 		protected double score;
 
 		public ScoreItem() {
@@ -125,6 +134,11 @@ public class ScoreCalcStructure {
 
 		public ScoreItem(double distance) {
 			this.distance = distance;
+		}
+
+		public ScoreItem(double distance, double score) {
+			this.distance = distance;
+			this.score = score;
 		}
 
 		public void setDistance(double distance) {
