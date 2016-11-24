@@ -902,4 +902,12 @@ public class Utils {
 		}
 		return false;
 	}
+
+	public static boolean isUnitActive(Minion previuosPosition, Minion newPosition) {
+		return previuosPosition.getX() != newPosition.getX() ||
+				previuosPosition.getY() != newPosition.getY() ||
+				previuosPosition.getAngle() != newPosition.getAngle() ||
+				newPosition.getLife() != newPosition.getMaxLife() ||
+				newPosition.getRemainingActionCooldownTicks() != 0;
+	}
 }

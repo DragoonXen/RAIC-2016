@@ -101,6 +101,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		for (int i = 0; i != Constants.getLines().length; ++i) {
 			Constants.getLines()[i].fightPoint.update(currentDrawingData.getLinesFightPoints()[i]);
 		}
+		this.agressiveCalcs = currentDrawingData.getAgressiveNeutralsCalcs();
 		return storedData;
 	}
 
@@ -117,7 +118,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   lastFightLine,
 									   myLineCalc,
 									   PositionMoveLine.INSTANCE.getPositionToMove().clonePoint(),
-									   new Point[]{Constants.getLines()[0].fightPoint, Constants.getLines()[1].fightPoint, Constants.getLines()[2].fightPoint});
+									   new Point[]{Constants.getLines()[0].fightPoint, Constants.getLines()[1].fightPoint, Constants.getLines()[2].fightPoint},
+									   agressiveCalcs);
 	}
 
     @Override

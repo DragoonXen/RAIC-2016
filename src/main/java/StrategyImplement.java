@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * Created by by.dragoon on 11/8/16.
@@ -72,7 +71,7 @@ public class StrategyImplement {
 
 	protected BonusesPossibilityCalcs bonusesPossibilityCalcs = new BonusesPossibilityCalcs();
 
-	protected TreeSet<Long> agressiveNeutrals = new TreeSet<>();
+	protected AgressiveNeutralsCalcs agressiveCalcs = new AgressiveNeutralsCalcs();
 
 	protected boolean treeCut;
 	protected boolean goToBonusActivated = false;
@@ -84,6 +83,7 @@ public class StrategyImplement {
 	}
 
 	public void move(Wizard self, World world, Game game, Move move) {
+		agressiveCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
 		enemyFound = false;
@@ -606,7 +606,8 @@ public class StrategyImplement {
 	private void findTargets() {
 		targets.clear();
 		double missileDamage = Utils.getSelfProjectileDamage(ProjectileType.MAGIC_MISSILE);
-		treeCut = myLineCalc == PositionMoveLine.INSTANCE ||
+		treeCut = (myLineCalc == PositionMoveLine.INSTANCE &&
+				Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), new Point(self.getX(), self.getY())) > 0) ||
 				Utils.unitsCountAtDistance(filteredWorld.getTrees(),
 											 self,
 											 Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
@@ -614,7 +615,7 @@ public class StrategyImplement {
 						Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), pointToReach) > 0; // one of them - tree
 		for (LivingUnit livingUnit : filteredWorld.getAimsList()) {
 			if (livingUnit.getFaction() != Constants.getEnemyFaction() &&
-					(livingUnit.getFaction() != Faction.NEUTRAL || livingUnit.getLife() >= livingUnit.getMaxLife()) &&
+					(livingUnit.getFaction() != Faction.NEUTRAL || !agressiveCalcs.isMinionAgressive(livingUnit.getId())) &&
 					livingUnit.getFaction() != Faction.OTHER) {
 				continue;
 			}
@@ -998,7 +999,7 @@ public class StrategyImplement {
 
 		for (Minion minion : filteredWorld.getMinions()) {
 			if (minion.getFaction() != Constants.getEnemyFaction() &&
-					(minion.getFaction() != Faction.NEUTRAL || minion.getLife() >= minion.getMaxLife())) {
+					(minion.getFaction() != Faction.NEUTRAL || !agressiveCalcs.isMinionAgressive(minion.getId()))) {
 				continue;
 			}
 			structure.clear();

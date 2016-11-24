@@ -16,6 +16,7 @@ public class Drawing_DrawingData {
     private TreeMap<Long, Double> projectilesDTL;
     private EnemyPositionCalc enemyPositionCalc;
     private BonusesPossibilityCalcs bonusesPossibilityCalcs;
+    private AgressiveNeutralsCalcs agressiveNeutralsCalcs;
 
     private boolean goToBonusActivated;
     private boolean moveToLineActivated;
@@ -37,7 +38,8 @@ public class Drawing_DrawingData {
                                BaseLine lastFightLine,
                                BaseLine currentCalcLine,
                                Point moveToLinePoint,
-                               Point[] linesFightPoints) {
+                               Point[] linesFightPoints,
+                               AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
         this.self = self;
         this.world = world;
         this.maxCastRange = Arrays.copyOf(maxCastRange, maxCastRange.length);
@@ -57,6 +59,7 @@ public class Drawing_DrawingData {
                 this.linesFightPoints[i] = linesFightPoints[i].clonePoint();
             }
         }
+        this.agressiveNeutralsCalcs = agressiveNeutralsCalcs.makeClone();
     }
 
     public Wizard getSelf() {
@@ -111,6 +114,10 @@ public class Drawing_DrawingData {
         return linesFightPoints;
     }
 
+    public AgressiveNeutralsCalcs getAgressiveNeutralsCalcs() {
+        return agressiveNeutralsCalcs;
+    }
+
     public Drawing_DrawingData clone() {
         return new Drawing_DrawingData(self,
                                        world,
@@ -124,7 +131,8 @@ public class Drawing_DrawingData {
                                        lastFightLine,
                                        currentCalcLine,
                                        moveToLinePoint,
-                                       linesFightPoints);
+                                       linesFightPoints,
+                                       agressiveNeutralsCalcs);
     }
 
     @Override
