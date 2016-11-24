@@ -205,7 +205,7 @@ public class StrategyImplement {
 
 			if (goToBonusActivated && FastMath.hypot(self, PositionMoveLine.INSTANCE.getPositionToMove()) <= self.getRadius() +
 					game.getBonusRadius() +
-					game.getWizardForwardSpeed() * Variables.moveFactor) {
+					game.getWizardForwardSpeed() * Variables.moveFactor + .1) {
 				boolean bonusOnPlace = bonusesPossibilityCalcs.getScore()[PositionMoveLine.INSTANCE.getPositionToMove().getX() > 2000 ? 1 : 0] > .9;
 				if (!bonusOnPlace) {
 					Point movePoint = PositionMoveLine.INSTANCE.getPositionToMove().negateCopy(self);
