@@ -135,11 +135,11 @@ public class EnemyPositionCalc {
 			}
 			double checkDistance = Constants.getGame().getWizardForwardSpeed() * 1.5 * (world.getTickIndex() - wizardPhantom.getLastSeenTick()) + 1.;
 
-			if (checkDistance < 600. && Utils.isUnitVisible(wizardPhantom.getPosition(),
-															checkDistance,
-															world.getWizards(),
-															world.getMinions(),
-															world.getBuildings())) {
+			if (checkDistance < 600. && Utils.isPositionVisible(wizardPhantom.getPosition(),
+																checkDistance,
+																world.getWizards(),
+																world.getMinions(),
+																world.getBuildings())) {
 				detectedWizards.remove(visibleId); // yay, dead!
 				deadEnemyWizards.add(wizardPhantom);
 			} else {
@@ -176,11 +176,11 @@ public class EnemyPositionCalc {
 				continue;
 			}
 			if (minionPhantom.getLastSeenTick() + Constants.ENEMY_MINIONS_LOST_TIME <= world.getTickIndex() ||
-					Utils.isUnitVisible(minionPhantom.getPosition(),
-										Constants.getGame().getMinionSpeed() * (world.getTickIndex() - minionPhantom.getLastSeenTick()) + .1,
-										world.getWizards(),
-										world.getMinions(),
-										world.getBuildings())) {
+					Utils.isPositionVisible(minionPhantom.getPosition(),
+											Constants.getGame().getMinionSpeed() * (world.getTickIndex() - minionPhantom.getLastSeenTick()) + .1,
+											world.getWizards(),
+											world.getMinions(),
+											world.getBuildings())) {
 				--minionsOnLine[minionPhantom.getLine()];
 				detectedMinions.remove(visibleId);
 			} else {

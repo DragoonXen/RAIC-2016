@@ -310,7 +310,8 @@ public class Utils {
 									 FilteredWorld filteredWorld,
 									 BaseLine myLineCalc,
 									 Wizard self,
-									 UnitScoreCalculation unitScoreCalculation) {
+									 UnitScoreCalculation unitScoreCalculation,
+									 boolean enemyFound) {
 		item.setAvailable(Utils.isAvailableTile(filteredWorld.getAllBlocksList(), item.getX(), item.getY()));
 		if (!item.isAvailable()) {
 			return;
@@ -336,6 +337,10 @@ public class Utils {
 				ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(i - 5);
 				structure.applyScores(item, FastMath.hypot(BonusesPossibilityCalcs.BONUSES_POINTS[i], item));
 			}
+		}
+
+		if (!enemyFound) {
+			return;
 		}
 
 		for (Minion minion : filteredWorld.getMinions()) {
@@ -563,7 +568,7 @@ public class Utils {
 				++hasBroken;
 				continue;
 			}
-			if (Utils.isUnitVisible(phantom.getPosition(), .1, world.getWizards(), world.getMinions(), null)) {
+			if (Utils.isPositionVisible(phantom.getPosition(), .1, world.getWizards(), world.getMinions(), null)) {
 				phantom.setBroken(true);
 				++hasBroken;
 			} else {
@@ -698,7 +703,7 @@ public class Utils {
 		return result;
 	}
 
-	public static boolean isUnitVisible(Point position, double additionalDistance, Wizard[] wizards, Minion[] minions, Building[] buildings) {
+	public static boolean isPositionVisible(Point position, double additionalDistance, Wizard[] wizards, Minion[] minions, Building[] buildings) {
 		for (Wizard unit : wizards) {
 			if (unit.getFaction() != Constants.getCurrentFaction()) {
 				continue;
@@ -813,6 +818,37 @@ public class Utils {
 			startDistance = Math.min(startDistance, FastMath.hypot(unit.getX() - livingUnit.getX(), unit.getY() - livingUnit.getY()));
 		}
 		return startDistance;
+	}
+
+	public static int getPrefferedUnitsCountInRange(Unit unit, FilteredWorld filteredWorld, double distance, int damage, int life) {
+		int cnt = 0;
+		for (LivingUnit livingUnit : filteredWorld.getMinions()) {
+			if (livingUnit.getFaction() != Constants.getCurrentFaction()) {
+				continue;
+			}
+
+			if (livingUnit.getLife() < damage || livingUnit.getLife() >= life) {
+				continue;
+			}
+
+			if (FastMath.hypot(unit, livingUnit) < distance) {
+				++cnt;
+			}
+		}
+		for (Wizard livingUnit : filteredWorld.getWizards()) {
+			if (livingUnit.getFaction() != Constants.getCurrentFaction() || livingUnit.isMe()) {
+				continue;
+			}
+
+			if (livingUnit.getLife() < damage || livingUnit.getLife() >= life) {
+				continue;
+			}
+
+			if (FastMath.hypot(unit, livingUnit) < distance) {
+				++cnt;
+			}
+		}
+		return cnt;
 	}
 
 	public static boolean hasAllyNearby(Unit unit, World filteredWorld, double checkDistance) {

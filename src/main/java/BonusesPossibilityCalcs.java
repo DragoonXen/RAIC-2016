@@ -43,7 +43,7 @@ public class BonusesPossibilityCalcs {
 			if (score[i] == 0.) {
 				continue;
 			}
-			if (Utils.isUnitVisible(BONUSES_POINTS[i], .1, world.getWizards(), world.getMinions(), null) && !visible[i]) {
+			if (Utils.isPositionVisible(BONUSES_POINTS[i], .1, world.getWizards(), world.getMinions(), null) && !visible[i]) {
 				score[i] = 0.;
 				continue;
 			}

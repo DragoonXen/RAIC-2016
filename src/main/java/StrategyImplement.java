@@ -345,7 +345,8 @@ public class StrategyImplement {
 								filteredWorld,
 								myLineCalc,
 								self,
-								unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks));
+								unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks),
+								enemyFound);
 			bestScore = testScanItem.getTotalScore(self);
 			bestDangerOnWay += testScanItem.getAllDangers();
 			bestDamage += Utils.checkProjectiveCollision(position, ticks++);
@@ -383,7 +384,8 @@ public class StrategyImplement {
 										filteredWorld,
 										myLineCalc,
 										self,
-										unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks));
+										unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks),
+										enemyFound);
 					if (!testScanItem.isAvailable()) {
 						stuck = true;
 						position.negate(moveVector);
@@ -447,7 +449,8 @@ public class StrategyImplement {
 										filteredWorld,
 										myLineCalc,
 										self,
-										unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks));
+										unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks),
+										enemyFound);
 					if (testScanItem.isAvailable()) {
 						currScore = testScanItem.getTotalScore(self);
 						currDangerOnWay += testScanItem.getAllDangers();
@@ -760,7 +763,7 @@ public class StrategyImplement {
 		if (Math.abs(Utils.normalizeAngle(maxAngle - minAngle)) > Constants.MOVE_ANGLE_PRECISE) {
 			changePosition = accAndStrafe.getCoordChange(self.getAngle());
 			testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
-			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation);
+			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, enemyFound);
 
 			double bestDanger = testScanItem.getAllDangers();
 			double bestScore = testScanItem.getTotalScore(self);
@@ -774,7 +777,7 @@ public class StrategyImplement {
 				accAndStrafe = getAccAndSpeedByAngle(newAngle, 100.);
 				changePosition = accAndStrafe.getCoordChange(self.getAngle());
 				testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
-				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation);
+				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, enemyFound);
 				if (!testScanItem.isAvailable() || bestDanger < testScanItem.getAllDangers() || run) {
 					continue;
 				}

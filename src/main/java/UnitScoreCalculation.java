@@ -97,17 +97,17 @@ public class UnitScoreCalculation {
 					break;
 			}
 
-			if (dynamicAgro) {
+			if (dynamicAgro) { // enemy and touched neutrals
 				structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(Utils.getDistanceToNearestAlly(minion,
 																											  filteredWorld,
 																											  minion.getVisionRange()) + .1,
 																			   damage));
+				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange(),
+																			  myDamage * Constants.MINION_ATTACK_FACTOR));
+				structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + minion.getRadius(),
+																				   Variables.staffDamage));
 			}
 
-			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange(),
-																		  myDamage * Constants.MINION_ATTACK_FACTOR));
-			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + minion.getRadius(),
-																			   Variables.staffDamage));
 			unitsScoreCalc.put(minion.getId(), structure);
 		}
 
@@ -149,11 +149,24 @@ public class UnitScoreCalculation {
 				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(expBonus));
 			}
 
+			int priorityAims = 0;
+			if (self.getLife() > building.getDamage()) {
+				priorityAims = Utils.getPrefferedUnitsCountInRange(building, filteredWorld, building.getAttackRange(), building.getDamage(), self.getLife());
+
+			}
+
+			if (priorityAims < 2) {
+				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(building.getAttackRange() + Math.min(2,
+																													  -building.getRemainingActionCooldownTicks() + 4) * 1.5,
+																				 building.getDamage() * shieldBonus));
+			} else if (priorityAims == 2) {
+				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer((building.getAttackRange() + Math.min(2,
+																													   -building.getRemainingActionCooldownTicks() + 4) * 1.5) * .5,
+																				 building.getDamage() * shieldBonus * .5));
+			}
+
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() + building.getRadius() + Constants.getGame().getMagicMissileRadius() - .1,
 																		  myDamage));
-			structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(building.getAttackRange() + Math.min(2,
-																												  -building.getRemainingActionCooldownTicks() + 4) * 1.5,
-																			 building.getDamage() * shieldBonus));
 			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + building.getRadius() - .1,
 																			   Variables.staffDamage));
 			unitsScoreCalc.put(building.getId(), structure);
