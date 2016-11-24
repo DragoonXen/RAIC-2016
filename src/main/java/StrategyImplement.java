@@ -604,7 +604,8 @@ public class StrategyImplement {
 	private void findTargets() {
 		targets.clear();
 		double missileDamage = Utils.getSelfProjectileDamage(ProjectileType.MAGIC_MISSILE);
-		treeCut = Utils.unitsCountAtDistance(filteredWorld.getTrees(),
+		treeCut = myLineCalc == PositionMoveLine.INSTANCE ||
+				Utils.unitsCountAtDistance(filteredWorld.getTrees(),
 											 self,
 											 Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
 				Utils.unitsCountCloseToDestination(filteredWorld.getAllBlocksList(), pointToReach) >= 2 && // can't go throught obstacles
