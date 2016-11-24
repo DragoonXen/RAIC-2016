@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Created by by.dragoon on 11/8/16.
@@ -70,6 +71,8 @@ public class StrategyImplement {
 	protected EnemyPositionCalc enemyPositionCalc = new EnemyPositionCalc();
 
 	protected BonusesPossibilityCalcs bonusesPossibilityCalcs = new BonusesPossibilityCalcs();
+
+	protected TreeSet<Long> agressiveNeutrals = new TreeSet<>();
 
 	protected boolean treeCut;
 	protected boolean goToBonusActivated = false;
@@ -217,8 +220,7 @@ public class StrategyImplement {
 					}
 					movePoint.fixVectorLength(needDistance);
 					movePoint.add(PositionMoveLine.INSTANCE.getPositionToMove());
-					AccAndSpeedWithFix accAndSpeedByAngle = getAccAndSpeedByAngle(Utils.normalizeAngle(self.getAngleTo(movePoint.getX(),
-																													   movePoint.getY()) - self.getAngle()),
+					AccAndSpeedWithFix accAndSpeedByAngle = getAccAndSpeedByAngle(Utils.normalizeAngle(self.getAngleTo(movePoint.getX(), movePoint.getY())),
 																				  self.getDistanceTo(movePoint.getX(), movePoint.getY()),
 																				  Variables.moveFactor);
 					move.setSpeed(accAndSpeedByAngle.getSpeed());
