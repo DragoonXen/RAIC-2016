@@ -241,6 +241,15 @@ public class StrategyImplement {
 
 		if (currentAction.getActionType().moveCalc) {
 			calcMatrixDanger();
+			Variables.maxDangerMatrixScore = Double.NEGATIVE_INFINITY;
+			for (int i = 0; i != scan_matrix.length; ++i) {
+				for (int j = 0; j != scan_matrix[0].length; ++j) {
+					if (!scan_matrix[i][j].isAvailable()) {
+						continue;
+					}
+					Variables.maxDangerMatrixScore = Math.max(scan_matrix[i][j].getTotalScore(self), Variables.maxDangerMatrixScore);
+				}
+			}
 			findAWay();
 			if (!wayPoints.isEmpty()) {
 				int lastPointGoTo = 1;
@@ -850,15 +859,15 @@ public class StrategyImplement {
 				}
 			}
 			if (testPointDirectAvailable(item)) {
-				wayPoints.add(new WayPoint(0, scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y], null));
-				wayPoints.add(new WayPoint(1, item, wayPoints.get(0)));
+				wayPoints.add(new WayPoint(1, scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y], null));
+				wayPoints.add(new WayPoint(2, item, wayPoints.get(0)));
 				return;
 			}
 		}
-		queue.add(new WayPoint(0, scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y], null));
+		queue.add(new WayPoint(1, scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y], null));
 		int nextDistanceFromStart;
+		double newScoresOnWay;
 		double newDangerOnWay;
-		double scoresOnWay;
 		while (!queue.isEmpty()) {
 			WayPoint currentPoint = queue.poll();
 			if (currentPoint.getPoint().getWayPoint() != currentPoint) {
@@ -874,18 +883,18 @@ public class StrategyImplement {
 					continue;
 				}
 				WayPoint wayPointToCompare = scanMatrixItem.getWayPoint();
-				newDangerOnWay = scanMatrixItem.getAllDangers() + currentPoint.getDangerOnWay();
+				newScoresOnWay = scanMatrixItem.getTotalScore(self) - Variables.maxDangerMatrixScore + currentPoint.getScoresOnWay();
 
-				if (newDangerOnWay == wayPointToCompare.getDangerOnWay()) {
+				if (newScoresOnWay == wayPointToCompare.getScoresOnWay()) {
 					if (wayPointToCompare.getDistanceFromStart() == nextDistanceFromStart) {
-						scoresOnWay = scanMatrixItem.getTotalScore(self) + currentPoint.getScoresOnWay();
-						if (scoresOnWay < wayPointToCompare.getScoresOnWay()) {
+						newDangerOnWay = scanMatrixItem.getAllDangers() + currentPoint.getDangerOnWay();
+						if (newDangerOnWay < wayPointToCompare.getDangerOnWay()) {
 							queue.add(new WayPoint(nextDistanceFromStart, scanMatrixItem, currentPoint));
 						}
 					} else if (nextDistanceFromStart < wayPointToCompare.getDistanceFromStart()) {
 						queue.add(new WayPoint(nextDistanceFromStart, scanMatrixItem, currentPoint));
 					}
-				} else if (newDangerOnWay < wayPointToCompare.getDangerOnWay()) {
+				} else if (newScoresOnWay > wayPointToCompare.getDangerOnWay()) {
 					queue.add(new WayPoint(nextDistanceFromStart, scanMatrixItem, currentPoint));
 				}
 			}
@@ -906,10 +915,13 @@ public class StrategyImplement {
 				}
 				if (best == null) {
 					best = newScanMatrixItem;
-					score = newScanMatrixItem.getTotalScore(self) - newScanMatrixItem.getWayPoint().getDangerOnWay() * .02;
+					score = newScanMatrixItem.getTotalScore(self) +
+							newScanMatrixItem.getWayPoint().getScoresOnWay() / newScanMatrixItem.getWayPoint().getDistanceFromStart() + Variables.maxDangerMatrixScore;
 					continue;
 				}
-				tmpScore = newScanMatrixItem.getTotalScore(self) - newScanMatrixItem.getWayPoint().getDangerOnWay() * .02;
+				tmpScore = newScanMatrixItem.getTotalScore(self) +
+						newScanMatrixItem.getWayPoint().getScoresOnWay() / newScanMatrixItem.getWayPoint().getDistanceFromStart()
+						+ Variables.maxDangerMatrixScore;
 				if (tmpScore > score) {
 					score = tmpScore;
 					best = newScanMatrixItem;

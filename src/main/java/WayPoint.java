@@ -16,7 +16,7 @@ public class WayPoint implements Comparable<WayPoint> {
 		this.distanceFromStart = distanceFromStart;
 		this.point = point;
 		this.prev = prev;
-		this.scoresOnWay = point.getTotalScore(Variables.self);
+		this.scoresOnWay = point.getTotalScore(Variables.self) - Variables.maxDangerMatrixScore;
 		this.dangerOnWay = point.getAllDangers();
 		if (prev != null) {
 			this.scoresOnWay += prev.scoresOnWay;
@@ -47,12 +47,12 @@ public class WayPoint implements Comparable<WayPoint> {
 
 	@Override
 	public int compareTo(WayPoint o) {
-		if (dangerOnWay != o.dangerOnWay) {
-			return Double.compare(dangerOnWay, o.dangerOnWay);
+		if (scoresOnWay != o.scoresOnWay) {
+			return Double.compare(o.scoresOnWay, scoresOnWay);
 		}
 		if (distanceFromStart != o.distanceFromStart) {
 			return Integer.compare(distanceFromStart, o.distanceFromStart);
 		}
-		return Double.compare(scoresOnWay, o.scoresOnWay);
+		return Double.compare(dangerOnWay, o.dangerOnWay);
 	}
 }

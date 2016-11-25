@@ -22,4 +22,6 @@ public class Variables {
 	public static List<AbstractMap.SimpleEntry<Projectile, Double>> projectilesSim = new LinkedList<>();
 
 	public static List<Long> projectiles = new ArrayList<>();
+
+	public static double maxDangerMatrixScore;
 }
