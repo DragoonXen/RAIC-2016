@@ -307,6 +307,7 @@ public class StrategyImplement {
 			if (projectilesDTL.containsKey(projectile.getId())) {
 				projectilesDTL.put(projectile.getId(),
 								   projectilesDTL.get(projectile.getId()) - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()]);
+				continue;
 			}
 			long castUnit = projectile.getOwnerUnitId();
 			double castRange = castUnit <= 10 ?
