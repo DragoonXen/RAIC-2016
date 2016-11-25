@@ -18,10 +18,10 @@ import model.World;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.TreeMap;
 
 /**
  * Created by by.dragoon on 11/8/16.
@@ -63,7 +63,7 @@ public class StrategyImplement {
 	protected double angle = 0.;
 	protected double targetAngle = 0.;
 
-	protected TreeMap<Long, Double> projectilesDTL = new TreeMap<>(); //store
+	protected HashMap<Long, Double> projectilesDTL = new HashMap<>(); //store
 	protected CurrentAction currentAction = new CurrentAction();
 	protected double[] castRange = new double[]{500., 500., 500., 500., 500., 500., 500., 500., 500., 500., 500.};
 

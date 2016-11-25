@@ -2,7 +2,8 @@ import model.Wizard;
 import model.World;
 
 import java.util.Arrays;
-import java.util.TreeMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by dragoon on 11/8/16.
@@ -13,8 +14,8 @@ public class Drawing_DrawingData {
     private World world;
     private double[] maxCastRange;
     private CurrentAction currentAction;
-    private TreeMap<Long, Double> projectilesDTL;
-    private EnemyPositionCalc enemyPositionCalc;
+	private HashMap<Long, Double> projectilesDTL;
+	private EnemyPositionCalc enemyPositionCalc;
     private BonusesPossibilityCalcs bonusesPossibilityCalcs;
     private AgressiveNeutralsCalcs agressiveNeutralsCalcs;
 
@@ -27,34 +28,37 @@ public class Drawing_DrawingData {
     private Point[] linesFightPoints;
 
     public Drawing_DrawingData(Wizard self,
-                               World world,
-                               double[] maxCastRange,
-                               CurrentAction currentAction,
-                               TreeMap<Long, Double> projectilesDT,
-                               EnemyPositionCalc enemyPositionCalc,
-                               BonusesPossibilityCalcs bonusesPossibilityCalcs,
-                               boolean goToBonusActivated,
-                               boolean moveToLineActivated,
-                               BaseLine lastFightLine,
-                               BaseLine currentCalcLine,
-                               Point moveToLinePoint,
-                               Point[] linesFightPoints,
-                               AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
+							   World world,
+							   double[] maxCastRange,
+							   CurrentAction currentAction,
+							   HashMap<Long, Double> projectilesDT,
+							   EnemyPositionCalc enemyPositionCalc,
+							   BonusesPossibilityCalcs bonusesPossibilityCalcs,
+							   boolean goToBonusActivated,
+							   boolean moveToLineActivated,
+							   BaseLine lastFightLine,
+							   BaseLine currentCalcLine,
+							   Point moveToLinePoint,
+							   Point[] linesFightPoints,
+							   AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
         this.self = self;
         this.world = world;
         this.maxCastRange = Arrays.copyOf(maxCastRange, maxCastRange.length);
         this.currentAction = currentAction.clone();
-        this.projectilesDTL = new TreeMap<>(projectilesDT);
-        this.enemyPositionCalc = enemyPositionCalc.clone();
+		this.projectilesDTL = new HashMap<>();
+		for (Map.Entry<Long, Double> longDoubleEntry : projectilesDT.entrySet()) {
+			this.projectilesDTL.put(longDoubleEntry.getKey(), longDoubleEntry.getValue());
+		}
+		this.enemyPositionCalc = enemyPositionCalc.clone();
         this.bonusesPossibilityCalcs = bonusesPossibilityCalcs.clone();
         this.goToBonusActivated = goToBonusActivated;
         this.moveToLineActivated = moveToLineActivated;
         this.lastFightLine = lastFightLine;
 
         this.moveToLinePoint = moveToLinePoint.clonePoint();
-        this.linesFightPoints = new Point[linesFightPoints.length];
         this.currentCalcLine = currentCalcLine;
-        for (int i = 0; i != linesFightPoints.length; ++i) {
+		this.linesFightPoints = new Point[linesFightPoints.length];
+		for (int i = 0; i != linesFightPoints.length; ++i) {
             if (linesFightPoints[i] != null) {
                 this.linesFightPoints[i] = linesFightPoints[i].clonePoint();
             }
@@ -78,8 +82,8 @@ public class Drawing_DrawingData {
         return currentAction;
     }
 
-    public TreeMap<Long, Double> getProjectilesDTL() {
-        return projectilesDTL;
+	public HashMap<Long, Double> getProjectilesDTL() {
+		return projectilesDTL;
     }
 
     public EnemyPositionCalc getEnemyPositionCalc() {

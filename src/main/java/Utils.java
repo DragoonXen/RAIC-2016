@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Created by dragoon on 11/9/16.
@@ -616,7 +616,7 @@ public class Utils {
 				Constants.getGame().getEmpoweredDamageFactor() : 1);
 	}
 
-	public static void fillProjectilesSim(FilteredWorld filteredWorld, TreeMap<Long, Double> projectilesDTL) {
+	public static void fillProjectilesSim(FilteredWorld filteredWorld, HashMap<Long, Double> projectilesDTL) {
 		Variables.projectilesSim.clear();
 		for (Projectile projectile : filteredWorld.getProjectiles()) {
 			Variables.projectilesSim.add(new AbstractMap.SimpleEntry<Projectile, Double>(projectile, projectilesDTL.get(projectile.getId())));

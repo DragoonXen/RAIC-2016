@@ -83,7 +83,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	private Drawing_DrawingData applyData(Drawing_DrawingData dataToApply, boolean receiveCurrent) {
 		Drawing_DrawingData storedData = null;
 		if (receiveCurrent) {
-			storedData = getCurrentData();
+			storedData = getCurrentData(world, self);
 		}
 		Drawing_DrawingData currentDrawingData = dataToApply.clone();
 		this.self = currentDrawingData.getSelf();
@@ -105,7 +105,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		return storedData;
 	}
 
-	public Drawing_DrawingData getCurrentData() {
+	public Drawing_DrawingData getCurrentData(World world, Wizard self) {
 		return new Drawing_DrawingData(self,
 									   world,
 									   castRange,
@@ -134,7 +134,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			while (drawingDataList.size() < world.getTickIndex()) {
 				drawingDataList.add(null);
 			}
-			drawingDataList.add(getCurrentData());
+			drawingDataList.add(getCurrentData(world, self));
 			mainFrame.getSlider().setMaximum(Math.max(world.getTickIndex(), mainFrame.getSlider().getMaximum()));
 			move(self, world, game, move, false);
 		}
