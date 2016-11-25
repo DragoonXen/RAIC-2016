@@ -75,8 +75,9 @@ public class UnitScoreCalculation {
 
 			ScoreCalcStructure structure = new ScoreCalcStructure();
 			double expBonus = ScanMatrixItem.calcExpBonus(minion.getLife(), minion.getMaxLife(), 1.);
+			double movePenalty = Constants.getGame().getMinionSpeed() * addTicks;
 			if (expBonus > 0.) {
-				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(expBonus));
+				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(Constants.EXPERIENCE_DISTANCE - movePenalty, expBonus));
 			}
 			double damage = 0.;
 			boolean dynamicAgro = minion.getFaction() != Faction.NEUTRAL || agressiveCalcs.isMinionAgressive(minion.getId());
@@ -85,14 +86,14 @@ public class UnitScoreCalculation {
 					damage = minion.getDamage() * shieldBonus * .5;
 					structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(
 							Utils.cooldownDistanceCalculation(Constants.getGame().getOrcWoodcutterAttackRange() + self.getRadius(),
-															  minion.getRemainingActionCooldownTicks()),
+															  minion.getRemainingActionCooldownTicks() - addTicks) + movePenalty,
 							damage));
 					break;
 				case FETISH_BLOWDART:
 					damage = Constants.getGame().getDartDirectDamage() * shieldBonus * .5;
 					structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(
 							Utils.cooldownDistanceCalculation(Constants.getGame().getFetishBlowdartAttackRange() + self.getRadius(),
-															  minion.getRemainingActionCooldownTicks()),
+															  minion.getRemainingActionCooldownTicks() - addTicks) + movePenalty,
 							damage));
 					break;
 			}
@@ -101,11 +102,11 @@ public class UnitScoreCalculation {
 				structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(Utils.getDistanceToNearestAlly(minion,
 																											  filteredWorld,
 																											  minion.getVisionRange()) +
-																					   Constants.getGame().getMinionSpeed() + .1,
+																					   Constants.getGame().getMinionSpeed() + .1 + movePenalty,
 																			   damage));
-				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange(),
+				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty,
 																			  myDamage * Constants.MINION_ATTACK_FACTOR));
-				structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + minion.getRadius(),
+				structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + minion.getRadius() - movePenalty,
 																				   Variables.staffDamage));
 			}
 
@@ -118,8 +119,9 @@ public class UnitScoreCalculation {
 			}
 			ScoreCalcStructure structure = new ScoreCalcStructure();
 			double expBonus = ScanMatrixItem.calcExpBonus(wizard.getLife(), wizard.getMaxLife(), 4.);
+			double movePenalty = Constants.getGame().getWizardForwardSpeed() * addTicks;
 			if (expBonus > 0.) {
-				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(expBonus));
+				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(Constants.EXPERIENCE_DISTANCE - movePenalty, expBonus));
 			}
 			double wizardDamage = 12.;
 			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
@@ -127,15 +129,17 @@ public class UnitScoreCalculation {
 			}
 			if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
-						wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2,
+						wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2 + movePenalty,
 						wizardDamage * 3. * shieldBonus));
 			} else {
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
-						wizard.getCastRange() + Constants.getGame().getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() + 4),
+						wizard.getCastRange() +
+								movePenalty +
+								Constants.getGame().getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() - addTicks + 4),
 						wizardDamage * shieldBonus));
 			}
 
-			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange(), myDamage));
+			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
 			unitsScoreCalc.put(wizard.getId(), structure);
 		}
 
@@ -153,16 +157,15 @@ public class UnitScoreCalculation {
 			int priorityAims = 0;
 			if (self.getLife() > building.getDamage()) {
 				priorityAims = Utils.getPrefferedUnitsCountInRange(building, filteredWorld, building.getAttackRange(), building.getDamage(), self.getLife());
-
 			}
 
 			if (priorityAims < 2) {
 				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(building.getAttackRange() + Math.min(2,
-																													  -building.getRemainingActionCooldownTicks() + 4) * 1.5,
+																													  -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5,
 																				 building.getDamage() * shieldBonus));
 			} else if (priorityAims == 2) {
 				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer((building.getAttackRange() + Math.min(2,
-																													   -building.getRemainingActionCooldownTicks() + 4) * 1.5) * .5,
+																													   -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5) * .5,
 																				 building.getDamage() * shieldBonus * .5));
 			}
 
