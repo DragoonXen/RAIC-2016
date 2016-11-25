@@ -100,7 +100,8 @@ public class UnitScoreCalculation {
 			if (dynamicAgro) { // enemy and touched neutrals
 				structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(Utils.getDistanceToNearestAlly(minion,
 																											  filteredWorld,
-																											  minion.getVisionRange()) + .1,
+																											  minion.getVisionRange()) +
+																					   Constants.getGame().getMinionSpeed() + .1,
 																			   damage));
 				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange(),
 																			  myDamage * Constants.MINION_ATTACK_FACTOR));
