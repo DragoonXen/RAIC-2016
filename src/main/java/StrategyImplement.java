@@ -787,7 +787,7 @@ public class StrategyImplement {
 				changePosition = accAndStrafe.getCoordChange(self.getAngle());
 				testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
 				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, enemyFound);
-				if (!testScanItem.isAvailable() || bestDanger < testScanItem.getAllDangers() || run) {
+				if (!testScanItem.isAvailable() || bestDanger < testScanItem.getAllDangers()) { //run???
 					continue;
 				}
 				if (testScanItem.getAllDangers() == bestDanger) {
