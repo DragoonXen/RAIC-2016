@@ -56,12 +56,13 @@ public class ScanMatrixItem extends Point {
 		this.minionsDanger = 0.;
 		this.buildingsDanger = 0.;
 		this.otherDanger = 0.;
-		if (x + y < 627 || x + y + 627 > Constants.getGame().getMapSize() + Constants.getGame().getMapSize()) {
+		if (x + y < 627 || x + y + 627 > Constants.getDoubledMapSize()) {
 			if (x > 2000) {
-				x = Constants.getGame().getMapSize() - x;
-				y = Constants.getGame().getMapSize() - y;
+				x = Constants.getDoubledMapSize() - x - y;
+			} else {
+				x += y;
 			}
-			otherDanger = (627 - x - y) / 100 + 1.;
+			otherDanger = (627 - x) / 100 + 1.;
 			otherDanger = (otherDanger * otherDanger - 1) * Constants.MAP_CORNER_DANGER_FACTOR;
 		} else {
 			checkMapSideDanger(x);
