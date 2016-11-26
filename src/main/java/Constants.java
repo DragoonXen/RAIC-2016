@@ -23,6 +23,7 @@ public abstract class Constants {
 
     public static int MAP_SIDE_DANGER_DISTANCE = 35 + 50; // wizard radius = 35
     public static double MAP_SIDE_DANGER_FACTOR = .05;
+    public static double MAP_CORNER_DANGER_FACTOR = 5.;
 
     public static double MINION_ATTACK_FACTOR = .25;
 
