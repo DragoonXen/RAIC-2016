@@ -29,4 +29,21 @@ public class AccAndSpeedWithFix {
 		return new Point(Math.cos(selfAngle) * speed + Math.cos(selfAngle + Math.PI / 2.) * strafe,
 						 Math.sin(selfAngle) * speed + Math.sin(selfAngle + Math.PI / 2.) * strafe);
 	}
+
+	public static AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance) {
+		return getAccAndSpeedByAngle(angle, distance, Variables.moveFactor);
+	}
+
+	public static AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance, double moveFactor) {
+		double strafe = Math.sin(angle) * distance;
+		double acc = Math.cos(angle) * distance;
+		double fwdLimit = (acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed()) * moveFactor;
+
+		double fix = Math.hypot(acc / fwdLimit, strafe / (Constants.getGame().getWizardStrafeSpeed() * moveFactor));
+		if (fix > 1.) {
+			return new AccAndSpeedWithFix(acc / fix, strafe / fix, fix);
+		} else {
+			return new AccAndSpeedWithFix(acc, strafe, fix);
+		}
+	}
 }

@@ -229,9 +229,10 @@ public class StrategyImplement {
 					}
 					movePoint.fixVectorLength(needDistance);
 					movePoint.add(PositionMoveLine.INSTANCE.getPositionToMove());
-					AccAndSpeedWithFix accAndSpeedByAngle = getAccAndSpeedByAngle(Utils.normalizeAngle(self.getAngleTo(movePoint.getX(), movePoint.getY())),
-																				  self.getDistanceTo(movePoint.getX(), movePoint.getY()),
-																				  Variables.moveFactor);
+					AccAndSpeedWithFix accAndSpeedByAngle = AccAndSpeedWithFix.getAccAndSpeedByAngle(Utils.normalizeAngle(self.getAngleTo(movePoint.getX(),
+																																		  movePoint.getY())),
+																									 self.getDistanceTo(movePoint.getX(), movePoint.getY()),
+																									 Variables.moveFactor);
 					move.setSpeed(accAndSpeedByAngle.getSpeed());
 					move.setStrafeSpeed(accAndSpeedByAngle.getStrafe());
 					moveToPoint = movePoint;
@@ -444,7 +445,7 @@ public class StrategyImplement {
 				currMoveFactor = moveFactor;
 				ticks = 0;
 				while (!Variables.projectilesSim.isEmpty()) {
-					accAndSpeed = getAccAndSpeedByAngle(Utils.normalizeAngle(moveAngle - curentAngle), 100., currMoveFactor);
+					accAndSpeed = AccAndSpeedWithFix.getAccAndSpeedByAngle(Utils.normalizeAngle(moveAngle - curentAngle), 100., currMoveFactor);
 					positionChange = accAndSpeed.getCoordChange(curentAngle);
 					position.add(positionChange);
 					curentAngle += Utils.updateMaxModule(Utils.normalizeAngle(moveAngle - curentAngle), // angle to turn
@@ -491,8 +492,9 @@ public class StrategyImplement {
 		}
 		if (bestDamage < maxDamageToRecieve) { // escape from projectile
 			moveAngle = self.getAngleTo(bestPosition.getX(), bestPosition.getY());
-			AccAndSpeedWithFix accAndSpeedByAngle = getAccAndSpeedByAngle(moveAngle,
-																		  FastMath.hypot(self.getX() - bestPosition.getX(), self.getY() - bestPosition.getY()));
+			AccAndSpeedWithFix accAndSpeedByAngle = AccAndSpeedWithFix.getAccAndSpeedByAngle(moveAngle,
+																							 FastMath.hypot(self.getX() - bestPosition.getX(),
+																											self.getY() - bestPosition.getY()));
 			move.setSpeed(accAndSpeedByAngle.getSpeed());
 			move.setStrafeSpeed(accAndSpeedByAngle.getStrafe());
 			if (bestActionType < Constants.EVADE_CALCULATIONS_COUNT) {
@@ -732,7 +734,7 @@ public class StrategyImplement {
 		double distance = FastMath.hypot(self, point.getX(), point.getY());
 		angle = self.getAngleTo(point.getX(), point.getY());
 
-		AccAndSpeedWithFix accAndStrafe = getAccAndSpeedByAngle(angle, distance);
+		AccAndSpeedWithFix accAndStrafe = AccAndSpeedWithFix.getAccAndSpeedByAngle(angle, distance);
 		move.setSpeed(accAndStrafe.getSpeed());
 		move.setStrafeSpeed(accAndStrafe.getStrafe());
 
@@ -784,7 +786,7 @@ public class StrategyImplement {
 			double itAngle = minAngle;
 			for (; maxAngle - itAngle > Constants.MOVE_ANGLE_PRECISE; itAngle += Constants.MOVE_ANGLE_PRECISE) {
 				newAngle = Utils.normalizeAngle(angle + itAngle);
-				accAndStrafe = getAccAndSpeedByAngle(newAngle, 100.);
+				accAndStrafe = AccAndSpeedWithFix.getAccAndSpeedByAngle(newAngle, 100.);
 				changePosition = accAndStrafe.getCoordChange(self.getAngle());
 				testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
 				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, enemyFound);
@@ -807,23 +809,6 @@ public class StrategyImplement {
 			moveToPoint = bestPosition;
 			move.setSpeed(bestMove.getSpeed());
 			move.setStrafeSpeed(bestMove.getStrafe());
-		}
-	}
-
-	public AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance) {
-		return getAccAndSpeedByAngle(angle, distance, Variables.moveFactor);
-	}
-
-	public AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance, double moveFactor) {
-		double strafe = Math.sin(angle) * distance;
-		double acc = Math.cos(angle) * distance;
-		double fwdLimit = (acc > 0 ? Constants.getGame().getWizardForwardSpeed() : Constants.getGame().getWizardBackwardSpeed()) * moveFactor;
-
-		double fix = Math.hypot(acc / fwdLimit, strafe / (Constants.getGame().getWizardStrafeSpeed() * moveFactor));
-		if (fix > 1.) {
-			return new AccAndSpeedWithFix(acc / fix, strafe / fix, fix);
-		} else {
-			return new AccAndSpeedWithFix(acc, strafe, fix);
 		}
 	}
 
