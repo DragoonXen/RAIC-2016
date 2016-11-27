@@ -2,6 +2,7 @@ import model.Bonus;
 import model.Building;
 import model.Faction;
 import model.Minion;
+import model.SkillType;
 import model.StatusType;
 import model.Wizard;
 
@@ -61,8 +62,10 @@ public class UnitScoreCalculation {
 		}
 
 		double myDamage = 12. + Variables.magicDamageBonus;
+		double staffDamage = Variables.staffDamage;
 		if (Utils.wizardStatusTicks(self, StatusType.EMPOWERED) >= addTicks) {
 			myDamage *= Constants.getGame().getEmpoweredDamageFactor();
+			staffDamage *= Constants.getGame().getEmpoweredDamageFactor();
 		}
 
 		double shieldBonus = Utils.wizardStatusTicks(self, StatusType.SHIELDED) >= addTicks ?
@@ -107,7 +110,7 @@ public class UnitScoreCalculation {
 				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty,
 																			  myDamage * Constants.MINION_ATTACK_FACTOR));
 				structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + minion.getRadius() - movePenalty,
-																				   Variables.staffDamage));
+																				   staffDamage));
 			}
 
 			unitsScoreCalc.put(minion.getId(), structure);
@@ -123,20 +126,25 @@ public class UnitScoreCalculation {
 			if (expBonus > 0.) {
 				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(Constants.EXPERIENCE_DISTANCE - movePenalty, expBonus));
 			}
-			double wizardDamage = 12.;
+			double wizardDamage = 24.;
+			if (Utils.wizardHasSkill(wizard, SkillType.FROST_BOLT)) {
+				wizardDamage *= 1.5;
+			}
 			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
 				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();
 			}
-			if (self.getLife() < self.getMaxLife() * Constants.ENEMY_WIZARD_ATTACK_LIFE) {
+			if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
+				double range = Math.min(wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2, 560);
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
-						wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2 + movePenalty,
+						range + movePenalty,
 						wizardDamage * 3. * shieldBonus));
 			} else {
-				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
-						wizard.getCastRange() +
-								movePenalty +
-								Constants.getGame().getWizardForwardSpeed() * Math.min(2, -wizard.getRemainingActionCooldownTicks() - addTicks + 4),
-						wizardDamage * shieldBonus));
+				int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
+				double range = Math.min(wizard.getCastRange() +
+												Constants.getGame().getWizardForwardSpeed() *
+														Math.min(2, -Math.max(wizard.getRemainingActionCooldownTicks(), freezeStatus) - addTicks + 4),
+										530);
+				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(range + movePenalty, wizardDamage * shieldBonus));
 			}
 
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
@@ -172,7 +180,7 @@ public class UnitScoreCalculation {
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() + building.getRadius() + Constants.getGame().getMagicMissileRadius() - .1,
 																		  myDamage));
 			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + building.getRadius() - .1,
-																			   Variables.staffDamage));
+																			   Constants.getGame().getEmpoweredDamageFactor()));
 			unitsScoreCalc.put(building.getId(), structure);
 		}
 	}

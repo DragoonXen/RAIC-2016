@@ -499,7 +499,7 @@ public class StrategyImplement {
 			if (bestActionType < Constants.EVADE_CALCULATIONS_COUNT) {
 				currentAction.setActionType(CurrentAction.ActionType.EVADE_PROJECTILE); // block move
 			} else {
-				turnTo(moveAngle, Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor, move);
+				turnTo(moveAngle, move);
 				currentAction.setActionType(CurrentAction.ActionType.RUN_FROM_PROJECTILE); // block move and turn
 			}
 		}
@@ -555,7 +555,7 @@ public class StrategyImplement {
 				turnTo(moveToPoint, move);
 				return true;
 			}
-			turnTo(turnAngle, maxTurnAngle, move);
+			turnTo(turnAngle, move);
 			return true;
 		}
 		return false;
@@ -580,7 +580,7 @@ public class StrategyImplement {
 				return true;
 			}
 			// если не можем попасть - доворачиваем на цель
-			turnTo(turnAngle, maxTurnAngle, move);
+			turnTo(turnAngle, move);
 			return true;
 		}
 		return false;
@@ -638,23 +638,54 @@ public class StrategyImplement {
 		if (currentAction.getActionType() == CurrentAction.ActionType.RUN_FROM_PROJECTILE) {
 			return;
 		}
-		if (point == null) {
-			return;
+		Wizard nearestEnemyWizard = null;
+		double minDistance = 1e6;
+		for (Wizard wizard : filteredWorld.getWizards()) {
+			if (wizard.getFaction() != Constants.getEnemyFaction()) {
+				continue;
+			}
+			double distance = FastMath.hypot(wizard, self);
+			if (distance < minDistance) {
+				nearestEnemyWizard = wizard;
+				minDistance = distance;
+			}
 		}
-		if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
-			point = pointToReach;
+
+		if (minDistance < 600 && minDistance > 400.) {
+			//turn to side
+			double nearestWizardAngle = self.getAngleTo(nearestEnemyWizard);
+			boolean leftSide;
+			if (Math.abs(nearestWizardAngle) < Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor * .5) {
+				double prefferedAngle = nearestWizardAngle;
+				if (point != null && FastMath.hypot(self, point) > Variables.moveFactor * Constants.getGame().getWizardStrafeSpeed()) {
+					prefferedAngle = self.getAngleTo(point.getX(), point.getY());
+				}
+				leftSide = prefferedAngle > 0;
+			} else {
+				leftSide = nearestWizardAngle < 0;
+			}
+			nearestWizardAngle = Math.abs(nearestWizardAngle);
+			double turnAngle = Math.PI * .5 - nearestWizardAngle;
+			turnTo(leftSide ? turnAngle : turnAngle * -1, move);
+		} else {
+			if (point == null) {
+				return;
+			}
+			if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
+				point = pointToReach;
+			}
+			if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
+				return;
+			}
+			turnTo(self.getAngleTo(point.getX(), point.getY()), move);
 		}
-		if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
-			return;
-		}
-		turnTo(self.getAngleTo(point.getX(), point.getY()), Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor, move);
 	}
 
-	private void turnTo(double angle, double maxAngle, Move move) {
+	private void turnTo(double angle, Move move) {
 		if (currentAction.getActionType() == CurrentAction.ActionType.RUN_FROM_PROJECTILE) {
 			return;
 		}
-		move.setTurn(Utils.updateMaxModule(angle, maxAngle));
+		move.setTurn(Utils.updateMaxModule(angle, Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor));
 	}
 
 	private void findTargets() {
@@ -675,6 +706,12 @@ public class StrategyImplement {
 						Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), pointToReach) > 0; // one of them - tree
 		double score;
 		double distanceToTarget;
+
+		int staffDamage = Variables.staffDamage;
+		if (Utils.wizardHasStatus(self, StatusType.EMPOWERED)) {
+			staffDamage *= Constants.getGame().getEmpoweredDamageFactor();
+		}
+
 		if (treeCut) {
 			for (Tree tree : filteredWorld.getTrees()) {
 
@@ -695,7 +732,7 @@ public class StrategyImplement {
 					if (distanceToTarget > 0) {
 						score *= 1 - distanceToTarget * .01; // divizion by 100
 					}
-					staffTargets.add(new Pair<>(score / Utils.getHitsToKill(tree.getLife(), Variables.staffDamage)
+					staffTargets.add(new Pair<>(score / Utils.getHitsToKill(tree.getLife(), staffDamage)
 														- Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
 												tree));
 				}
@@ -712,7 +749,7 @@ public class StrategyImplement {
 
 			score = Utils.getMinionAttackPriority(minion, missileDamage, self);
 			missileTargets.add(new Pair<>(score, minion));
-			Utils.appendStaffTarget(staffTargets, minion, self, Utils.getMinionAttackPriority(minion, Variables.staffDamage, self));
+			Utils.appendStaffTarget(staffTargets, minion, self, Utils.getMinionAttackPriority(minion, staffDamage, self));
 			if (frostBoltDamage > 0) {
 				score = Utils.getMinionAttackPriority(minion, frostBoltDamage, self);
 				iceTargets.add(new Pair<>(score, minion));

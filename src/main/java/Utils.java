@@ -389,6 +389,14 @@ public class Utils {
 		return false;
 	}
 
+	public static boolean wizardHasSkill(Wizard wizard, SkillType skillType) {
+		for (SkillType type : wizard.getSkills()) {
+			if (type == skillType) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public static boolean wizardHasStatus(Wizard wizard, StatusType statusType) {
 		for (Status status : wizard.getStatuses()) {
