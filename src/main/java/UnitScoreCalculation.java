@@ -90,7 +90,7 @@ public class UnitScoreCalculation {
 							damage));
 					break;
 				case FETISH_BLOWDART:
-					damage = Constants.getGame().getDartDirectDamage() * shieldBonus * .5;
+					damage = Constants.getGame().getDartDirectDamage() * shieldBonus; // damage x2 (cd 30)
 					structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(
 							Utils.cooldownDistanceCalculation(Constants.getGame().getFetishBlowdartAttackRange() + self.getRadius(),
 															  minion.getRemainingActionCooldownTicks() - addTicks) + movePenalty,

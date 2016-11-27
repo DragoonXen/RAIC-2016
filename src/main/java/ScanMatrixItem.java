@@ -184,7 +184,7 @@ public class ScanMatrixItem extends Point {
 		double total = 0.;
 		double dangers = getAllDangers();
 		dangers /= self.getLife();
-		total -= dangers * dangers * Constants.DANGER_PENALTY;
+		total -= dangers * Constants.DANGER_PENALTY;
 
 		total += expBonus;
 		total += meleeAttackBonus;

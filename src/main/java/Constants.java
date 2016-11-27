@@ -27,7 +27,7 @@ public abstract class Constants {
 
     public static double MINION_ATTACK_FACTOR = .25;
 
-    public static double DANGER_PENALTY = 500.;
+    public static double DANGER_PENALTY = 200.;
     public static double DANGER_AT_START_MULT_RUN = .9;
 
     public static double MOVE_ANGLE_PRECISE = Math.PI / 180. * .2; // 0.2 per calc
