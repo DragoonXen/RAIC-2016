@@ -19,15 +19,20 @@ public final class MyStrategy implements Strategy {
         this.draw = draw;
     }
 
-    private StrategyImplement strategy;
+	private Strategy strategy;
 
     @Override
     public void move(Wizard self, World world, Game game, Move move) {
         try {
-            if (Constants.getGame() == null) {
-                Constants.init(game, self);
-                strategy = draw ? new Drawing_DrawingStrategy(self) : new StrategyImplement(self);
-            }
+			if (world.getTickIndex() == 0) {
+				if (game.isSkillsEnabled()) {
+					Constants.init(game, self);
+					strategy = draw ? new Drawing_DrawingStrategy(self) : new StrategyImplement(self);
+				} else {
+					XXX_Constants.init(game, self);
+					strategy = draw ? new XXX_Drawing_DrawingStrategy(self) : new XXX_StrategyImplement(self);
+				}
+			}
             strategy.move(self, world, game, move);
         } catch (Throwable e) {
             System.out.println(e.getMessage());

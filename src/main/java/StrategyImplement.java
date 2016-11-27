@@ -23,7 +23,7 @@ import java.util.PriorityQueue;
 /**
  * Created by by.dragoon on 11/8/16.
  */
-public class StrategyImplement {
+public class StrategyImplement implements Strategy {
 
 	protected World world;
 	protected Wizard self;
