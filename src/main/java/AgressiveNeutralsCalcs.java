@@ -31,7 +31,7 @@ public class AgressiveNeutralsCalcs {
 				if (phantom == null) {
 					phantoms.put(minion.getId(), minion);
 				} else {
-					if (!agressive.contains(minion.getId()) && Utils.isUnitActive(phantom, minion)) {
+					if (!agressive.contains(minion.getId()) && Utils.isNeutralActive(phantom, minion)) {
 						agressive.add(minion.getId());
 					}
 				}

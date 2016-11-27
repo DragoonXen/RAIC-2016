@@ -6,11 +6,13 @@ import model.Faction;
 import model.LaneType;
 import model.LivingUnit;
 import model.Minion;
+import model.MinionType;
 import model.Projectile;
 import model.ProjectileType;
 import model.SkillType;
 import model.Status;
 import model.StatusType;
+import model.Tree;
 import model.Unit;
 import model.Wizard;
 import model.World;
@@ -21,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +33,7 @@ import java.util.Map;
  */
 public class Utils {
 
-	public final static Comparator<Map.Entry<Double, CircularUnit>> AIM_SORT_COMPARATOR = (o1, o2) -> o2.getKey().compareTo(o1.getKey());
+	public final static Comparator<Pair<Double, CircularUnit>> AIM_SORT_COMPARATOR = (o1, o2) -> o2.getFirst().compareTo(o1.getFirst());
 
 	private static double[] lineDistance = new double[Constants.getLines().length];
 
@@ -86,6 +89,7 @@ public class Utils {
 				filterUnit(world.getBonuses(), point, FilteredWorld.FilterType.FIGHT),
 				filterUnit(buildings, point, FilteredWorld.FilterType.FIGHT),
 				filterUnit(world.getTrees(), point, FilteredWorld.FilterType.MOVE),
+				filterUnit(world.getTrees(), point, FilteredWorld.FilterType.AIM_OBSTACLE),
 				point);
 	}
 
@@ -95,7 +99,6 @@ public class Utils {
 			return unitsList;
 		}
 		double distance = 0.;
-		boolean isBuilding = false;
 		switch (filterType) {
 			case FIGHT:
 				distance = Constants.getFightDistanceFilter();
@@ -104,10 +107,8 @@ public class Utils {
 				distance = Constants.MOVE_DISTANCE_FILTER + Constants.getGame().getWizardRadius();
 				break;
 			case AIM:
+			case AIM_OBSTACLE:
 				distance = Variables.self.getCastRange();
-				if (units[0] instanceof Building) {
-					isBuilding = true;
-				}
 				break;
 		}
 
@@ -127,17 +128,16 @@ public class Utils {
 				}
 				break;
 			case AIM:
-				if (isBuilding) {
-					for (T unit : units) {
-						if (unit.getDistanceTo(point.getX(), point.getY()) - unit.getRadius() <= distance) {
-							unitsList.add(unit);
-						}
+				for (T unit : units) {
+					if (unit.getDistanceTo(point.getX(), point.getY()) - unit.getRadius() + 50 <= distance) {
+						unitsList.add(unit);
 					}
-				} else {
-					for (T unit : units) {
-						if (unit.getDistanceTo(point.getX(), point.getY()) <= distance) {
-							unitsList.add(unit);
-						}
+				}
+				break;
+			case AIM_OBSTACLE:
+				for (T unit : units) {
+					if (unit.getDistanceTo(point.getX(), point.getY()) <= distance) {
+						unitsList.add(unit);
 					}
 				}
 				break;
@@ -412,10 +412,14 @@ public class Utils {
 	private static int[] skillsCount = new int[5];
 	private static int[] aurasCount = new int[5];
 
+	public final static HashSet<SkillType> SKILLS_LEARNED = new HashSet<>();
+
 	public static void calcCurrentSkillBonuses(Wizard self, FilteredWorld filteredWorld) {
 		Arrays.fill(skillsCount, 0);
 		Arrays.fill(aurasCount, 0);
+		SKILLS_LEARNED.clear();
 		for (SkillType skillType : self.getSkills()) {
+			SKILLS_LEARNED.add(skillType);
 			switch (skillType) {
 				case RANGE_BONUS_PASSIVE_1:
 					skillsCount[SkillFork.RANGE.ordinal()] = Math.max(skillsCount[SkillFork.RANGE.ordinal()], 1);
@@ -603,17 +607,24 @@ public class Utils {
 					Constants.getGame().getFireballExplosionMaxDamage(),
 					Constants.getGame().getDartDirectDamage()};
 
+	public final static double[] PROJECTIVE_RADIUS = new double[]
+			{Constants.getGame().getMagicMissileRadius(),
+					Constants.getGame().getFrostBoltRadius(),
+					Constants.getGame().getFireballRadius(),
+					Constants.getGame().getDartRadius()};
+
 	public static int getProjectileDamage(Projectile projectile) {
-		return getProjectileDamage(projectile.getType());
+		return PROJECTIVE_DAMAGE[projectile.getType().ordinal()];
 	}
 
-	public static int getProjectileDamage(ProjectileType projectileType) {
-		return PROJECTIVE_DAMAGE[projectileType.ordinal()];
+	public static int getSelfProjectileDamage(ProjectileType projectileType) {
+		return getIntDamage((PROJECTIVE_DAMAGE[projectileType.ordinal()] + Variables.magicDamageBonus) * (wizardHasStatus(Variables.self,
+																														  StatusType.EMPOWERED) ?
+				Constants.getGame().getEmpoweredDamageFactor() : 1));
 	}
 
-	public static double getSelfProjectileDamage(ProjectileType projectileType) {
-		return (getProjectileDamage(projectileType) + Variables.magicDamageBonus) * (wizardHasStatus(Variables.self, StatusType.EMPOWERED) ?
-				Constants.getGame().getEmpoweredDamageFactor() : 1);
+	public static int getIntDamage(double damage) {
+		return (int) Math.floor(damage);
 	}
 
 	public static void fillProjectilesSim(FilteredWorld filteredWorld, HashMap<Long, Double> projectilesDTL) {
@@ -871,11 +882,121 @@ public class Utils {
 		return false;
 	}
 
-	public static boolean isUnitActive(Minion previuosPosition, Minion newPosition) {
+	public static boolean isNeutralActive(Minion previuosPosition, Minion newPosition) {
 		return previuosPosition.getX() != newPosition.getX() ||
 				previuosPosition.getY() != newPosition.getY() ||
 				previuosPosition.getAngle() != newPosition.getAngle() ||
 				newPosition.getLife() != newPosition.getMaxLife() ||
 				newPosition.getRemainingActionCooldownTicks() != 0;
+	}
+
+	public static int getHitsToKill(int life, int damage) {
+		return (life + damage - 1) / damage;
+	}
+
+	public static double getMinionAttackPriority(Minion minion, int damage, Wizard self) {
+		double score = Constants.LOW_AIM_SCORE;
+		double tmp = (minion.getMaxLife() - Math.max(minion.getLife(), damage)) / (double) minion.getMaxLife();
+		if (minion.getLife() < damage) {
+			tmp *= 1 - (damage - minion.getLife()) / damage * .3;
+		}
+		score += tmp * tmp;
+		if (minion.getType() == MinionType.FETISH_BLOWDART) {
+			score *= Constants.FETISH_AIM_PROIRITY;
+		} else {
+			score *= Constants.ORC_AIM_PROIRITY;
+		}
+
+		if (minion.getFaction() == Faction.NEUTRAL) {
+			if (damage >= minion.getLife()) {
+				score *= Constants.NEUTRAL_LAST_HIT_AIM_PROIRITY;
+			} else {
+				score *= Constants.NEUTRAL_FACTION_AIM_PROIRITY;
+			}
+		}
+		if (Math.abs(minion.getAngleTo(self)) <= Constants.getGame().getMinionMaxTurnAngle() && FastMath.hypot(self, minion) < minion.getVisionRange()) {
+			score *= Constants.ATTACKS_ME_PRIORITY;
+			if (minion.getType() == MinionType.ORC_WOODCUTTER) {
+				score *= Constants.ORC_ATTACKS_ME_ADD_PRIORITY;
+			}
+		}
+		return score;
+	}
+
+	public static void appendStaffTarget(List<Pair<Double, CircularUnit>> staffTargets, CircularUnit unit, Wizard self, double score) {
+		double distanceToTarget = FastMath.hypot(self, unit);
+		if (distanceToTarget < Constants.getGame().getStaffRange() + unit.getRadius() + 50) {
+			distanceToTarget -= Constants.getGame().getStaffRange() + unit.getRadius();
+			if (distanceToTarget > 0) {
+				score *= 1 - distanceToTarget * .01; // divizion by 100
+			}
+			staffTargets.add(new Pair<>(score, unit));
+		}
+	}
+
+	public static void filterTargets(List<Pair<Double, CircularUnit>> targets,
+									 ProjectileType shotType,
+									 Wizard self,
+									 FilteredWorld filteredWorld) {
+		Point pointA = new Point(self.getX(), self.getY());
+		double projectileRadius = PROJECTIVE_RADIUS[shotType.ordinal()];
+//		double projectileSpeed = PROJECTIVE_SPEED[shotType.ordinal()];
+		int cntFound = 0;
+		for (Iterator<Pair<Double, CircularUnit>> iterator = targets.iterator(); iterator.hasNext(); ) {
+			Pair<Double, CircularUnit> item = iterator.next();
+			CircularUnit target = item.getSecond();
+			Point pointB = getShootPoint(target, projectileRadius);
+
+			if (FastMath.hypot(self, pointB) > self.getCastRange()) { // не дострельнем
+				iterator.remove();
+				continue;
+			}
+
+			boolean canShot = true;
+			for (Tree tree : filteredWorld.getShootingTreeList()) {
+				if (tree == target) {
+					continue;
+				}
+				double distance = Utils.distancePointToSegment(new Point(tree.getX(), tree.getY()), pointA, pointB);
+				if (distance + .01 < tree.getRadius() + projectileRadius) {
+					canShot = false;
+					break;
+				}
+			}
+			// TODO: добавить проверку на уклонение визарда
+			if (!canShot) {
+				iterator.remove();
+			} else {
+				++cntFound;
+				if (cntFound >= 3) {
+					while (iterator.hasNext()) {
+						iterator.next();
+						iterator.remove();
+					}
+					return;
+				}
+			}
+		}
+	}
+
+	public static Point getShootPoint(CircularUnit unit, double projectileRadius) {
+		if (unit instanceof Wizard) {
+			double preffered = unit.getRadius() + projectileRadius - (unit.getRadius() + projectileRadius) * 6. / 7.;
+			return new Point(unit.getX() + Math.cos(unit.getAngle()) * preffered, unit.getY() + Math.sin(unit.getAngle()) * preffered);
+		} else {
+			return new Point(unit.getX(), unit.getY());
+		}
+	}
+
+	public static void applyPreviousContainedModifier(List<Pair<Double, CircularUnit>> newTargets, List<Pair<Double, CircularUnit>> prevTargets) {
+		int i = 0;
+		for (Pair<Double, CircularUnit> prevTarget : prevTargets) {
+			for (Pair<Double, CircularUnit> newTarget : newTargets) {
+				if (prevTarget.getSecond().getId() == newTarget.getSecond().getId()) {
+					newTarget.setFirst(newTarget.getFirst() * (Constants.PREV_AIM_MODIFIER / ++i));
+					break;
+				}
+			}
+		}
 	}
 }

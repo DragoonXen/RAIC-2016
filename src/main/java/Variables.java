@@ -16,7 +16,7 @@ public class Variables {
 	public static double moveFactor = 1.;
 	public static double turnFactor = 1.;
 
-	public static double staffDamage = 12.;
+	public static int staffDamage = 12;
 	public static int magicDamageBonus = 0;
 
 	public static List<AbstractMap.SimpleEntry<Projectile, Double>> projectilesSim = new LinkedList<>();

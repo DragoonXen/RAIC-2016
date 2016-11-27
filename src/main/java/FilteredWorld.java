@@ -1,7 +1,6 @@
 import model.Bonus;
 import model.Building;
 import model.CircularUnit;
-import model.LivingUnit;
 import model.Minion;
 import model.Player;
 import model.Projectile;
@@ -19,7 +18,7 @@ public class FilteredWorld extends World {
 
 	private List<CircularUnit> allBlocksList;
 
-	private List<LivingUnit> aimsList;
+	private List<Tree> shootingTreeList;
 
 	public FilteredWorld(int tickIndex,
 						 int tickCount,
@@ -32,6 +31,7 @@ public class FilteredWorld extends World {
 						 List<Bonus> bonuses,
 						 List<Building> buildings,
 						 List<Tree> trees,
+						 List<Tree> shootingTreeList,
 						 Point point) {
 		super(tickIndex,
 			  tickCount,
@@ -44,30 +44,26 @@ public class FilteredWorld extends World {
 			  bonuses.toArray(new Bonus[bonuses.size()]),
 			  buildings.toArray(new Building[buildings.size()]),
 			  trees.toArray(new Tree[trees.size()]));
+		this.shootingTreeList = shootingTreeList;
 		allBlocksList = new ArrayList<>();
 		allBlocksList.addAll(Utils.filterUnit(getWizards(), point, FilterType.MOVE));
 		allBlocksList.addAll(Utils.filterUnit(getMinions(), point, FilterType.MOVE));
 		allBlocksList.addAll(Utils.filterUnit(getBuildings(), point, FilterType.MOVE));
 		allBlocksList.addAll(Utils.filterUnit(getTrees(), point, FilterType.MOVE));
-		aimsList = new ArrayList<>();
-		Point aimFilterPoint = new Point(Variables.self.getX(), Variables.self.getY());
-		aimsList.addAll(Utils.filterUnit(getWizards(), aimFilterPoint, FilterType.AIM));
-		aimsList.addAll(Utils.filterUnit(getMinions(), aimFilterPoint, FilterType.AIM));
-		aimsList.addAll(Utils.filterUnit(getBuildings(), aimFilterPoint, FilterType.AIM));
-		aimsList.addAll(Utils.filterUnit(getTrees(), aimFilterPoint, FilterType.AIM));
 	}
 
 	public List<CircularUnit> getAllBlocksList() {
 		return allBlocksList;
 	}
 
-	public List<LivingUnit> getAimsList() {
-		return aimsList;
+	public List<Tree> getShootingTreeList() {
+		return shootingTreeList;
 	}
 
-	public static enum FilterType {
+	public enum FilterType {
 		FIGHT,
 		MOVE,
-		AIM
+		AIM,
+		AIM_OBSTACLE
 	}
 }

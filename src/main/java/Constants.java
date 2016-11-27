@@ -45,21 +45,26 @@ public abstract class Constants {
     public static int[] STEP_Y_HELP = new int[]{-1, 1, 0, 0};
 
     public static double WIZARD_AIM_PROIRITY = 5.;
+    public static double FROST_WIZARD_AIM_PROIRITY = 3.;
     public static double BUILDING_AIM_PROIRITY = 6.;
     public static double FETISH_AIM_PROIRITY = 1.1;
     public static double ORC_AIM_PROIRITY = 0.9;
     public static double LOW_AIM_SCORE = .5;
     public static double NEUTRAL_FACTION_AIM_PROIRITY = 0.2;
+    public static double ATTACKS_ME_PRIORITY = 3.;
+    public static double ORC_ATTACKS_ME_ADD_PRIORITY = 1.4;
+    public static double NEUTRAL_LAST_HIT_AIM_PROIRITY = 3.;
 
     public static double FORWARD_MOVE_FROM_DISTANCE_POWER = 1 / 8.;
 
     public static double SHIELDENED_AIM_PRIORITY = 0.3;
     public static double EMPOWERED_AIM_PRIORITY = 1.2;
-    public static double HASTENED_AIM_PRIORITY = 0.7;
 
     public static double ENEMY_WIZARD_ATTACK_LIFE = 0.75;
 
     public static double MAX_SHOOT_ANGLE = Math.PI / 12.;
+
+    public static double PREV_AIM_MODIFIER = .1;
 
     public static double EXPERIENCE_DISTANCE = 600.;
 

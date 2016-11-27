@@ -4,23 +4,20 @@ import model.Building;
 import model.CircularUnit;
 import model.Faction;
 import model.Game;
-import model.LivingUnit;
 import model.Minion;
-import model.MinionType;
 import model.Move;
 import model.Projectile;
 import model.ProjectileType;
+import model.SkillType;
 import model.StatusType;
 import model.Tree;
 import model.Wizard;
 import model.World;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
 
 /**
@@ -51,12 +48,14 @@ public class StrategyImplement {
 
 	protected Point moveToPoint;
 
-	protected CircularUnit target;
-	protected CircularUnit meleeTarget;
-
 	private PriorityQueue<WayPoint> queue = new PriorityQueue<>();
 
-	private List<Map.Entry<Double, CircularUnit>> targets = new ArrayList<>();
+	protected List<Pair<Double, CircularUnit>> missileTargets = new ArrayList<>();
+	protected List<Pair<Double, CircularUnit>> staffTargets = new ArrayList<>();
+	protected List<Pair<Double, CircularUnit>> iceTargets = new ArrayList<>();
+	protected List<Pair<Double, CircularUnit>> prevMissileTargets = new ArrayList<>();
+	protected List<Pair<Double, CircularUnit>> prevStaffTargets = new ArrayList<>();
+	protected List<Pair<Double, CircularUnit>> prevIceTargets = new ArrayList<>();
 
 	protected double minAngle = 0.;
 	protected double maxAngle = 0.;
@@ -87,10 +86,10 @@ public class StrategyImplement {
 		agressiveNeutralsCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
+		SkillsLearning.updateSkills(self, move);
 		enemyFound = false;
 		treeCut = false;
 		moveToPoint = null;
-		target = null;
 		minAngle = 0.;
 		wayPoints.clear();
 		maxAngle = 0.;
@@ -507,12 +506,63 @@ public class StrategyImplement {
 	}
 
 	private void shotAndTurn(Move move) {
-		if (target == null) {
+		if (missileTargets.isEmpty()) {
 			turnTo(moveToPoint, move);
 			return;
 		}
+		CircularUnit target = missileTargets.get(0).getSecond();
+		Point targetShootPoint = Utils.getShootPoint(target, Utils.PROJECTIVE_RADIUS[ProjectileType.MAGIC_MISSILE.ordinal()]);
+		CircularUnit frostTarget = iceTargets.isEmpty() ? null : iceTargets.get(0).getSecond();
+		Point frostTargetShootPoint = frostTarget != null ?
+				Utils.getShootPoint(frostTarget, Utils.PROJECTIVE_RADIUS[ProjectileType.FROST_BOLT.ordinal()]) :
+				null;
+		CircularUnit meleeTarget = staffTargets.isEmpty() ? null : staffTargets.get(0).getSecond();
 
-		double turnAngle = self.getAngleTo(target);
+		if (frostTarget != null) {
+			if (frostTarget instanceof Wizard || self.getMana() > self.getMaxMana() * .9) {
+				if (applyTargetAction(ActionType.FROST_BOLT, frostTargetShootPoint, frostTarget, move)) {
+					return;
+				}
+			}
+		}
+
+		if (applyTargetAction(ActionType.MAGIC_MISSILE, targetShootPoint, target, move)) {
+			return;
+		}
+
+		if (meleeTarget != null) {
+			if (applyMeleeAction(meleeTarget, move)) {
+				return;
+			}
+		}
+
+		turnTo(moveToPoint, move);
+	}
+
+	private boolean applyMeleeAction(CircularUnit target, Move move) {
+		double turnAngle = self.getAngleTo(target.getX(), target.getY());
+		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor;
+		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+
+		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
+		if (hastenedTicksRemain > -1 && turnTicksCount > hastenedTicksRemain) {
+			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
+			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+		}
+
+		if (waitTimeForAction(ActionType.STAFF) <= turnTicksCount + 2) {
+			if (checkHit(turnAngle, target, move)) {
+				turnTo(moveToPoint, move);
+				return true;
+			}
+			turnTo(turnAngle, maxTurnAngle, move);
+			return true;
+		}
+		return false;
+	}
+
+	private boolean applyTargetAction(ActionType actionType, Point target, CircularUnit unit, Move move) {
+		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor;
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
@@ -523,43 +573,17 @@ public class StrategyImplement {
 			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
 		}
 
-		//если уже надо бы поворачиваться дла атаки
-		if (waitTimeForAction(ActionType.MAGIC_MISSILE) <= turnTicksCount + 2) {
+		if (waitTimeForAction(actionType) <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
-			if (checkShot(turnAngle, target, move)) {
+			if (checkShot(turnAngle, target, unit, move, actionType)) {
 				turnTo(moveToPoint, move);
-				return;
+				return true;
 			}
 			// если не можем попасть - доворачиваем на цель
 			turnTo(turnAngle, maxTurnAngle, move);
-			return;
+			return true;
 		}
-		if (meleeTarget != null) {
-
-			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor;
-			int meleeTurnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.getStaffHitSector());
-
-			if (hastenedTicksRemain > -1 && turnTicksCount > hastenedTicksRemain) {
-				maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
-				meleeTurnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.getStaffHitSector());
-			}
-			// милишная цель есть
-			double meleeTurnAngle = self.getAngleTo(meleeTarget);
-
-			//если уже надо бы поворачиваться дла атаки
-			if (waitTimeForAction(ActionType.STAFF) <= meleeTurnTicksCount + 2) {
-				// если уже можем попасть - атакуем и бежим дальше
-				if (checkHit(meleeTurnAngle, meleeTarget, move)) {
-					turnTo(moveToPoint, move);
-					return;
-				}
-				// если не можем попасть - доворачиваем на цель
-				turnTo(meleeTurnAngle, maxTurnAngle, move);
-				return;
-			}
-		}
-		// целей нет или же мы успеем к ним повернуться
-		turnTo(moveToPoint, move);
+		return false;
 	}
 
 	private int waitTimeForAction(ActionType actionType) {
@@ -578,17 +602,14 @@ public class StrategyImplement {
 		return false;
 	}
 
-	private boolean checkShot(double angle, CircularUnit target, Move move) {
-		if (checkHit(angle, target, move)) {
-			return true;
-		}
+	private boolean checkShot(double angle, Point point, CircularUnit target, Move move, ActionType actionType) {
 		if (Math.abs(angle) > Constants.MAX_SHOOT_ANGLE) {
 			return false;
 		}
-		if (FastMath.hypot(self.getX() - target.getX(), self.getY() - target.getY()) < target.getRadius() + self.getCastRange()
-				&& waitTimeForAction(ActionType.MAGIC_MISSILE) == 0) {
+		if (FastMath.hypot(self.getX() - point.getX(), self.getY() - point.getY()) < self.getCastRange() &&
+				waitTimeForAction(actionType) == 0) {
 			move.setCastAngle(angle);
-			move.setAction(ActionType.MAGIC_MISSILE);
+			move.setAction(actionType);
 			if (target instanceof Tree) {
 				move.setMinCastDistance(self.getCastRange() - .01);
 			} else {
@@ -637,92 +658,112 @@ public class StrategyImplement {
 	}
 
 	private void findTargets() {
-		targets.clear();
-		double missileDamage = Utils.getSelfProjectileDamage(ProjectileType.MAGIC_MISSILE);
+		prevIceTargets = iceTargets;
+		prevMissileTargets = missileTargets;
+		prevStaffTargets = staffTargets;
+		iceTargets = new ArrayList<>();
+		missileTargets = new ArrayList<>();
+		staffTargets = new ArrayList<>();
+		int missileDamage = Utils.getSelfProjectileDamage(ProjectileType.MAGIC_MISSILE);
+		int frostBoltDamage = Utils.SKILLS_LEARNED.contains(SkillType.FROST_BOLT) ? Utils.getSelfProjectileDamage(ProjectileType.FROST_BOLT) : 0;
 		treeCut = (myLineCalc == PositionMoveLine.INSTANCE &&
 				Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), new Point(self.getX(), self.getY())) > 0) ||
 				Utils.unitsCountAtDistance(filteredWorld.getTrees(),
-											 self,
-											 Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
+										   self,
+										   Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
 				Utils.unitsCountCloseToDestination(filteredWorld.getAllBlocksList(), pointToReach) >= 2 && // can't go throught obstacles
 						Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), pointToReach) > 0; // one of them - tree
-		for (LivingUnit livingUnit : filteredWorld.getAimsList()) {
-			if (livingUnit.getFaction() != Constants.getEnemyFaction() &&
-					(livingUnit.getFaction() != Faction.NEUTRAL || !agressiveNeutralsCalcs.isMinionAgressive(livingUnit.getId())) &&
-					livingUnit.getFaction() != Faction.OTHER) {
+		double score;
+		double distanceToTarget;
+		if (treeCut) {
+			for (Tree tree : filteredWorld.getTrees()) {
+
+				// distance to destination
+				// distance to me
+				score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(pointToReach.getX() - tree.getX(),
+																					 pointToReach.getY() - tree.getY());
+				distanceToTarget = FastMath.hypot(self, tree);
+				score += Constants.CUT_SELF_DISTANCE_PRIORITY / distanceToTarget;
+
+				score *= (tree.getRadius() + self.getRadius()) * .02;
+				missileTargets.add(new Pair<>(score / Utils.getHitsToKill(tree.getLife(), missileDamage) -
+													  Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
+											  tree));
+
+				if (distanceToTarget < Constants.getGame().getStaffRange() + tree.getRadius() + 50) {
+					distanceToTarget -= Constants.getGame().getStaffRange() + tree.getRadius();
+					if (distanceToTarget > 0) {
+						score *= 1 - distanceToTarget * .01; // divizion by 100
+					}
+					staffTargets.add(new Pair<>(score / Utils.getHitsToKill(tree.getLife(), Variables.staffDamage)
+														- Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
+												tree));
+				}
+			}
+		}
+
+		for (Minion minion : filteredWorld.getMinions()) {
+			if (minion.getFaction() == Constants.getCurrentFaction()) {
 				continue;
 			}
-			double score;
-			if (livingUnit instanceof Tree) {
-				if (treeCut) {
-					// distance to destination
-					// distance to me
-					score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(pointToReach.getX() - livingUnit.getX(),
-																						 pointToReach.getY() - livingUnit.getY());
-					score += Constants.CUT_SELF_DISTANCE_PRIORITY / FastMath.hypot(self.getX() - livingUnit.getX(), self.getY() - livingUnit.getY());
-					score /= (livingUnit.getLife() + missileDamage - 1) / missileDamage;
-					targets.add(new AbstractMap.SimpleEntry<>(score - Constants.CUT_REACH_POINT_DISTANCE_PTIORITY, livingUnit));
-				}
+			if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
+				continue;
+			}
+
+			score = Utils.getMinionAttackPriority(minion, missileDamage, self);
+			missileTargets.add(new Pair<>(score, minion));
+			Utils.appendStaffTarget(staffTargets, minion, self, Utils.getMinionAttackPriority(minion, Variables.staffDamage, self));
+			if (frostBoltDamage > 0) {
+				score = Utils.getMinionAttackPriority(minion, frostBoltDamage, self);
+				iceTargets.add(new Pair<>(score, minion));
+			}
+		}
+
+		for (Building building : filteredWorld.getBuildings()) {
+			if (building.getFaction() == Constants.getCurrentFaction()) {
 				continue;
 			}
 			score = Constants.LOW_AIM_SCORE;
-			double tmp = (livingUnit.getMaxLife() - livingUnit.getLife()) / (double) livingUnit.getMaxLife();
+			double tmp = (building.getMaxLife() - building.getLife()) / (double) building.getMaxLife();
 			score += tmp * tmp;
-			if (livingUnit instanceof Minion) {
-				if (((Minion) livingUnit).getType() == MinionType.FETISH_BLOWDART) {
-					score *= Constants.FETISH_AIM_PROIRITY;
-				} else {
-					score *= Constants.ORC_AIM_PROIRITY;
-				}
-				if (livingUnit.getFaction() == Faction.NEUTRAL) {
-					score *= Constants.NEUTRAL_FACTION_AIM_PROIRITY;
-				}
-			} else if (livingUnit instanceof Wizard) {
-				score *= Constants.WIZARD_AIM_PROIRITY;
-				if (Utils.wizardHasStatus((Wizard) livingUnit, StatusType.SHIELDED)) {
-					score *= Constants.SHIELDENED_AIM_PRIORITY;
-				}
-				if (Utils.wizardHasStatus((Wizard) livingUnit, StatusType.EMPOWERED)) {
-					score *= Constants.EMPOWERED_AIM_PRIORITY;
-				}
-				if (Utils.wizardHasStatus((Wizard) livingUnit, StatusType.HASTENED)) {
-					score *= Constants.HASTENED_AIM_PRIORITY;
-				}
-			} else if (livingUnit instanceof Building) {
-				score *= Constants.BUILDING_AIM_PROIRITY;
-			}
-			targets.add(new AbstractMap.SimpleEntry<>(score, livingUnit));
+			score *= Constants.BUILDING_AIM_PROIRITY;
+			missileTargets.add(new Pair<>(score, building));
+			Utils.appendStaffTarget(staffTargets, building, self, score);
 		}
-		Collections.sort(targets, Utils.AIM_SORT_COMPARATOR);
-		for (Map.Entry<Double, CircularUnit> doubleCircularUnitEntry : targets) {
-			target = doubleCircularUnitEntry.getValue();
-			Point pointA = new Point(self.getX(), self.getY());
-			Point pointB = new Point(target.getX(), target.getY());
 
-			for (Tree tree : filteredWorld.getTrees()) {
-				if (tree == target) {
-					continue;
-				}
-				double distance = Utils.distancePointToSegment(new Point(tree.getX(), tree.getY()), pointA, pointB);
-				if (distance < tree.getRadius() + Constants.getGame().getMagicMissileRadius()) {
-					target = null;
-					break;
-				}
+		for (Wizard wizard : filteredWorld.getWizards()) {
+			if (wizard.getFaction() == Constants.getCurrentFaction()) {
+				continue;
 			}
-			if (target != null) {
-				break;
+			score = Constants.LOW_AIM_SCORE;
+			double tmp = (wizard.getMaxLife() - wizard.getLife()) / (double) wizard.getMaxLife();
+			score += tmp * tmp;
+			score *= Constants.WIZARD_AIM_PROIRITY;
+			if (Utils.wizardHasStatus(wizard, StatusType.SHIELDED)) {
+				score *= Constants.SHIELDENED_AIM_PRIORITY;
+			}
+			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
+				score *= Constants.EMPOWERED_AIM_PRIORITY;
+			}
+			staffTargets.add(new Pair<>(score, wizard));
+			Utils.appendStaffTarget(staffTargets, wizard, self, score);
+			missileTargets.add(new Pair<>(score, wizard));
+			if (frostBoltDamage > 0) {
+				iceTargets.add(new Pair<>(score * Constants.FROST_WIZARD_AIM_PROIRITY, wizard));
 			}
 		}
 
-		double distance;
-		for (Map.Entry<Double, CircularUnit> doubleCircularUnitEntry : targets) {
-			meleeTarget = doubleCircularUnitEntry.getValue();
-			distance = FastMath.hypot(self.getX() - meleeTarget.getX(), self.getY() - meleeTarget.getY());
-			if (distance + .001 < meleeTarget.getRadius() + Constants.getGame().getStaffRange()) {
-				break;
-			}
-			meleeTarget = null;
-		}
+		Utils.applyPreviousContainedModifier(staffTargets, prevStaffTargets);
+		Utils.applyPreviousContainedModifier(missileTargets, prevMissileTargets);
+		Utils.applyPreviousContainedModifier(iceTargets, prevIceTargets);
+
+		Collections.sort(staffTargets, Utils.AIM_SORT_COMPARATOR);
+		Collections.sort(missileTargets, Utils.AIM_SORT_COMPARATOR);
+		Collections.sort(iceTargets, Utils.AIM_SORT_COMPARATOR);
+
+		staffTargets = staffTargets.subList(0, Math.min(staffTargets.size(), 3));
+		Utils.filterTargets(missileTargets, ProjectileType.MAGIC_MISSILE, self, filteredWorld);
+		Utils.filterTargets(iceTargets, ProjectileType.FROST_BOLT, self, filteredWorld);
 	}
 
 	protected void moveTo(int pointIdx, Move move, boolean run) {

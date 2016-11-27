@@ -122,8 +122,8 @@ public class Drawing_DrawingData {
         return agressiveNeutralsCalcs;
     }
 
-    public Drawing_DrawingData clone() {
-        return new Drawing_DrawingData(self,
+	public Drawing_DrawingData clone() {
+		return new Drawing_DrawingData(self,
                                        world,
                                        maxCastRange,
                                        currentAction,

@@ -353,11 +353,17 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			}
 		}
 
-		if (target != null) {
-			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.BLACK);
-			if (meleeTarget != null && meleeTarget != target) {
-				drawCross(new Point(meleeTarget.getX(), meleeTarget.getY()), meleeTarget.getRadius(), Color.BLACK);
-			}
+		if (!staffTargets.isEmpty()) {
+			CircularUnit target = staffTargets.get(0).getSecond();
+			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.black);
+		}
+		if (!missileTargets.isEmpty()) {
+			CircularUnit target = missileTargets.get(0).getSecond();
+			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.MAGENTA);
+		}
+		if (!iceTargets.isEmpty()) {
+			CircularUnit target = iceTargets.get(0).getSecond();
+			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.BLUE);
 		}
 
 		StringBuilder sb = new StringBuilder("Action timeout: " + self.getRemainingActionCooldownTicks());
