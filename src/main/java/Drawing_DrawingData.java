@@ -1,8 +1,11 @@
+import model.CircularUnit;
 import model.Wizard;
 import model.World;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,11 +26,15 @@ public class Drawing_DrawingData {
     private boolean moveToLineActivated;
     private BaseLine lastFightLine;
     private BaseLine currentCalcLine;
+	private List<Pair<Double, CircularUnit>> missileTargets;
+	private List<Pair<Double, CircularUnit>> staffTargets;
+	private List<Pair<Double, CircularUnit>> iceTargets;
 
-    private Point moveToLinePoint;
-    private Point[] linesFightPoints;
 
-    public Drawing_DrawingData(Wizard self,
+	private Point moveToLinePoint;
+	private Point[] linesFightPoints;
+
+	public Drawing_DrawingData(Wizard self,
 							   World world,
 							   double[] maxCastRange,
 							   CurrentAction currentAction,
@@ -40,9 +47,12 @@ public class Drawing_DrawingData {
 							   BaseLine currentCalcLine,
 							   Point moveToLinePoint,
 							   Point[] linesFightPoints,
-							   AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
-        this.self = self;
-        this.world = world;
+							   AgressiveNeutralsCalcs agressiveNeutralsCalcs,
+							   List<Pair<Double, CircularUnit>> missileTargets,
+							   List<Pair<Double, CircularUnit>> staffTargets,
+							   List<Pair<Double, CircularUnit>> iceTargets) {
+		this.self = self;
+		this.world = world;
         this.maxCastRange = Arrays.copyOf(maxCastRange, maxCastRange.length);
         this.currentAction = currentAction.clone();
 		this.projectilesDTL = new HashMap<>();
@@ -64,7 +74,21 @@ public class Drawing_DrawingData {
             }
         }
         this.agressiveNeutralsCalcs = agressiveNeutralsCalcs.makeClone();
-    }
+
+		this.iceTargets = new ArrayList<>(iceTargets.size());
+		for (Pair<Double, CircularUnit> iceTarget : iceTargets) {
+			this.iceTargets.add(new Pair<>(iceTarget));
+		}
+		this.staffTargets = new ArrayList<>(staffTargets.size());
+		for (Pair<Double, CircularUnit> iceTarget : staffTargets) {
+			this.staffTargets.add(new Pair<>(iceTarget));
+		}
+		this.missileTargets = new ArrayList<>(missileTargets.size());
+		for (Pair<Double, CircularUnit> iceTarget : missileTargets) {
+			this.missileTargets.add(new Pair<>(iceTarget));
+		}
+
+	}
 
     public Wizard getSelf() {
         return self;
@@ -124,23 +148,38 @@ public class Drawing_DrawingData {
 
 	public Drawing_DrawingData clone() {
 		return new Drawing_DrawingData(self,
-                                       world,
-                                       maxCastRange,
-                                       currentAction,
-                                       projectilesDTL,
-                                       enemyPositionCalc,
-                                       bonusesPossibilityCalcs,
-                                       goToBonusActivated,
-                                       moveToLineActivated,
-                                       lastFightLine,
-                                       currentCalcLine,
-                                       moveToLinePoint,
-                                       linesFightPoints,
-                                       agressiveNeutralsCalcs);
-    }
+									   world,
+									   maxCastRange,
+									   currentAction,
+									   projectilesDTL,
+									   enemyPositionCalc,
+									   bonusesPossibilityCalcs,
+									   goToBonusActivated,
+									   moveToLineActivated,
+									   lastFightLine,
+									   currentCalcLine,
+									   moveToLinePoint,
+									   linesFightPoints,
+									   agressiveNeutralsCalcs,
+									   missileTargets,
+									   staffTargets,
+									   iceTargets);
+	}
 
-    @Override
-    public String toString() {
+	public List<Pair<Double, CircularUnit>> getMissileTargets() {
+		return missileTargets;
+	}
+
+	public List<Pair<Double, CircularUnit>> getStaffTargets() {
+		return staffTargets;
+	}
+
+	public List<Pair<Double, CircularUnit>> getIceTargets() {
+		return iceTargets;
+	}
+
+	@Override
+	public String toString() {
         return "Drawing_DrawingData{" +
                 String.format("self=(%s, %s)", self.getX(), self.getY()) +
                 ", " + String.format("world= (tick: %d)", world.getTickIndex()) +

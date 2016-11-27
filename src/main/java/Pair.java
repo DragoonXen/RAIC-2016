@@ -10,6 +10,12 @@ public class Pair<K, V> {
 		this.second = second;
 	}
 
+	public Pair(Pair<K, V> pair) {
+		this.first = pair.first;
+		this.second = pair.second;
+	}
+
+
 	public K getFirst() {
 		return first;
 	}

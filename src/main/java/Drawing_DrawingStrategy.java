@@ -102,6 +102,9 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			Constants.getLines()[i].fightPoint.update(currentDrawingData.getLinesFightPoints()[i]);
 		}
 		this.agressiveNeutralsCalcs = currentDrawingData.getAgressiveNeutralsCalcs();
+		this.iceTargets = currentDrawingData.getIceTargets();
+		this.missileTargets = currentDrawingData.getMissileTargets();
+		this.staffTargets = currentDrawingData.getStaffTargets();
 		return storedData;
 	}
 
@@ -119,7 +122,10 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   myLineCalc,
 									   PositionMoveLine.INSTANCE.getPositionToMove().clonePoint(),
 									   new Point[]{Constants.getLines()[0].fightPoint, Constants.getLines()[1].fightPoint, Constants.getLines()[2].fightPoint},
-									   agressiveNeutralsCalcs);
+									   agressiveNeutralsCalcs,
+									   missileTargets,
+									   staffTargets,
+									   iceTargets);
 	}
 
     @Override

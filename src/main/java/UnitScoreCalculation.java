@@ -126,9 +126,9 @@ public class UnitScoreCalculation {
 			if (expBonus > 0.) {
 				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(Constants.EXPERIENCE_DISTANCE - movePenalty, expBonus));
 			}
-			double wizardDamage = 24.;
+			double wizardDamage = 18.;
 			if (Utils.wizardHasSkill(wizard, SkillType.FROST_BOLT)) {
-				wizardDamage *= 1.5;
+				wizardDamage *= 1.75;
 			}
 			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
 				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();

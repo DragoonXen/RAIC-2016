@@ -998,10 +998,17 @@ public class Utils {
 
 	public static void applyPreviousContainedModifier(List<Pair<Double, CircularUnit>> newTargets, List<Pair<Double, CircularUnit>> prevTargets) {
 		int i = 0;
+		double min = 0;
+		for (Pair<Double, CircularUnit> newTarget : newTargets) {
+			min = Math.min(min, newTarget.getFirst());
+		}
+		for (Pair<Double, CircularUnit> newTarget : newTargets) {
+			newTarget.setFirst(newTarget.getFirst() - min);
+		}
 		for (Pair<Double, CircularUnit> prevTarget : prevTargets) {
 			for (Pair<Double, CircularUnit> newTarget : newTargets) {
 				if (prevTarget.getSecond().getId() == newTarget.getSecond().getId()) {
-					newTarget.setFirst(newTarget.getFirst() * (Constants.PREV_AIM_MODIFIER / ++i));
+					newTarget.setFirst(newTarget.getFirst() * (1. + (Constants.PREV_AIM_MODIFIER / ++i)));
 					break;
 				}
 			}
