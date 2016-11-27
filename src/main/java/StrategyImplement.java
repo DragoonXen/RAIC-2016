@@ -511,15 +511,15 @@ public class StrategyImplement {
 			return;
 		}
 		CircularUnit target = missileTargets.get(0).getSecond();
-		Point targetShootPoint = Utils.getShootPoint(target, Utils.PROJECTIVE_RADIUS[ProjectileType.MAGIC_MISSILE.ordinal()]);
+		Point targetShootPoint = Utils.getShootPoint(target, self, Utils.PROJECTIVE_RADIUS[ProjectileType.MAGIC_MISSILE.ordinal()]);
 		CircularUnit frostTarget = iceTargets.isEmpty() ? null : iceTargets.get(0).getSecond();
 		Point frostTargetShootPoint = frostTarget != null ?
-				Utils.getShootPoint(frostTarget, Utils.PROJECTIVE_RADIUS[ProjectileType.FROST_BOLT.ordinal()]) :
+				Utils.getShootPoint(frostTarget, self, Utils.PROJECTIVE_RADIUS[ProjectileType.FROST_BOLT.ordinal()]) :
 				null;
 		CircularUnit meleeTarget = staffTargets.isEmpty() ? null : staffTargets.get(0).getSecond();
 
 		if (frostTarget != null) {
-			if (frostTarget instanceof Wizard || self.getMana() > self.getMaxMana() * .9) {
+			if (frostTarget instanceof Wizard || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
 				if (applyTargetAction(ActionType.FROST_BOLT, frostTargetShootPoint, frostTarget, move)) {
 					return;
 				}
@@ -606,8 +606,7 @@ public class StrategyImplement {
 		if (Math.abs(angle) > Constants.MAX_SHOOT_ANGLE) {
 			return false;
 		}
-		if (FastMath.hypot(self.getX() - point.getX(), self.getY() - point.getY()) < self.getCastRange() &&
-				waitTimeForAction(actionType) == 0) {
+		if (FastMath.hypot(self, point) < self.getCastRange() && waitTimeForAction(actionType) == 0) {
 			move.setCastAngle(angle);
 			move.setAction(actionType);
 			if (target instanceof Tree) {
@@ -698,7 +697,8 @@ public class StrategyImplement {
 		int missileDamage = Utils.getSelfProjectileDamage(ProjectileType.MAGIC_MISSILE);
 		int frostBoltDamage = Utils.SKILLS_LEARNED.contains(SkillType.FROST_BOLT) ? Utils.getSelfProjectileDamage(ProjectileType.FROST_BOLT) : 0;
 		treeCut = (myLineCalc == PositionMoveLine.INSTANCE &&
-				Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), new Point(self.getX(), self.getY())) > 0) ||
+				(Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), new Point(self.getX(), self.getY())) > 0 ||
+						Utils.unitsCountAtDistance(filteredWorld.getTrees(), self, Constants.TREES_DISTANCE_TO_CUT) >= 3)) ||
 				Utils.unitsCountAtDistance(filteredWorld.getTrees(),
 										   self,
 										   Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
@@ -782,7 +782,6 @@ public class StrategyImplement {
 			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
 				score *= Constants.EMPOWERED_AIM_PRIORITY;
 			}
-			staffTargets.add(new Pair<>(score, wizard));
 			Utils.appendStaffTarget(staffTargets, wizard, self, score);
 			missileTargets.add(new Pair<>(score, wizard));
 			if (frostBoltDamage > 0) {
@@ -805,6 +804,7 @@ public class StrategyImplement {
 
 	protected void moveTo(int pointIdx, Move move, boolean run) {
 		if (wayPoints.size() < 2) {
+
 			return;
 		}
 		ScanMatrixItem point = wayPoints.get(pointIdx).getPoint();
@@ -986,7 +986,7 @@ public class StrategyImplement {
 				tmpScore = newScanMatrixItem.getTotalScore(self) +
 						newScanMatrixItem.getWayPoint().getScoresOnWay() / newScanMatrixItem.getWayPoint().getDistanceFromStart()
 						+ Variables.maxDangerMatrixScore;
-				if (tmpScore > score) {
+				if (tmpScore > score || (tmpScore == score && best.getDistanceFromSelf() < 6.)) {
 					score = tmpScore;
 					best = newScanMatrixItem;
 				}
@@ -1037,7 +1037,7 @@ public class StrategyImplement {
 
 				if (currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION) {
 					if (FastMath.hypot(self.getX() - myLineCalc.getFightPoint().getX(), self.getY() - myLineCalc.getFightPoint().getY()) > 200) {
-						item.addOtherBonus(item.getForwardDistanceDivision() * 70);
+						item.addOtherBonus(item.getForwardDistanceDivision() * 140);
 					}
 				} else if (!enemyFound) {
 					item.addOtherBonus(item.getForwardDistanceDivision() * .0001);

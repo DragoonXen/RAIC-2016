@@ -208,7 +208,6 @@ public class Utils {
 			}
 		}
 		Collections.sort(pointsMap, (o1, o2) -> o1.getKey().compareTo(o2.getKey()));
-		int i = 0;
 		for (Map.Entry<Double, ScanMatrixItem> doubleScanMatrixItemEntry : pointsMap) {
 			ScanMatrixItem item = doubleScanMatrixItemEntry.getValue();
 			item.setDistanceFromSelf(doubleScanMatrixItemEntry.getKey());
@@ -953,9 +952,14 @@ public class Utils {
 		for (Iterator<Pair<Double, CircularUnit>> iterator = targets.iterator(); iterator.hasNext(); ) {
 			Pair<Double, CircularUnit> item = iterator.next();
 			CircularUnit target = item.getSecond();
-			Point pointB = getShootPoint(target, projectileRadius);
+			Point pointB = getShootPoint(target, self, projectileRadius);
 
-			if (FastMath.hypot(self, pointB) > self.getCastRange()) { // не дострельнем
+			if (target instanceof Building) {
+				if (FastMath.hypot(self, pointB) > self.getCastRange()) { // не дострельнем
+					iterator.remove();
+					continue;
+				}
+			} else if (FastMath.hypot(self, pointB) > self.getCastRange()) { // не дострельнем
 				iterator.remove();
 				continue;
 			}
@@ -987,10 +991,14 @@ public class Utils {
 		}
 	}
 
-	public static Point getShootPoint(CircularUnit unit, double projectileRadius) {
+	public static Point getShootPoint(CircularUnit unit, Wizard self, double projectileRadius) {
 		if (unit instanceof Wizard) {
 			double preffered = unit.getRadius() + projectileRadius - (unit.getRadius() + projectileRadius) * 6. / 7.;
 			return new Point(unit.getX() + Math.cos(unit.getAngle()) * preffered, unit.getY() + Math.sin(unit.getAngle()) * preffered);
+		} else if (unit instanceof Building) {
+			double angleToMe = unit.getAngleTo(self);
+			return new Point(unit.getX() + Math.cos(angleToMe) * (projectileRadius + unit.getRadius() - .1),
+							 unit.getY() + Math.sin(angleToMe) * (projectileRadius + unit.getRadius() - .1));
 		} else {
 			return new Point(unit.getX(), unit.getY());
 		}

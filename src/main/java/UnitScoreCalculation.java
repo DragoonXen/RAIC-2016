@@ -1,5 +1,6 @@
 import model.Bonus;
 import model.Building;
+import model.BuildingType;
 import model.Faction;
 import model.Minion;
 import model.SkillType;
@@ -163,7 +164,7 @@ public class UnitScoreCalculation {
 			}
 
 			int priorityAims = 0;
-			if (self.getLife() > building.getDamage()) {
+			if (self.getLife() > building.getDamage() && building.getType() == BuildingType.GUARDIAN_TOWER) {
 				priorityAims = Utils.getPrefferedUnitsCountInRange(building, filteredWorld, building.getAttackRange(), building.getDamage(), self.getLife());
 			}
 

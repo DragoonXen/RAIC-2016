@@ -25,7 +25,7 @@ public class SkillsLearning {
 			SkillType.HASTE};
 
 	public static void updateSkills(Wizard self, Move move) {
-		if (self.getLevel() > self.getSkills().length) {
+		if (self.getLevel() > self.getSkills().length && self.getLevel() <= skillsToLearn.length) {
 			move.setSkillToLearn(skillsToLearn[self.getSkills().length]);
 		}
 	}
