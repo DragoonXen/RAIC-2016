@@ -117,6 +117,8 @@ public class UnitScoreCalculation {
 			unitsScoreCalc.put(minion.getId(), structure);
 		}
 
+		boolean meHasFrostSkill = Utils.wizardHasSkill(self, SkillType.FROST_BOLT);
+
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				continue;
@@ -137,18 +139,24 @@ public class UnitScoreCalculation {
 				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();
 			}
 			if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
-				double range = fire ? 400 : Math.min(wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2, 560);
+				double range = fire && meHasFrostSkill ? 400 : Math.min(wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2,
+																		560);
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
 						range + movePenalty,
 						wizardDamage * 3. * shieldBonus));
 			} else {
 				int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
-				double range = fire ? 300 : Math.min(wizard.getCastRange() +
-															 Constants.getGame().getWizardForwardSpeed() *
-																	 Math.min(2,
-																			  -Math.max(wizard.getRemainingActionCooldownTicks(), freezeStatus) - addTicks + 4),
-													 530);
+				double range = fire && meHasFrostSkill ? 300 : Math.min(wizard.getCastRange() +
+																				Constants.getGame().getWizardForwardSpeed() *
+																						Math.min(2,
+																								 -Math.max(wizard.getRemainingActionCooldownTicks(),
+																										   freezeStatus) - addTicks + 4),
+																		530);
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(range + movePenalty, wizardDamage * shieldBonus));
+			}
+
+			if (!frost && meHasFrostSkill) {
+				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(500, 12));
 			}
 
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
