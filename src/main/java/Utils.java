@@ -555,53 +555,6 @@ public class Utils {
 
 	}
 
-	public static BuildingPhantom[] updateBuildingPhantoms(World world, BuildingPhantom[] phantoms) {
-		for (BuildingPhantom phantom : phantoms) {
-			phantom.resetUpdate();
-		}
-
-		for (Building building : world.getBuildings()) {
-			for (BuildingPhantom phantom : phantoms) {
-				if (phantom.getId() == building.getId()) {
-					phantom.updateInfo(building);
-					break;
-				}
-			}
-		}
-
-		int hasBroken = 0;
-		for (BuildingPhantom phantom : phantoms) {
-			if (phantom.isUpdated()) {
-				continue;
-			}
-			if (phantom.getFaction() == Constants.getCurrentFaction()) {
-				phantom.setBroken(true);
-				++hasBroken;
-				continue;
-			}
-			if (Utils.isPositionVisible(phantom.getPosition(), .1, world.getWizards(), world.getMinions(), null)) {
-				phantom.setBroken(true);
-				++hasBroken;
-			} else {
-				if (phantom.getRemainingActionCooldownTicks() == 0 && Utils.hasAllyNearby(phantom, world, phantom.getAttackRange() + .1)) {
-					phantom.fixRemainingActionCooldownTicks();
-				}
-				phantom.nextTick();
-			}
-		}
-		BuildingPhantom[] response = phantoms;
-		if (hasBroken != 0) {
-			response = new BuildingPhantom[phantoms.length - hasBroken];
-			int idx = 0;
-			for (BuildingPhantom phantom : phantoms) {
-				if (!phantom.isBroken()) {
-					response[idx++] = phantom;
-				}
-			}
-		}
-		return response;
-	}
-
 	public final static double[] PROJECTIVE_SPEED = new double[]
 			{Constants.getGame().getMagicMissileSpeed(),
 					Constants.getGame().getFrostBoltSpeed(),
@@ -684,7 +637,6 @@ public class Utils {
 				} else {
 					damage += getProjectileDamage(projectile, distanceToProjective);
 					remove = true;
-
 				}
 			}
 			if (remove) {

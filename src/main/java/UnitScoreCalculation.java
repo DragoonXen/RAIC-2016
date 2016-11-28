@@ -127,24 +127,27 @@ public class UnitScoreCalculation {
 			if (expBonus > 0.) {
 				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(Constants.EXPERIENCE_DISTANCE - movePenalty, expBonus));
 			}
-			double wizardDamage = 18.;
-			if (Utils.wizardHasSkill(wizard, SkillType.FROST_BOLT)) {
+			double wizardDamage = 16.;
+			boolean frost = Utils.wizardHasSkill(wizard, SkillType.FROST_BOLT);
+			boolean fire = Utils.wizardHasSkill(wizard, SkillType.FIREBALL);
+			if (frost || fire) {
 				wizardDamage *= 1.75;
 			}
 			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
 				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();
 			}
 			if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
-				double range = Math.min(wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2, 560);
+				double range = fire ? 400 : Math.min(wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2, 560);
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
 						range + movePenalty,
 						wizardDamage * 3. * shieldBonus));
 			} else {
 				int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
-				double range = Math.min(wizard.getCastRange() +
-												Constants.getGame().getWizardForwardSpeed() *
-														Math.min(2, -Math.max(wizard.getRemainingActionCooldownTicks(), freezeStatus) - addTicks + 4),
-										530);
+				double range = fire ? 300 : Math.min(wizard.getCastRange() +
+															 Constants.getGame().getWizardForwardSpeed() *
+																	 Math.min(2,
+																			  -Math.max(wizard.getRemainingActionCooldownTicks(), freezeStatus) - addTicks + 4),
+													 530);
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(range + movePenalty, wizardDamage * shieldBonus));
 			}
 

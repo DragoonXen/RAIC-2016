@@ -77,7 +77,49 @@ public class EnemyPositionCalc {
 				buildingPhantoms[phantomIdx++] = new BuildingPhantom(building, true);
 			}
 		} else {
-			this.buildingPhantoms = Utils.updateBuildingPhantoms(world, buildingPhantoms);
+			for (BuildingPhantom phantom : buildingPhantoms) {
+				phantom.resetUpdate();
+			}
+
+			for (Building building : world.getBuildings()) {
+				for (BuildingPhantom phantom : buildingPhantoms) {
+					if (phantom.getId() == building.getId()) {
+						phantom.updateInfo(building);
+						break;
+					}
+				}
+			}
+
+			int hasBroken = 0;
+			for (BuildingPhantom phantom : buildingPhantoms) {
+				if (phantom.isUpdated()) {
+					continue;
+				}
+				if (phantom.getFaction() == Constants.getCurrentFaction()) {
+					phantom.setBroken(true);
+					++hasBroken;
+					continue;
+				}
+				if (Utils.isPositionVisible(phantom.getPosition(), .1, world.getWizards(), world.getMinions(), null)) {
+					phantom.setBroken(true);
+					++hasBroken;
+				} else {
+					if (phantom.getRemainingActionCooldownTicks() == 0 && Utils.hasAllyNearby(phantom, world, phantom.getAttackRange() + .1)) {
+						phantom.fixRemainingActionCooldownTicks();
+					}
+					phantom.nextTick();
+				}
+			}
+			if (hasBroken != 0) {
+				BuildingPhantom[] updated = new BuildingPhantom[buildingPhantoms.length - hasBroken];
+				int idx = 0;
+				for (BuildingPhantom phantom : buildingPhantoms) {
+					if (!phantom.isBroken()) {
+						updated[idx++] = phantom;
+					}
+				}
+				this.buildingPhantoms = updated;
+			}
 		}
 	}
 
