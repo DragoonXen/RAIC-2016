@@ -611,7 +611,7 @@ public class Utils {
 	public final static int[] PROJECTIVE_DAMAGE = new int[]
 			{Constants.getGame().getMagicMissileDirectDamage(),
 					Constants.getGame().getFrostBoltDirectDamage(),
-					Constants.getGame().getFireballExplosionMaxDamage(),
+					Constants.getGame().getBurningSummaryDamage(),
 					Constants.getGame().getDartDirectDamage()};
 
 	public final static double[] PROJECTIVE_RADIUS = new double[]
@@ -620,8 +620,16 @@ public class Utils {
 					Constants.getGame().getFireballRadius(),
 					Constants.getGame().getDartRadius()};
 
-	public static int getProjectileDamage(Projectile projectile) {
-		return PROJECTIVE_DAMAGE[projectile.getType().ordinal()];
+	public static int getProjectileDamage(Projectile projectile, double distance) {
+		int damage = PROJECTIVE_DAMAGE[projectile.getType().ordinal()];
+		if (projectile.getType() == ProjectileType.FIREBALL) {
+			if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
+				return damage + Constants.getGame().getFireballExplosionMaxDamage();
+			} else {
+				return damage + Constants.getGame().getFireballExplosionMinDamage();
+			}
+		}
+		return damage;
 	}
 
 	public static int getSelfProjectileDamage(ProjectileType projectileType) {
@@ -664,16 +672,7 @@ public class Utils {
 			}
 			double distanceToProjective = Utils.distancePointToSegment(point, startProjectilePoint, projectileVector);
 			if (distanceToProjective < projectiveRadius + selfRadius + .001) {
-				if (projectile.getType() == ProjectileType.FIREBALL) {
-					damage += Constants.getGame().getBurningSummaryDamage();
-					if (distanceToProjective < Constants.getGame().getFireballExplosionMaxDamageRange() + selfRadius + .001) {
-						damage += Constants.getGame().getFireballExplosionMaxDamage();
-					} else {
-						damage += Constants.getGame().getFireballExplosionMinDamage();
-					}
-				} else {
-					damage += getProjectileDamage(projectile);
-				}
+				damage += getProjectileDamage(projectile, distanceToProjective);
 				remove = true;
 			}
 			if (remove) {

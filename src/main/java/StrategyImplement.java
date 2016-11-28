@@ -334,7 +334,7 @@ public class StrategyImplement implements Strategy {
 				projectileRadius = Constants.getGame().getFireballExplosionMinDamageRange();
 			}
 			if (distance < maxStep + this.self.getRadius() + projectileRadius) {
-				sumDamage += Utils.getProjectileDamage(projectile);
+				sumDamage += Utils.getProjectileDamage(projectile, distance);
 			}
 		}
 		return sumDamage;
