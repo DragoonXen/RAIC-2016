@@ -322,13 +322,18 @@ public class StrategyImplement implements Strategy {
 		Point self = new Point(this.self.getX(), this.self.getY());
 		double distance;
 		double sumDamage = 0.;
+		double projectileRadius;
 		for (Projectile projectile : filteredWorld.getProjectiles()) {
 			Point projectileStart = new Point(projectile.getX(), projectile.getY());
 			Point projectileDestination = new Point(projectile.getSpeedX(), projectile.getSpeedY());
 			projectileDestination.fixVectorLength(projectilesDTL.get(projectile.getId()));
 			projectileDestination.add(projectileStart);
 			distance = Utils.distancePointToSegment(self, projectileStart, projectileDestination);
-			if (distance < maxStep + this.self.getRadius() + projectile.getRadius()) {
+			projectileRadius = projectile.getRadius();
+			if (projectile.getType() == ProjectileType.FIREBALL) {
+				projectileRadius = Constants.getGame().getFireballExplosionMinDamageRange();
+			}
+			if (distance < maxStep + this.self.getRadius() + projectileRadius) {
 				sumDamage += Utils.getProjectileDamage(projectile);
 			}
 		}

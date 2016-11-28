@@ -660,10 +660,20 @@ public class Utils {
 			projectileVector.add(startProjectilePoint);
 			double projectiveRadius = projectile.getRadius();
 			if (projectile.getType() == ProjectileType.FIREBALL) {
-				projectiveRadius = 100.001;
+				projectiveRadius = Constants.getGame().getFireballExplosionMinDamageRange();
 			}
-			if (Utils.distancePointToSegment(point, startProjectilePoint, projectileVector) < projectiveRadius + selfRadius + .001) {
-				damage += getProjectileDamage(projectile);
+			double distanceToProjective = Utils.distancePointToSegment(point, startProjectilePoint, projectileVector);
+			if (distanceToProjective < projectiveRadius + selfRadius + .001) {
+				if (projectile.getType() == ProjectileType.FIREBALL) {
+					damage += Constants.getGame().getBurningSummaryDamage();
+					if (distanceToProjective < Constants.getGame().getFireballExplosionMaxDamageRange() + selfRadius + .001) {
+						damage += Constants.getGame().getFireballExplosionMaxDamage();
+					} else {
+						damage += Constants.getGame().getFireballExplosionMinDamage();
+					}
+				} else {
+					damage += getProjectileDamage(projectile);
+				}
 				remove = true;
 			}
 			if (remove) {
