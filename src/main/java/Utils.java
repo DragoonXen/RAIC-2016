@@ -658,7 +658,11 @@ public class Utils {
 				next.setValue(next.getValue() - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()]);
 			}
 			projectileVector.add(startProjectilePoint);
-			if (Utils.distancePointToSegment(point, startProjectilePoint, projectileVector) < projectile.getRadius() + selfRadius + .001) {
+			double projectiveRadius = projectile.getRadius();
+			if (projectile.getType() == ProjectileType.FIREBALL) {
+				projectiveRadius = 100.001;
+			}
+			if (Utils.distancePointToSegment(point, startProjectilePoint, projectileVector) < projectiveRadius + selfRadius + .001) {
 				damage += getProjectileDamage(projectile);
 				remove = true;
 			}
