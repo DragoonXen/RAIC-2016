@@ -372,6 +372,12 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			CircularUnit target = iceTargets.get(0).getSecond();
 			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.BLUE);
 		}
+		if (!fireTargets.isEmpty()) {
+			Pair<Double, Point> fireTarget = fireTargets.get(0);
+			if (fireTarget.getFirst() > 90. || self.getMana() > self.getMaxMana() * .9) {
+				drawCross(fireTarget.getSecond(), 30., Color.ORANGE);
+			}
+		}
 
 		StringBuilder sb = new StringBuilder("Action timeout: " + self.getRemainingActionCooldownTicks());
 		sb.append(" [");

@@ -17,6 +17,8 @@ import model.World;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -53,6 +55,7 @@ public class StrategyImplement implements Strategy {
 	protected List<Pair<Double, CircularUnit>> missileTargets = new ArrayList<>();
 	protected List<Pair<Double, CircularUnit>> staffTargets = new ArrayList<>();
 	protected List<Pair<Double, CircularUnit>> iceTargets = new ArrayList<>();
+	protected List<Pair<Double, Point>> fireTargets = new LinkedList<>();
 	protected List<Pair<Double, CircularUnit>> prevMissileTargets = new ArrayList<>();
 	protected List<Pair<Double, CircularUnit>> prevStaffTargets = new ArrayList<>();
 	protected List<Pair<Double, CircularUnit>> prevIceTargets = new ArrayList<>();
@@ -525,16 +528,34 @@ public class StrategyImplement implements Strategy {
 				null;
 		CircularUnit meleeTarget = staffTargets.isEmpty() ? null : staffTargets.get(0).getSecond();
 
-		if (frostTarget != null) {
-			if (frostTarget instanceof Wizard || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
-				if (applyTargetAction(ActionType.FROST_BOLT, frostTargetShootPoint, frostTarget, move)) {
+		Pair<Double, Point> fireTarget = fireTargets.isEmpty() ? null : fireTargets.get(0);
+		if (fireTarget != null && fireTarget.getFirst() < 30) {
+			fireTarget = null;
+		}
+
+		if (fireTarget != null) {
+			if (fireTarget.getFirst() > 90. || self.getMana() > self.getMaxMana() * .9) {
+				if (applyTargetAction(ActionType.FIREBALL, FastMath.hypot(self, fireTarget.getSecond()), fireTarget.getSecond(), move)) {
 					return;
 				}
 			}
 		}
 
-		if (applyTargetAction(ActionType.MAGIC_MISSILE, targetShootPoint, target, move)) {
-			return;
+		if (frostTarget != null) {
+			if (frostTarget instanceof Wizard || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
+				if (applyTargetAction(ActionType.FROST_BOLT, FastMath.hypot(self, target) - target.getRadius(), frostTargetShootPoint, move)) {
+					return;
+				}
+			}
+		}
+
+		if (fireTarget == null || fireTarget.getFirst() < 70. || self.getMana() > self.getMaxMana() * .9) {
+			if (applyTargetAction(ActionType.MAGIC_MISSILE, target instanceof Tree ?
+										  1000. :
+										  FastMath.hypot(self, target) - target.getRadius(),
+								  targetShootPoint, move)) {
+				return;
+			}
 		}
 
 		if (meleeTarget != null) {
@@ -568,7 +589,7 @@ public class StrategyImplement implements Strategy {
 		return false;
 	}
 
-	private boolean applyTargetAction(ActionType actionType, Point target, CircularUnit unit, Move move) {
+	private boolean applyTargetAction(ActionType actionType, double minCastRange, Point target, Move move) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor;
@@ -582,7 +603,7 @@ public class StrategyImplement implements Strategy {
 
 		if (waitTimeForAction(actionType) <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
-			if (checkShot(turnAngle, target, unit, move, actionType)) {
+			if (checkShot(turnAngle, target, minCastRange, move, actionType)) {
 				turnTo(moveToPoint, move);
 				return true;
 			}
@@ -609,17 +630,16 @@ public class StrategyImplement implements Strategy {
 		return false;
 	}
 
-	private boolean checkShot(double angle, Point point, CircularUnit target, Move move, ActionType actionType) {
+	private boolean checkShot(double angle, Point point, double minCastRange, Move move, ActionType actionType) {
 		if (Math.abs(angle) > Constants.MAX_SHOOT_ANGLE) {
 			return false;
 		}
 		if (FastMath.hypot(self, point) < self.getCastRange() && waitTimeForAction(actionType) == 0) {
 			move.setCastAngle(angle);
 			move.setAction(actionType);
-			if (target instanceof Tree) {
-				move.setMinCastDistance(self.getCastRange() - .01);
-			} else {
-				move.setMinCastDistance(self.getDistanceTo(target) - target.getRadius());
+			move.setMinCastDistance(minCastRange);//self.getCastRange() - .01
+			if (actionType == ActionType.FIREBALL) {
+				move.setMaxCastDistance(minCastRange);
 			}
 			return true;
 		}
@@ -807,6 +827,188 @@ public class StrategyImplement implements Strategy {
 		staffTargets = staffTargets.subList(0, Math.min(staffTargets.size(), 3));
 		Utils.filterTargets(missileTargets, ProjectileType.MAGIC_MISSILE, self, filteredWorld);
 		Utils.filterTargets(iceTargets, ProjectileType.FROST_BOLT, self, filteredWorld);
+
+		fireTargets.clear();
+
+		if (Utils.wizardHasSkill(self, SkillType.FIREBALL)) {
+			for (Minion minion : filteredWorld.getMinions()) {
+				if (minion.getFaction() == Constants.getCurrentFaction()) {
+					continue;
+				}
+				if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
+					continue;
+				}
+				if (minion.getSpeedX() != 0. || minion.getSpeedY() != 0) {
+					continue;
+				}
+				Point checkPoint = new Point(minion.getX(), minion.getY());
+				addFireTarget(checkDistances(checkPoint,
+											 minion.getRadius() + Constants.getGame().getFireballExplosionMaxDamage() - .1));
+				addFireTarget(checkDistances(new Point(minion.getX(), minion.getY()),
+											 minion.getRadius() + Constants.getGame().getFireballExplosionMinDamage() - .1));
+			}
+
+			for (Building building : filteredWorld.getBuildings()) {
+				if (building.getFaction() == Constants.getCurrentFaction()) {
+					continue;
+				}
+				Point checkPoint = new Point(building.getX(), building.getY());
+				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMaxDamage() - .1));
+				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMinDamage() - .1));
+			}
+
+			for (Wizard wizard : filteredWorld.getWizards()) {
+				if (wizard.getFaction() == Constants.getCurrentFaction()) {
+					continue;
+				}
+
+				Point checkPoint = new Point(wizard.getX(), wizard.getY());
+				int ticks = Utils.getTicksToFly(FastMath.hypot(self, wizard), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+				if (FastMath.hypot(self, wizard) < self.getCastRange()) {
+					Point wizardPoint = new Point(wizard.getX(), wizard.getY());
+					double damage = checkFireballDamage(wizardPoint);
+					fireTargets.add(new Pair<Double, Point>(damage, wizardPoint));
+				}
+				double checkDistance = wizard.getRadius() +
+						Constants.getGame().getFireballExplosionMaxDamage() -
+						ShootEvasionMatrix.EVASION_MATRIX[0][ticks - 1] - .1;
+				if (checkDistance > 0.) {
+					addFireTarget(checkDistances(checkPoint, checkDistance));
+				}
+				checkDistance = wizard.getRadius() +
+						Constants.getGame().getFireballExplosionMinDamage() -
+						ShootEvasionMatrix.EVASION_MATRIX[0][ticks - 1] - .1;
+				addFireTarget(checkDistances(checkPoint, checkDistance));
+			}
+			Collections.sort(fireTargets, Utils.POINT_AIM_SORT_COMPARATOR);
+			for (Iterator<Pair<Double, Point>> iterator = fireTargets.iterator(); iterator.hasNext(); ) {
+				Pair<Double, Point> fireTarget = iterator.next();
+				if (Utils.noTreesOnWay(fireTarget.getSecond(), self, ProjectileType.FIREBALL, filteredWorld)) {
+					if (iterator.hasNext()) {
+						iterator.next();
+					}
+					while (iterator.hasNext()) {
+						iterator.next();
+						iterator.remove();
+					}
+					break;
+				} else {
+					iterator.remove();
+				}
+			}
+		}
+	}
+
+	private void addFireTarget(Pair<Double, Point> target) {
+		if (target != null) {
+			fireTargets.add(target);
+		}
+	}
+
+
+	private final static int angleCheck = 20;
+	private final static int checkCount = 360 / angleCheck;
+	private final static double angleCheckRadians = Math.PI / 180. * angleCheck;
+
+	private Pair<Double, Point> checkDistances(Point point, double distance) {
+		double maxPriority = 0.;
+		Point bestPoint = null;
+		for (int i = 0; i != checkCount; ++i) {
+			Point checkPoint = new Point(point.getX() + distance * Math.cos(angleCheckRadians * i), point.getY() + distance * Math.sin(angleCheckRadians * i));
+			if (FastMath.hypot(self, checkPoint) > self.getCastRange()) {
+				continue;
+			}
+			double temp = checkFireballDamage(checkPoint);
+			if (temp > maxPriority) {
+				maxPriority = temp;
+				bestPoint = checkPoint;
+			}
+		}
+		if (bestPoint == null) {
+			return null;
+		}
+		return new Pair<Double, Point>(maxPriority, bestPoint);
+	}
+
+	public double checkFireballDamage(Point where) {
+		int ticksToFly = Utils.getTicksToFly(FastMath.hypot(self, where), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+		double totalDamage = 0.;
+		for (Minion minion : filteredWorld.getMinions()) {
+			if (minion.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
+			if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
+				continue;
+			}
+
+			Point checkPoint = new Point(minion.getX() + minion.getSpeedY() * ticksToFly, minion.getY() + minion.getSpeedY() * ticksToFly);
+			double distance = FastMath.hypot(checkPoint, where) - minion.getRadius();
+			if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
+				double damage;
+				if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
+					damage = Constants.getGame().getFireballExplosionMaxDamage();
+				} else {
+					damage = Constants.getGame().getFireballExplosionMinDamage();
+				}
+				totalDamage += Math.min(damage + Constants.getGame().getBurningSummaryDamage() / 2, minion.getLife());
+			}
+		}
+
+		for (Building building : filteredWorld.getBuildings()) {
+			if (building.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
+
+			double distance = FastMath.hypot(building, where) - building.getRadius();
+			if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
+				double damage;
+				if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
+					damage = Constants.getGame().getFireballExplosionMaxDamage();
+				} else {
+					damage = Constants.getGame().getFireballExplosionMinDamage();
+				}
+				totalDamage += Math.min(damage + Constants.getGame().getBurningSummaryDamage(), building.getLife()) * 1.5;
+			}
+		}
+
+		for (Wizard wizard : filteredWorld.getWizards()) {
+			totalDamage += checkFirePointsWizard(wizard, where, ticksToFly);
+		}
+		totalDamage += checkFirePointsWizard(self, where, ticksToFly);
+		return totalDamage;
+	}
+
+	private double checkFirePointsWizard(Wizard wizard, Point where, int ticksToFly) {
+		double distance = FastMath.hypot(wizard, where) - wizard.getRadius();
+		if (wizard.isMe()) {
+			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly - 1] * Variables.moveFactor;
+		} else {
+			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly - 1];
+		}
+
+		if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
+			double score;
+			if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
+				score = Constants.getGame().getFireballExplosionMaxDamage();
+			} else {
+				score = Constants.getGame().getFireballExplosionMinDamage();
+			}
+			score = Math.min(score + Constants.getGame().getBurningSummaryDamage(), wizard.getLife()) * 3.;
+			if (wizard.getLife() < score + Constants.getGame().getBurningSummaryDamage() * .5 &&
+					wizard.getFaction() == Constants.getEnemyFaction()) {
+				score += 50.;
+			}
+			if (wizard.getFaction() == Constants.getCurrentFaction()) {
+				if (wizard.isMe()) {
+					return -score * 5;
+				} else {
+					return -score;
+				}
+			} else {
+				return score;
+			}
+		}
+		return 0;
 	}
 
 	protected void moveTo(int pointIdx, Move move, boolean run) {

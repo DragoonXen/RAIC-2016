@@ -34,6 +34,7 @@ import java.util.Map;
 public class Utils {
 
 	public final static Comparator<Pair<Double, CircularUnit>> AIM_SORT_COMPARATOR = (o1, o2) -> o2.getFirst().compareTo(o1.getFirst());
+	public final static Comparator<Pair<Double, Point>> POINT_AIM_SORT_COMPARATOR = (o1, o2) -> o2.getFirst().compareTo(o1.getFirst());
 
 	private static double[] lineDistance = new double[Constants.getLines().length];
 
@@ -969,6 +970,21 @@ public class Utils {
 		}
 	}
 
+	public static boolean noTreesOnWay(Point target,
+									   Wizard self,
+									   ProjectileType shotType,
+									   FilteredWorld filteredWorld) {
+		Point pointA = new Point(self.getX(), self.getY());
+		double projectileRadius = PROJECTIVE_RADIUS[shotType.ordinal()];
+		for (Tree tree : filteredWorld.getShootingTreeList()) {
+			double distance = Utils.distancePointToSegment(new Point(tree.getX(), tree.getY()), pointA, target);
+			if (distance + .01 < tree.getRadius() + projectileRadius) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public static Point getShootPoint(CircularUnit unit, Wizard self, double projectileRadius) {
 		if (unit instanceof Wizard) {
 			double preffered = unit.getRadius() + projectileRadius - (unit.getRadius() + projectileRadius) * 6. / 7.;
@@ -999,5 +1015,9 @@ public class Utils {
 				}
 			}
 		}
+	}
+
+	public static int getTicksToFly(double distance, double speed) {
+		return (int) Math.floor(speed / distance + .99);
 	}
 }
