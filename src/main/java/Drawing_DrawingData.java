@@ -30,6 +30,7 @@ public class Drawing_DrawingData {
 	private List<Pair<Double, CircularUnit>> staffTargets;
 	private List<Pair<Double, CircularUnit>> iceTargets;
 
+	private TeammateIdsContainer teammateIdsContainer;
 
 	private Point moveToLinePoint;
 	private Point[] linesFightPoints;
@@ -50,7 +51,8 @@ public class Drawing_DrawingData {
 							   AgressiveNeutralsCalcs agressiveNeutralsCalcs,
 							   List<Pair<Double, CircularUnit>> missileTargets,
 							   List<Pair<Double, CircularUnit>> staffTargets,
-							   List<Pair<Double, CircularUnit>> iceTargets) {
+							   List<Pair<Double, CircularUnit>> iceTargets,
+							   TeammateIdsContainer teammateIdsContainer) {
 		this.self = self;
 		this.world = world;
         this.maxCastRange = Arrays.copyOf(maxCastRange, maxCastRange.length);
@@ -87,7 +89,7 @@ public class Drawing_DrawingData {
 		for (Pair<Double, CircularUnit> iceTarget : missileTargets) {
 			this.missileTargets.add(new Pair<>(iceTarget));
 		}
-
+		this.teammateIdsContainer = teammateIdsContainer.makeClone();
 	}
 
     public Wizard getSelf() {
@@ -146,6 +148,10 @@ public class Drawing_DrawingData {
         return agressiveNeutralsCalcs;
     }
 
+	public TeammateIdsContainer getTeammateIdsContainer() {
+		return teammateIdsContainer;
+	}
+
 	public Drawing_DrawingData clone() {
 		return new Drawing_DrawingData(self,
 									   world,
@@ -163,7 +169,8 @@ public class Drawing_DrawingData {
 									   agressiveNeutralsCalcs,
 									   missileTargets,
 									   staffTargets,
-									   iceTargets);
+									   iceTargets,
+									   teammateIdsContainer);
 	}
 
 	public List<Pair<Double, CircularUnit>> getMissileTargets() {

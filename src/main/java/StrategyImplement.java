@@ -72,6 +72,7 @@ public class StrategyImplement implements Strategy {
 
 	protected AgressiveNeutralsCalcs agressiveNeutralsCalcs = new AgressiveNeutralsCalcs();
 	protected UnitScoreCalculation unitScoreCalculation = new UnitScoreCalculation();
+	protected TeammateIdsContainer teammateIdsContainer = new TeammateIdsContainer();
 
 	protected boolean treeCut;
 	protected boolean goToBonusActivated = false;
@@ -86,6 +87,7 @@ public class StrategyImplement implements Strategy {
 		agressiveNeutralsCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
+		teammateIdsContainer.updateTeammatesIds(world);
 		SkillsLearning.updateSkills(self, move);
 		enemyFound = false;
 		treeCut = false;
@@ -116,7 +118,7 @@ public class StrategyImplement implements Strategy {
 		filteredWorld = Utils.filterWorld(world,
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
-										  enemyPositionCalc.getBuildingPhantoms());
+										  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
 		updateProjectilesDTL(filteredWorld.getProjectiles());
 
 		Utils.calcCurrentSkillBonuses(self, filteredWorld);
@@ -207,7 +209,7 @@ public class StrategyImplement implements Strategy {
 				filteredWorld = Utils.filterWorld(world,
 												  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 															self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
-												  enemyPositionCalc.getBuildingPhantoms());
+												  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
 				enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
 						Utils.hasEnemy(filteredWorld.getWizards()) ||
 						Utils.hasEnemy(filteredWorld.getBuildings());

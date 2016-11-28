@@ -125,7 +125,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   agressiveNeutralsCalcs,
 									   missileTargets,
 									   staffTargets,
-									   iceTargets);
+									   iceTargets,
+									   teammateIdsContainer);
 	}
 
     @Override

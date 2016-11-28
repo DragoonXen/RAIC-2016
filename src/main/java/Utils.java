@@ -66,10 +66,10 @@ public class Utils {
 		}
 	}
 
-	public static FilteredWorld filterWorld(World world, Point point, Building[] buildings) {
+	public static FilteredWorld filterWorld(World world, Point point, Building[] buildings, TeammateIdsContainer teammateIdsContainer) {
 		List<Projectile> projectiles = new ArrayList<>();
 		for (Projectile projectile : world.getProjectiles()) {
-			if (projectile.getOwnerUnitId() == Variables.self.getId()) {
+			if (projectile.getOwnerUnitId() == Variables.self.getId() || teammateIdsContainer.isTeammate(projectile.getOwnerUnitId())) {
 				continue;
 			}
 			projectiles.add(projectile);
