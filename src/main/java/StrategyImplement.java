@@ -1056,6 +1056,8 @@ public class StrategyImplement implements Strategy {
 				}
 				idx -= step;
 			}
+			minAngle = Math.max(-Math.PI, minAngle - Constants.MOVE_ANGLE_EXPAND);
+			maxAngle = Math.min(Math.PI, maxAngle + Constants.MOVE_ANGLE_EXPAND);
 			targetAngle = angle;
 		}
 		Point changePosition;
@@ -1196,6 +1198,9 @@ public class StrategyImplement implements Strategy {
 						newScanMatrixItem.getWayPoint().getScoresOnWay() / newScanMatrixItem.getWayPoint().getDistanceFromStart()
 						+ Variables.maxDangerMatrixScore;
 				if (tmpScore > score || (tmpScore == score && best.getDistanceFromSelf() < 6.)) {
+//					if (newScanMatrixItem.getDistanceFromSelf() < 6.) {
+//						tmpScore -= (6. - newScanMatrixItem.getDistanceFromSelf()) / 100.;
+//					}
 					score = tmpScore;
 					best = newScanMatrixItem;
 				}
@@ -1249,7 +1254,7 @@ public class StrategyImplement implements Strategy {
 						item.addOtherBonus(item.getForwardDistanceDivision() * 140);
 					}
 				} else if (!enemyFound) {
-					item.addOtherBonus(item.getForwardDistanceDivision() * .0001);
+					item.addOtherBonus(item.getForwardDistanceDivision() * .01);
 				}
 			}
 		}
