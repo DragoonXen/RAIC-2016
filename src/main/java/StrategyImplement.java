@@ -982,10 +982,10 @@ public class StrategyImplement implements Strategy {
 	private double checkFirePointsWizard(Wizard wizard, Point where, int ticksToFly) {
 		ticksToFly = Math.min(ticksToFly - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
 		double distance = FastMath.hypot(wizard, where) - wizard.getRadius();
-		if (wizard.isMe()) {
-			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * Variables.moveFactor;
-		} else {
+		if (wizard.getFaction() == Constants.getEnemyFaction()) {
 			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly];
+		} else if (wizard.isMe()) {
+			distance -= ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * Variables.moveFactor;
 		}
 
 		if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
