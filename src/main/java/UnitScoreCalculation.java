@@ -176,7 +176,7 @@ public class UnitScoreCalculation {
 			}
 
 			ScoreCalcStructure structure = new ScoreCalcStructure();
-			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 1.);
+			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);
 			if (expBonus > 0.) {
 				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(expBonus));
 			}
