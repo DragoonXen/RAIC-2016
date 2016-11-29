@@ -1018,6 +1018,6 @@ public class Utils {
 	}
 
 	public static int getTicksToFly(double distance, double speed) {
-		return (int) Math.floor(speed / distance + .99);
+		return (int) Math.floor(distance / speed + .99);
 	}
 }

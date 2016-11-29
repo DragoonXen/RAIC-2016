@@ -43,6 +43,9 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 	protected TreeMap<Double, ScanMatrixItem> foundScanMatrixItems = new TreeMap<>();
 
 	private final static Color FOUND_DISTANCE_COLOR = new Color(100, 0, 0);
+	private final static Color FIREBALL_SHOT_COLOR = new Color(230, 100, 0);
+	private final static Color FIREBALL_EXPLODE_COLOR = new Color(200, 50, 0);
+	private TreeMap<Integer, Pair<Point, Double>> fireballShots = new TreeMap<>();
 
 	public Drawing_DrawingStrategy(Wizard self) {
 		super(self);
@@ -277,6 +280,14 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		long time = System.nanoTime();
 		foundScanMatrixItems.clear();
 		super.move(self, world, game, move);
+		if (move.getAction() == ActionType.FIREBALL) {
+			double angle = Utils.normalizeAngle(self.getAngle() + move.getCastAngle());
+			fireballShots.put(world.getTickIndex(),
+							  new Pair<>(
+									  new Point(self.getX() + Math.cos(angle) * move.getMaxCastDistance(),
+												self.getY() + Math.sin(angle) * move.getMaxCastDistance()),
+									  move.getMaxCastDistance()));
+		}
 		time = System.nanoTime() - time;
 		System.out.println("Call took " + nanosToMsec(time) + "ms");
 		if (!draw) {
@@ -376,6 +387,21 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			Pair<Double, Point> fireTarget = fireTargets.get(0);
 			if (fireTarget.getFirst() > 90. || self.getMana() > self.getMaxMana() * .9) {
 				drawCross(fireTarget.getSecond(), 30., Color.ORANGE);
+			}
+		}
+		Map.Entry<Integer, Pair<Point, Double>> fireballShotEntry = fireballShots.floorEntry(world.getTickIndex());
+		if (fireballShotEntry != null) {
+			int ticksToFly = Utils.getTicksToFly(fireballShotEntry.getValue().getSecond(), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+			if (fireballShotEntry.getKey() + ticksToFly >= world.getTickIndex()) {
+				Color drawColor = fireballShotEntry.getKey() + ticksToFly == world.getTickIndex() ? FIREBALL_EXPLODE_COLOR : FIREBALL_SHOT_COLOR;
+				drawPanel.addFigure(new Drawing_Circle(fireballShotEntry.getValue().getFirst().getX(),
+													   fireballShotEntry.getValue().getFirst().getY(),
+													   Constants.getGame().getFireballExplosionMinDamageRange(),
+													   drawColor));
+				drawPanel.addFigure(new Drawing_Circle(fireballShotEntry.getValue().getFirst().getX(),
+													   fireballShotEntry.getValue().getFirst().getY(),
+													   Constants.getGame().getFireballExplosionMaxDamageRange(),
+													   drawColor));
 			}
 		}
 

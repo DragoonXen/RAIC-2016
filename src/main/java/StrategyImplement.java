@@ -529,7 +529,7 @@ public class StrategyImplement implements Strategy {
 		CircularUnit meleeTarget = staffTargets.isEmpty() ? null : staffTargets.get(0).getSecond();
 
 		Pair<Double, Point> fireTarget = fireTargets.isEmpty() ? null : fireTargets.get(0);
-		if (fireTarget != null && fireTarget.getFirst() < 30) {
+		if (fireTarget != null && fireTarget.getFirst() < 40) {
 			fireTarget = null;
 		}
 
@@ -864,6 +864,7 @@ public class StrategyImplement implements Strategy {
 
 				Point checkPoint = new Point(wizard.getX(), wizard.getY());
 				int ticks = Utils.getTicksToFly(FastMath.hypot(self, wizard), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+				ticks = Math.min(ticks - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
 				if (FastMath.hypot(self, wizard) < self.getCastRange()) {
 					Point wizardPoint = new Point(wizard.getX(), wizard.getY());
 					double damage = checkFireballDamage(wizardPoint);
@@ -871,13 +872,13 @@ public class StrategyImplement implements Strategy {
 				}
 				double checkDistance = wizard.getRadius() +
 						Constants.getGame().getFireballExplosionMaxDamage() -
-						ShootEvasionMatrix.EVASION_MATRIX[0][ticks - 1] - .1;
+						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
 				if (checkDistance > 0.) {
 					addFireTarget(checkDistances(checkPoint, checkDistance));
 				}
 				checkDistance = wizard.getRadius() +
 						Constants.getGame().getFireballExplosionMinDamage() -
-						ShootEvasionMatrix.EVASION_MATRIX[0][ticks - 1] - .1;
+						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
 				addFireTarget(checkDistances(checkPoint, checkDistance));
 			}
 			Collections.sort(fireTargets, Utils.POINT_AIM_SORT_COMPARATOR);
@@ -979,11 +980,12 @@ public class StrategyImplement implements Strategy {
 	}
 
 	private double checkFirePointsWizard(Wizard wizard, Point where, int ticksToFly) {
+		ticksToFly = Math.min(ticksToFly - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
 		double distance = FastMath.hypot(wizard, where) - wizard.getRadius();
 		if (wizard.isMe()) {
-			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly - 1] * Variables.moveFactor;
+			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * Variables.moveFactor;
 		} else {
-			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly - 1];
+			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly];
 		}
 
 		if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
@@ -996,7 +998,7 @@ public class StrategyImplement implements Strategy {
 			score = Math.min(score + Constants.getGame().getBurningSummaryDamage(), wizard.getLife()) * 3.;
 			if (wizard.getLife() < score + Constants.getGame().getBurningSummaryDamage() * .5 &&
 					wizard.getFaction() == Constants.getEnemyFaction()) {
-				score += 50.;
+				score += 65.;
 			}
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				if (wizard.isMe()) {
