@@ -522,38 +522,45 @@ public class StrategyImplement implements Strategy {
 		CircularUnit meleeTarget = staffTargets.isEmpty() ? null : staffTargets.get(0).getSecond();
 
 		Pair<Double, Point> fireTarget = fireTargets.isEmpty() ? null : fireTargets.get(0);
-		if (fireTarget != null && fireTarget.getFirst() < 40) {
-			fireTarget = null;
-		}
 
-		if (fireTarget != null) {
-			if (fireTarget.getFirst() > 90. || self.getMana() > self.getMaxMana() * .9) {
-				if (applyTargetAction(ActionType.FIREBALL, FastMath.hypot(self, fireTarget.getSecond()), fireTarget.getSecond(), move)) {
+		if (wizardsInfo.getMe().isHasHasteSkill() && wizardsInfo.getMe().getHastened() == 0 && Constants.getGame().getHasteManacost() <= self.getMana()) {
+			if (self.getRemainingActionCooldownTicks() == 0) {
+				move.setAction(ActionType.HASTE);
+			}
+		} else {
+			if (fireTarget != null && fireTarget.getFirst() < 40) {
+				fireTarget = null;
+			}
+
+			if (fireTarget != null) {
+				if (fireTarget.getFirst() > 90. || self.getMana() > self.getMaxMana() * .9) {
+					if (applyTargetAction(ActionType.FIREBALL, FastMath.hypot(self, fireTarget.getSecond()), fireTarget.getSecond(), move)) {
+						return;
+					}
+				}
+			}
+
+			if (frostTarget != null) {
+				if (frostTarget instanceof Wizard || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
+					if (applyTargetAction(ActionType.FROST_BOLT, FastMath.hypot(self, target) - target.getRadius(), frostTargetShootPoint, move)) {
+						return;
+					}
+				}
+			}
+
+			if (fireTarget == null || fireTarget.getFirst() < 70. || self.getMana() > self.getMaxMana() * .9) {
+				if (applyTargetAction(ActionType.MAGIC_MISSILE, target instanceof Tree ?
+											  1000. :
+											  FastMath.hypot(self, target) - target.getRadius(),
+									  targetShootPoint, move)) {
 					return;
 				}
 			}
-		}
 
-		if (frostTarget != null) {
-			if (frostTarget instanceof Wizard || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
-				if (applyTargetAction(ActionType.FROST_BOLT, FastMath.hypot(self, target) - target.getRadius(), frostTargetShootPoint, move)) {
+			if (meleeTarget != null) {
+				if (applyMeleeAction(meleeTarget, move)) {
 					return;
 				}
-			}
-		}
-
-		if (fireTarget == null || fireTarget.getFirst() < 70. || self.getMana() > self.getMaxMana() * .9) {
-			if (applyTargetAction(ActionType.MAGIC_MISSILE, target instanceof Tree ?
-										  1000. :
-										  FastMath.hypot(self, target) - target.getRadius(),
-								  targetShootPoint, move)) {
-				return;
-			}
-		}
-
-		if (meleeTarget != null) {
-			if (applyMeleeAction(meleeTarget, move)) {
-				return;
 			}
 		}
 
