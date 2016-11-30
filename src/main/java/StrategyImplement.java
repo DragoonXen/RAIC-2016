@@ -1343,14 +1343,15 @@ public class StrategyImplement implements Strategy {
 	}
 
 	public boolean isMeNearestWizard(Point point, boolean includeEnemies) {
-		double distanceToMe = FastMath.hypot(self.getX() - point.getX(), self.getY() - point.getY()) * Constants.NEAREST_TO_BONUS_CALCULATION_OTHER_MULT;
+		double distanceToMe = FastMath.hypot(self.getX() - point.getX(), self.getY() - point.getY());
+		double distanceToMeCalc = distanceToMe * Constants.NEAREST_TO_BONUS_CALCULATION_OTHER_MULT;
 		if (includeEnemies) {
 			for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
 				double distance = FastMath.hypot(phantom.getPosition().getX() - point.getX(), phantom.getPosition().getY() - point.getY());
-				if (!phantom.isUpdated()) {
+				if (!phantom.isUpdated() && distanceToMe > 599.99) {
 					distance -= (world.getTickIndex() - phantom.getLastSeenTick()) * Constants.MAX_WIZARDS_FORWARD_SPEED;
 				}
-				if (distanceToMe > distance) {
+				if (distanceToMeCalc > distance) {
 					return false;
 				}
 			}
@@ -1360,7 +1361,7 @@ public class StrategyImplement implements Strategy {
 			if (wizard.getFaction() != Constants.getCurrentFaction()) {
 				continue;
 			}
-			if (FastMath.hypot(wizard.getX() - point.getX(), wizard.getY() - point.getY()) < distanceToMe) {
+			if (FastMath.hypot(wizard.getX() - point.getX(), wizard.getY() - point.getY()) < distanceToMeCalc) {
 				return false;
 			}
 		}
