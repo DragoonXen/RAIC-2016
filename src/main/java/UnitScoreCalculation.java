@@ -138,11 +138,13 @@ public class UnitScoreCalculation {
 			if (fire) {
 				wizardDamage = wizardInfo.getFireballMaxDamage() + Constants.getGame().getBurningSummaryDamage();
 			}
+			int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
 			if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
-				double range = wizard.getCastRange() + self.getRadius() +
-						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
+				double range = ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()) +
+						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() * 3. +
+						self.getRadius();
 				if (fire) {
-					range = Math.min(range + 50, 600);
+					range = Math.min(range + 75, 700);
 				} else {
 					range = Math.min(range, 570);
 				}
@@ -150,13 +152,12 @@ public class UnitScoreCalculation {
 						range + movePenalty,
 						wizardDamage * 3. * shieldBonus));
 			} else {
-				int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
-				double range = Math.min(wizard.getCastRange() +
-												Constants.getGame().getWizardForwardSpeed() * myWizardInfo.getMoveFactor() * .5 *
-														Math.min(2,
-																 -Math.max(wizard.getRemainingActionCooldownTicks(),
-																		   freezeStatus) - addTicks + 4),
-										570);
+				double range = Math.min(ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()),
+										wizardInfo.getCastRange() + ShootEvasionMatrix.distanceFromCenter) +
+						Constants.getGame().getWizardForwardSpeed() * myWizardInfo.getMoveFactor() * .5 *
+								Math.min(2,
+										 -Math.max(wizard.getRemainingActionCooldownTicks(),
+												   freezeStatus) - addTicks + 4);
 				if (fire && meHasFrostSkill && self.getMana() >= Constants.getGame().getFrostBoltManacost()) {
 					range = 450;
 				}

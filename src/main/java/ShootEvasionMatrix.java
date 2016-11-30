@@ -1,3 +1,5 @@
+import java.util.TreeMap;
+
 /**
  * Created by dragoon on 11/25/16.
  */
@@ -185,7 +187,6 @@ public class ShootEvasionMatrix {
 			{3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.0, 36.0, 39.0, 42.0, 45.0, 48.000199904863564, 51.00999437757582, 54.043764347231544, 57.11583999093015, 60.24039963125031},
 			{3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.0, 36.0, 39.0, 42.0, 45.0, 48.0, 51.00719612807619, 54.03597284163122, 57.10067362907966, 60.21551303082833}};
 
-
 	public static final double[][] HASTENED_EVASION_MATRIX = new double[][]{{4.0, 8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0, 44.0, 48.0, 52.0, 56.0, 60.0, 64.0, 68.0, 72.0, 76.0, 80.0},
 			{3.9995262829588585, 7.9995262829588585, 11.999526282958858, 15.999526282958858, 19.999526282958858, 23.999526282958858, 27.999526282958858, 31.999526282958858, 35.999526282958854, 39.999526282958854, 43.999526282958854, 47.999526282958854, 51.999526282958854, 55.999526282958854, 59.999526282958854, 63.999526282958854, 67.99952628295885, 71.99952628295885, 75.99952628295885, 79.99952628295885},
 			{3.998106717467654, 7.998106717467654, 11.998106717467653, 15.998106717467653, 19.998106717467653, 23.998106717467653, 27.998106717467653, 31.998106717467653, 35.99810671746765, 39.99810671746765, 43.99810671746765, 47.99810671746765, 51.99810671746765, 55.99810671746765, 59.99810671746765, 63.99810671746765, 67.99810671746765, 71.99810671746765, 75.99810671746765, 79.99810671746765},
@@ -367,4 +368,49 @@ public class ShootEvasionMatrix {
 			{3.0000000000000004, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.00079961558746, 36.02498168854571, 39.1048264809169, 42.272087984371254, 45.55677401387332, 48.98452674915537, 52.571994433920175, 56.320120223572054, 60.20692801015965, 64.18402293994},
 			{3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.000199904863564, 36.020186230803766, 39.09226187450237, 42.248280260271486, 45.5185412172155, 48.929359697868684, 52.49868176253837, 56.22956896276223, 60.10288145444432, 64.07308787087355},
 			{3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.0, 36.016189697073926, 39.080890484522364, 42.22604220147989, 45.48220736824009, 48.87631991793552, 52.42754213527556, 56.14095956791302, 60.00021061935771, 63.96267840279172}};
+
+	private final static TreeMap<Double, Double> correctEvasionDistance;
+	public final static double distanceFromCenter;
+
+	static {
+		correctEvasionDistance = new TreeMap<>();
+		distanceFromCenter = Constants.getGame().getWizardRadius() +
+				Constants.getGame().getMagicMissileRadius() - (Constants.getGame().getWizardRadius() +
+				Constants.getGame().getMagicMissileRadius()) * 6. / 7.;
+		double forwardDistance = distanceFromCenter + Constants.getGame().getWizardRadius() +
+				Constants.getGame().getMagicMissileRadius();
+		double backwardDistance = distanceFromCenter + Constants.getGame().getWizardRadius() -
+				Constants.getGame().getMagicMissileRadius();
+
+		double[] speedFactors = new double[5];
+		double[] hasteSpeedFactors = new double[5];
+		speedFactors[0] = 1.;
+		hasteSpeedFactors[0] = 1. + Constants.getGame().getHastenedMovementBonusFactor();
+		for (int i = 1; i != 5; ++i) {
+			speedFactors[i] = speedFactors[0] + Constants.getGame().getMovementBonusFactorPerSkillLevel() * i;
+			hasteSpeedFactors[i] = hasteSpeedFactors[0] + Constants.getGame().getMovementBonusFactorPerSkillLevel() * i;
+		}
+
+		updateEvasionDistance(speedFactors, EVASION_MATRIX, forwardDistance, backwardDistance, distanceFromCenter);
+		updateEvasionDistance(hasteSpeedFactors, HASTENED_EVASION_MATRIX, forwardDistance, backwardDistance, distanceFromCenter);
+	}
+
+	private static void updateEvasionDistance(double[] speedFactors,
+											  double[][] EVASION_MATRIX,
+											  double forwardDistance,
+											  double backwardDistance,
+											  double distanceFromCenter) {
+		for (int i = 0; i != 5; ++i) {
+			int j = 0;
+			double speedFactor = speedFactors[i];
+			while (EVASION_MATRIX[0][j] * speedFactor < forwardDistance || EVASION_MATRIX[180][j] * speedFactor < backwardDistance) {
+				++j;
+			}
+			correctEvasionDistance.put(speedFactor, (j + 2) * Constants.getGame().getMagicMissileSpeed() + distanceFromCenter);
+		}
+	}
+
+	public static double getCorrectDistance(double speedFactor) {
+		return correctEvasionDistance.lowerEntry(speedFactor + .0001).getValue();
+	}
 }
