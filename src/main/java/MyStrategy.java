@@ -26,6 +26,7 @@ public final class MyStrategy implements Strategy {
         try {
 			if (world.getTickIndex() == 0) {
 				if (game.isSkillsEnabled()) {
+					SkillsLearning.init(world);
 					Constants.init(game, self);
 					strategy = draw ? new Drawing_DrawingStrategy(self) : new StrategyImplement(self);
 				} else {
