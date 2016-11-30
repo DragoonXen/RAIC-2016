@@ -144,20 +144,24 @@ public class UnitScoreCalculation {
 						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() * 3. +
 						self.getRadius();
 				if (fire) {
-					range = Math.min(range + 75, 700);
+					range = wizardInfo.getCastRange() + Constants.getGame().getFireballExplosionMinDamageRange() + self.getRadius();
 				}
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
 						range + movePenalty,
 						wizardDamage * 3. * shieldBonus));
 			} else {
 				double range = Math.min(ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()),
-										wizardInfo.getCastRange() + ShootEvasionMatrix.distanceFromCenter * 2.) +
+										wizardInfo.getCastRange() + ShootEvasionMatrix.distanceFromCenter * 3.) +
 						Constants.getGame().getWizardForwardSpeed() * myWizardInfo.getMoveFactor() * .5 *
 								Math.min(2,
 										 -Math.max(wizard.getRemainingActionCooldownTicks(),
 												   freezeStatus) - addTicks + 4);
-				if (fire && meHasFrostSkill && self.getMana() >= Constants.getGame().getFrostBoltManacost()) {
-					range = 450;
+				if (fire) {
+					if (meHasFrostSkill && self.getMana() >= Constants.getGame().getFrostBoltManacost()) {
+						range = 450;
+					} else {
+						range = wizardInfo.getCastRange() + Constants.getGame().getFireballExplosionMinDamageRange();
+					}
 				}
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(range + movePenalty, wizardDamage * shieldBonus));
 			}
