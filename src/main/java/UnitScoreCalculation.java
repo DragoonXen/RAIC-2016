@@ -143,7 +143,7 @@ public class UnitScoreCalculation {
 				if (fire) {
 					range = Math.min(range + 50, 600);
 				} else {
-					range = Math.min(range, 560);
+					range = Math.min(range, 570);
 				}
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
 						range + movePenalty,
@@ -155,7 +155,7 @@ public class UnitScoreCalculation {
 														Math.min(2,
 																 -Math.max(wizard.getRemainingActionCooldownTicks(),
 																		   freezeStatus) - addTicks + 4),
-										530);
+										570);
 				if (fire && meHasFrostSkill && self.getMana() >= Constants.getGame().getFrostBoltManacost()) {
 					range = 450;
 				}
