@@ -145,15 +145,13 @@ public class UnitScoreCalculation {
 						self.getRadius();
 				if (fire) {
 					range = Math.min(range + 75, 700);
-				} else {
-					range = Math.min(range, 570);
 				}
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
 						range + movePenalty,
 						wizardDamage * 3. * shieldBonus));
 			} else {
 				double range = Math.min(ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()),
-										wizardInfo.getCastRange() + ShootEvasionMatrix.distanceFromCenter) +
+										wizardInfo.getCastRange() + ShootEvasionMatrix.distanceFromCenter * 2.) +
 						Constants.getGame().getWizardForwardSpeed() * myWizardInfo.getMoveFactor() * .5 *
 								Math.min(2,
 										 -Math.max(wizard.getRemainingActionCooldownTicks(),
