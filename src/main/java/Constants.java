@@ -26,6 +26,7 @@ public abstract class Constants {
     public static double MAP_CORNER_DANGER_FACTOR = 5.;
 
     public static double MINION_ATTACK_FACTOR = .25;
+    public static double BUILDING_ATTACK_FACTOR = 2.;
 
     public static double DANGER_PENALTY = 300.;
     public static double DANGER_AT_START_MULT_RUN = .9;
@@ -61,7 +62,7 @@ public abstract class Constants {
     public static double SHIELDENED_AIM_PRIORITY = 0.3;
     public static double EMPOWERED_AIM_PRIORITY = 1.2;
 
-    public static double ATTACK_ENEMY_WIZARD_LIFE = 0.5;
+    public static double ATTACK_ENEMY_WIZARD_LIFE = 0.75;
 
     public static double MAX_SHOOT_ANGLE = Math.PI / 12.;
 

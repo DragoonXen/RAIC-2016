@@ -107,7 +107,7 @@ public class UnitScoreCalculation {
 				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty,
 																			  myDamage * Constants.MINION_ATTACK_FACTOR));
 				structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + minion.getRadius() - movePenalty,
-																				   staffDamage));
+																				   staffDamage * Constants.MINION_ATTACK_FACTOR));
 			}
 
 			unitsScoreCalc.put(minion.getId(), structure);
@@ -199,9 +199,9 @@ public class UnitScoreCalculation {
 			}
 
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() + building.getRadius() + Constants.getGame().getMagicMissileRadius() - .1,
-																		  myDamage));
+																		  myDamage * Constants.BUILDING_ATTACK_FACTOR));
 			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + building.getRadius() - .1,
-																			   Constants.getGame().getEmpoweredDamageFactor()));
+																			   staffDamage * Constants.BUILDING_ATTACK_FACTOR));
 			unitsScoreCalc.put(building.getId(), structure);
 		}
 	}
