@@ -139,7 +139,8 @@ public class UnitScoreCalculation {
 				wizardDamage = wizardInfo.getFireballMaxDamage() + Constants.getGame().getBurningSummaryDamage();
 			}
 			if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
-				double range = wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
+				double range = wizard.getCastRange() + self.getRadius() +
+						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
 				if (fire) {
 					range = Math.min(range + 50, 600);
 				} else {
@@ -151,7 +152,7 @@ public class UnitScoreCalculation {
 			} else {
 				int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
 				double range = Math.min(wizard.getCastRange() +
-												Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() *
+												Constants.getGame().getWizardForwardSpeed() * myWizardInfo.getMoveFactor() * .5 *
 														Math.min(2,
 																 -Math.max(wizard.getRemainingActionCooldownTicks(),
 																		   freezeStatus) - addTicks + 4),
