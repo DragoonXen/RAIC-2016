@@ -111,9 +111,7 @@ public class StrategyImplement implements Strategy {
 			baseLine.updateFightPoint(world, enemyPositionCalc);
 		}
 
-		if (world.getTickIndex() < 650) {
-			myLineCalc = Utils.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
-		}
+		myLineCalc = Utils.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
 		lastFightLine = myLineCalc;
 
 		lastTick = world.getTickIndex();
