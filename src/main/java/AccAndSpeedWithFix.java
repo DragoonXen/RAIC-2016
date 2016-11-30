@@ -31,7 +31,7 @@ public class AccAndSpeedWithFix {
 	}
 
 	public static AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance) {
-		return getAccAndSpeedByAngle(angle, distance, Variables.moveFactor);
+		return getAccAndSpeedByAngle(angle, distance, Variables.wizardsInfo.getMe().getMoveFactor());
 	}
 
 	public static AccAndSpeedWithFix getAccAndSpeedByAngle(double angle, double distance, double moveFactor) {

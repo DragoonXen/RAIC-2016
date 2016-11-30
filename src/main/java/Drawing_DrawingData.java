@@ -3,7 +3,6 @@ import model.Wizard;
 import model.World;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,12 +14,12 @@ public class Drawing_DrawingData {
 
     private Wizard self;
     private World world;
-    private double[] maxCastRange;
     private CurrentAction currentAction;
 	private HashMap<Long, Double> projectilesDTL;
 	private EnemyPositionCalc enemyPositionCalc;
     private BonusesPossibilityCalcs bonusesPossibilityCalcs;
     private AgressiveNeutralsCalcs agressiveNeutralsCalcs;
+	private WizardsInfo wizardsInfo;
 
     private boolean goToBonusActivated;
     private boolean moveToLineActivated;
@@ -37,7 +36,6 @@ public class Drawing_DrawingData {
 
 	public Drawing_DrawingData(Wizard self,
 							   World world,
-							   double[] maxCastRange,
 							   CurrentAction currentAction,
 							   HashMap<Long, Double> projectilesDT,
 							   EnemyPositionCalc enemyPositionCalc,
@@ -52,10 +50,10 @@ public class Drawing_DrawingData {
 							   List<Pair<Double, CircularUnit>> missileTargets,
 							   List<Pair<Double, CircularUnit>> staffTargets,
 							   List<Pair<Double, CircularUnit>> iceTargets,
-							   TeammateIdsContainer teammateIdsContainer) {
+							   TeammateIdsContainer teammateIdsContainer,
+							   WizardsInfo wizardsInfo) {
 		this.self = self;
 		this.world = world;
-        this.maxCastRange = Arrays.copyOf(maxCastRange, maxCastRange.length);
         this.currentAction = currentAction.clone();
 		this.projectilesDTL = new HashMap<>();
 		for (Map.Entry<Long, Double> longDoubleEntry : projectilesDT.entrySet()) {
@@ -90,6 +88,7 @@ public class Drawing_DrawingData {
 			this.missileTargets.add(new Pair<>(iceTarget));
 		}
 		this.teammateIdsContainer = teammateIdsContainer.makeClone();
+		this.wizardsInfo = wizardsInfo.makeClone();
 	}
 
     public Wizard getSelf() {
@@ -98,10 +97,6 @@ public class Drawing_DrawingData {
 
     public World getWorld() {
         return world;
-    }
-
-    public double[] getMaxCastRange() {
-        return maxCastRange;
     }
 
     public CurrentAction getCurrentAction() {
@@ -155,7 +150,6 @@ public class Drawing_DrawingData {
 	public Drawing_DrawingData clone() {
 		return new Drawing_DrawingData(self,
 									   world,
-									   maxCastRange,
 									   currentAction,
 									   projectilesDTL,
 									   enemyPositionCalc,
@@ -170,7 +164,8 @@ public class Drawing_DrawingData {
 									   missileTargets,
 									   staffTargets,
 									   iceTargets,
-									   teammateIdsContainer);
+									   teammateIdsContainer,
+									   wizardsInfo);
 	}
 
 	public List<Pair<Double, CircularUnit>> getMissileTargets() {
@@ -183,6 +178,10 @@ public class Drawing_DrawingData {
 
 	public List<Pair<Double, CircularUnit>> getIceTargets() {
 		return iceTargets;
+	}
+
+	public WizardsInfo getWizardsInfo() {
+		return wizardsInfo;
 	}
 
 	@Override

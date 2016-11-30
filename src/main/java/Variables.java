@@ -14,16 +14,12 @@ public class Variables {
 
 	public static Wizard self;
 
-	public static double moveFactor = 1.;
-	public static double turnFactor = 1.;
-
-	public static int staffDamage = 12;
-	public static int magicDamageBonus = 0;
-
 	public static List<AbstractMap.SimpleEntry<Projectile, Double>> projectilesSim = new LinkedList<>();
 	public static HashSet<Long> fireballHitDamageCheck = new HashSet<>();
 
 	public static List<Long> projectiles = new ArrayList<>();
+
+	public static WizardsInfo wizardsInfo;
 
 	public static double maxDangerMatrixScore;
 }

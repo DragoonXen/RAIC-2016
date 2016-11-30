@@ -9,8 +9,6 @@ import model.Minion;
 import model.MinionType;
 import model.Projectile;
 import model.ProjectileType;
-import model.SkillType;
-import model.Status;
 import model.StatusType;
 import model.Tree;
 import model.Unit;
@@ -19,11 +17,9 @@ import model.World;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -389,171 +385,25 @@ public class Utils {
 		return false;
 	}
 
-	public static boolean wizardHasSkill(Wizard wizard, SkillType skillType) {
-		for (SkillType type : wizard.getSkills()) {
-			if (type == skillType) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public static boolean wizardHasStatus(Wizard wizard, StatusType statusType) {
-		for (Status status : wizard.getStatuses()) {
-			if (status.getType() == statusType) {
-				return true;
-			}
-		}
-		return false;
+		return wizardStatusTicks(wizard, statusType) != 0;
 	}
 
 	public static int wizardStatusTicks(Wizard wizard, StatusType statusType) {
-		int hasteStatusTicks = -1;
-		for (Status status : wizard.getStatuses()) {
-			if (status.getType() == statusType) {
-				hasteStatusTicks = Math.max(status.getRemainingDurationTicks(), hasteStatusTicks);
-			}
+		WizardsInfo.WizardInfo wizardInfo = Variables.wizardsInfo.getWizardInfo(wizard.getId());
+		switch (statusType) {
+			case BURNING:
+				return 0;
+			case EMPOWERED:
+				return wizardInfo.getEmpowered();
+			case FROZEN:
+				return wizardInfo.getFrozen();
+			case HASTENED:
+				return wizardInfo.getHastened();
+			case SHIELDED:
+				return wizardInfo.getShielded();
 		}
-		return hasteStatusTicks;
-	}
-
-	private static int[] skillsCount = new int[5];
-	private static int[] aurasCount = new int[5];
-
-	public final static HashSet<SkillType> SKILLS_LEARNED = new HashSet<>();
-
-	public static void calcCurrentSkillBonuses(Wizard self, FilteredWorld filteredWorld) {
-		Arrays.fill(skillsCount, 0);
-		Arrays.fill(aurasCount, 0);
-		SKILLS_LEARNED.clear();
-		for (SkillType skillType : self.getSkills()) {
-			SKILLS_LEARNED.add(skillType);
-			switch (skillType) {
-				case RANGE_BONUS_PASSIVE_1:
-					skillsCount[SkillFork.RANGE.ordinal()] = Math.max(skillsCount[SkillFork.RANGE.ordinal()], 1);
-					break;
-				case RANGE_BONUS_AURA_1:
-					aurasCount[SkillFork.RANGE.ordinal()] = Math.max(aurasCount[SkillFork.RANGE.ordinal()], 1);
-					break;
-				case RANGE_BONUS_PASSIVE_2:
-					skillsCount[SkillFork.RANGE.ordinal()] = 2;
-					break;
-				case RANGE_BONUS_AURA_2:
-					aurasCount[SkillFork.RANGE.ordinal()] = 2;
-					break;
-
-				case MAGICAL_DAMAGE_BONUS_PASSIVE_1:
-					skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = Math.max(skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()], 1);
-					break;
-				case MAGICAL_DAMAGE_BONUS_AURA_1:
-					aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()], 1);
-					break;
-				case MAGICAL_DAMAGE_BONUS_PASSIVE_2:
-					skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = 2;
-					break;
-				case MAGICAL_DAMAGE_BONUS_AURA_2:
-					aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = 2;
-					break;
-
-				case STAFF_DAMAGE_BONUS_PASSIVE_1:
-					skillsCount[SkillFork.STAFF_DAMAGE.ordinal()] = Math.max(skillsCount[SkillFork.STAFF_DAMAGE.ordinal()], 1);
-					break;
-				case STAFF_DAMAGE_BONUS_AURA_1:
-					aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] = Math.max(aurasCount[SkillFork.STAFF_DAMAGE.ordinal()], 1);
-					break;
-				case STAFF_DAMAGE_BONUS_PASSIVE_2:
-					skillsCount[SkillFork.STAFF_DAMAGE.ordinal()] = 2;
-					break;
-				case STAFF_DAMAGE_BONUS_AURA_2:
-					aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] = 2;
-					break;
-
-				case MOVEMENT_BONUS_FACTOR_PASSIVE_1:
-					skillsCount[SkillFork.MOVEMENT.ordinal()] = Math.max(skillsCount[SkillFork.MOVEMENT.ordinal()], 1);
-					break;
-				case MOVEMENT_BONUS_FACTOR_AURA_1:
-					aurasCount[SkillFork.MOVEMENT.ordinal()] = Math.max(aurasCount[SkillFork.MOVEMENT.ordinal()], 1);
-					break;
-				case MOVEMENT_BONUS_FACTOR_PASSIVE_2:
-					skillsCount[SkillFork.MOVEMENT.ordinal()] = 2;
-					break;
-				case MOVEMENT_BONUS_FACTOR_AURA_2:
-					aurasCount[SkillFork.MOVEMENT.ordinal()] = 2;
-					break;
-
-				case MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1:
-					skillsCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = Math.max(skillsCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()], 1);
-					break;
-				case MAGICAL_DAMAGE_ABSORPTION_AURA_1:
-					aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()], 1);
-					break;
-				case MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2:
-					skillsCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = 2;
-					break;
-				case MAGICAL_DAMAGE_ABSORPTION_AURA_2:
-					aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = 2;
-					break;
-			}
-		}
-		for (Wizard wizard : filteredWorld.getWizards()) {
-			if (wizard.getFaction() != Constants.getCurrentFaction()) {
-				continue;
-			}
-			if (wizard.getDistanceTo(self) < Constants.getGame().getAuraSkillRange()) {
-				for (SkillType skillType : wizard.getSkills()) {
-					switch (skillType) {
-						case RANGE_BONUS_AURA_1:
-							aurasCount[SkillFork.RANGE.ordinal()] = Math.max(aurasCount[SkillFork.RANGE.ordinal()], 1);
-							break;
-						case RANGE_BONUS_AURA_2:
-							aurasCount[SkillFork.RANGE.ordinal()] = 2;
-							break;
-
-						case MAGICAL_DAMAGE_BONUS_AURA_1:
-							aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()], 1);
-							break;
-						case MAGICAL_DAMAGE_BONUS_AURA_2:
-							aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] = 2;
-							break;
-
-						case STAFF_DAMAGE_BONUS_AURA_1:
-							aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] = Math.max(aurasCount[SkillFork.STAFF_DAMAGE.ordinal()], 1);
-							break;
-						case STAFF_DAMAGE_BONUS_AURA_2:
-							aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] = 2;
-							break;
-
-						case MOVEMENT_BONUS_FACTOR_AURA_1:
-							aurasCount[SkillFork.MOVEMENT.ordinal()] = Math.max(aurasCount[SkillFork.MOVEMENT.ordinal()], 1);
-							break;
-						case MOVEMENT_BONUS_FACTOR_AURA_2:
-							aurasCount[SkillFork.MOVEMENT.ordinal()] = 2;
-							break;
-
-						case MAGICAL_DAMAGE_ABSORPTION_AURA_1:
-							aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()], 1);
-							break;
-						case MAGICAL_DAMAGE_ABSORPTION_AURA_2:
-							aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = 2;
-							break;
-					}
-				}
-			}
-		}
-
-		Variables.turnFactor = 1.;
-		Variables.moveFactor = 1. + Constants.getGame().getMovementBonusFactorPerSkillLevel() *
-				(aurasCount[SkillFork.MOVEMENT.ordinal()] + skillsCount[SkillFork.MOVEMENT.ordinal()]);
-
-		if (Utils.wizardHasStatus(self, StatusType.HASTENED)) {
-			Variables.turnFactor += Constants.getGame().getHastenedRotationBonusFactor();
-			Variables.moveFactor += Constants.getGame().getHastenedMovementBonusFactor();
-		}
-		Variables.staffDamage = Constants.getGame().getStaffDamage() +
-				Constants.getGame().getStaffDamageBonusPerSkillLevel() * (aurasCount[SkillFork.STAFF_DAMAGE.ordinal()] + skillsCount[SkillFork.STAFF_DAMAGE.ordinal()]);
-		Variables.magicDamageBonus = Constants.getGame().getMagicalDamageBonusPerSkillLevel() *
-				(aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()] + skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()]);
-
+		return 0;
 	}
 
 	public final static double[] PROJECTIVE_SPEED = new double[]
@@ -584,12 +434,6 @@ public class Utils {
 			}
 		}
 		return damage;
-	}
-
-	public static int getSelfProjectileDamage(ProjectileType projectileType) {
-		return getIntDamage((PROJECTIVE_DAMAGE[projectileType.ordinal()] + Variables.magicDamageBonus) * (wizardHasStatus(Variables.self,
-																														  StatusType.EMPOWERED) ?
-				Constants.getGame().getEmpoweredDamageFactor() : 1));
 	}
 
 	public static int getIntDamage(double damage) {
@@ -731,7 +575,10 @@ public class Utils {
 	}
 
 	public static double cooldownDistanceCalculation(double baseDistance, int coolDownRemaining) {
-		return baseDistance + Math.min(1, -coolDownRemaining + 3) * Constants.getGame().getWizardBackwardSpeed() * Variables.moveFactor * .66;
+		return baseDistance + Math.min(1, -coolDownRemaining + 3) *
+				Constants.getGame().getWizardBackwardSpeed() *
+				Variables.wizardsInfo.getMe().getMoveFactor() *
+				.66;
 	}
 
 	public static int getTicksToBonusSpawn(int tickNo) {

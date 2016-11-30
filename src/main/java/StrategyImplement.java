@@ -8,7 +8,6 @@ import model.Minion;
 import model.Move;
 import model.Projectile;
 import model.ProjectileType;
-import model.SkillType;
 import model.StatusType;
 import model.Tree;
 import model.Wizard;
@@ -67,7 +66,6 @@ public class StrategyImplement implements Strategy {
 
 	protected HashMap<Long, Double> projectilesDTL = new HashMap<>(); //store
 	protected CurrentAction currentAction = new CurrentAction();
-	protected double[] castRange = new double[]{500., 500., 500., 500., 500., 500., 500., 500., 500., 500., 500.};
 
 	protected EnemyPositionCalc enemyPositionCalc = new EnemyPositionCalc();
 
@@ -81,6 +79,8 @@ public class StrategyImplement implements Strategy {
 	protected boolean goToBonusActivated = false;
 	protected boolean moveToLineActivated = false;
 
+	protected WizardsInfo wizardsInfo = new WizardsInfo();
+
 	public StrategyImplement(Wizard self) {
 		myLineCalc = Constants.getLine(Utils.getDefaultMyLine((int) self.getId()));
 		lastFightLine = myLineCalc;
@@ -89,6 +89,7 @@ public class StrategyImplement implements Strategy {
 	public void move(Wizard self, World world, Game game, Move move) {
 		agressiveNeutralsCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
+		wizardsInfo.updateData(world, enemyPositionCalc);
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
 		teammateIdsContainer.updateTeammatesIds(world);
 		SkillsLearning.updateSkills(self, move);
@@ -105,7 +106,6 @@ public class StrategyImplement implements Strategy {
 		this.world = world;
 		this.self = self;
 		SpawnPoint.updateTick(world.getTickIndex());
-		updateCastRange(world.getWizards());
 
 		for (BaseLine baseLine : Constants.getLines()) {
 			baseLine.updateFightPoint(world, enemyPositionCalc);
@@ -124,7 +124,6 @@ public class StrategyImplement implements Strategy {
 										  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
 		updateProjectilesDTL(filteredWorld.getProjectiles());
 
-		Utils.calcCurrentSkillBonuses(self, filteredWorld);
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
 		enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
 				Utils.hasEnemy(filteredWorld.getWizards()) ||
@@ -155,7 +154,7 @@ public class StrategyImplement implements Strategy {
 														 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[0].getY()) -
 						self.getRadius() -
 						game.getBonusRadius();
-				double ticksRunToBonusA = distanceToBonusA / (Constants.getGame().getWizardForwardSpeed() * Variables.moveFactor) *
+				double ticksRunToBonusA = distanceToBonusA / (Constants.getGame().getWizardForwardSpeed() * wizardsInfo.getMe().getMoveFactor()) *
 						Constants.TICKS_BUFFER_RUN_TO_BONUS;
 				if (ticksRunToBonusA < Constants.MAX_TICKS_RUN_TO_BONUS &&
 						(ticksRunToBonusA >= ticksToBonusSpawn || bonusesPossibilityCalcs.getScore()[0] > Constants.BONUS_POSSIBILITY_RUN) &&
@@ -170,7 +169,7 @@ public class StrategyImplement implements Strategy {
 														 self.getY() - BonusesPossibilityCalcs.BONUSES_POINTS[1].getY()) -
 						self.getRadius() -
 						game.getBonusRadius();
-				double ticksRunToBonusB = distanceToBonusB / (Constants.getGame().getWizardForwardSpeed() * Variables.moveFactor) *
+				double ticksRunToBonusB = distanceToBonusB / (Constants.getGame().getWizardForwardSpeed() * wizardsInfo.getMe().getMoveFactor()) *
 						Constants.TICKS_BUFFER_RUN_TO_BONUS;
 
 				if (ticksRunToBonusB < Constants.MAX_TICKS_RUN_TO_BONUS &&
@@ -221,7 +220,7 @@ public class StrategyImplement implements Strategy {
 
 			if (goToBonusActivated && FastMath.hypot(self, PositionMoveLine.INSTANCE.getPositionToMove()) <= self.getRadius() +
 					game.getBonusRadius() +
-					game.getWizardForwardSpeed() * Variables.moveFactor + .1) {
+					game.getWizardForwardSpeed() * wizardsInfo.getMe().getMoveFactor() + .1) {
 				boolean bonusOnPlace = bonusesPossibilityCalcs.getScore()[PositionMoveLine.INSTANCE.getPositionToMove().getX() > 2000 ? 1 : 0] > .9;
 				if (!bonusOnPlace) {
 					Point movePoint = PositionMoveLine.INSTANCE.getPositionToMove().negateCopy(self);
@@ -236,7 +235,7 @@ public class StrategyImplement implements Strategy {
 					AccAndSpeedWithFix accAndSpeedByAngle = AccAndSpeedWithFix.getAccAndSpeedByAngle(Utils.normalizeAngle(self.getAngleTo(movePoint.getX(),
 																																		  movePoint.getY())),
 																									 self.getDistanceTo(movePoint.getX(), movePoint.getY()),
-																									 Variables.moveFactor);
+																									 wizardsInfo.getMe().getMoveFactor());
 					move.setSpeed(accAndSpeedByAngle.getSpeed());
 					move.setStrafeSpeed(accAndSpeedByAngle.getStrafe());
 					moveToPoint = movePoint;
@@ -291,12 +290,6 @@ public class StrategyImplement implements Strategy {
 		shotAndTurn(move);
 	}
 
-	private void updateCastRange(Wizard[] wizards) {
-		for (Wizard wizard : wizards) {
-			castRange[(int) wizard.getId()] = wizard.getCastRange();
-		}
-	}
-
 	private void updateProjectilesDTL(Projectile[] projectiles) {
 		Variables.projectiles.clear();
 		for (Projectile projectile : projectiles) {
@@ -316,14 +309,14 @@ public class StrategyImplement implements Strategy {
 			}
 			long castUnit = projectile.getOwnerUnitId();
 			double castRange = castUnit <= 10 ?
-					this.castRange[(int) castUnit] - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()]
+					Variables.wizardsInfo.getWizardInfo(castUnit).getCastRange() - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()]
 					: Constants.getGame().getFetishBlowdartAttackRange() - Utils.PROJECTIVE_SPEED[projectile.getType().ordinal()];
 			projectilesDTL.put(projectile.getId(), castRange);
 		}
 	}
 
 	protected double checkHitByProjectilePossible() {
-		double maxStep = Variables.moveFactor * Constants.getGame().getWizardForwardSpeed();
+		double maxStep = wizardsInfo.getMe().getMoveFactor() * Constants.getGame().getWizardForwardSpeed();
 		Point self = new Point(this.self.getX(), this.self.getY());
 		double distance;
 		double sumDamage = 0.;
@@ -377,7 +370,7 @@ public class StrategyImplement implements Strategy {
 		double currDangerOnWay;
 		int hastenedTicks = Utils.wizardStatusTicks(self, StatusType.HASTENED);
 		int currHastenedTicks;
-		double moveFactor = Variables.moveFactor;
+		double moveFactor = wizardsInfo.getMe().getMoveFactor();
 		double moveAngle;
 		Point moveVector;
 		boolean stuck;
@@ -459,7 +452,7 @@ public class StrategyImplement implements Strategy {
 					position.add(positionChange);
 					curentAngle += Utils.updateMaxModule(Utils.normalizeAngle(moveAngle - curentAngle), // angle to turn
 														 currHastenedTicks >= 0. ?
-																 Variables.turnFactor * Constants.getGame().getWizardMaxTurnAngle() :
+																 wizardsInfo.getMe().getTurnFactor() * Constants.getGame().getWizardMaxTurnAngle() :
 																 Constants.getGame().getWizardMaxTurnAngle());
 					if (--currHastenedTicks == -1) {
 						currMoveFactor -= Constants.getGame().getHastenedMovementBonusFactor();
@@ -569,7 +562,7 @@ public class StrategyImplement implements Strategy {
 
 	private boolean applyMeleeAction(CircularUnit target, Move move) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
-		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor;
+		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
 
 		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
@@ -592,7 +585,7 @@ public class StrategyImplement implements Strategy {
 	private boolean applyTargetAction(ActionType actionType, double minCastRange, Point target, Move move) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 
-		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor;
+		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
 
 		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
@@ -681,9 +674,9 @@ public class StrategyImplement implements Strategy {
 			//turn to side
 			double nearestWizardAngle = self.getAngleTo(nearestEnemyWizard);
 			boolean leftSide;
-			if (Math.abs(nearestWizardAngle) < Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor * .5) {
+			if (Math.abs(nearestWizardAngle) < Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor() * .5) {
 				double prefferedAngle = nearestWizardAngle;
-				if (point != null && FastMath.hypot(self, point) > Variables.moveFactor * Constants.getGame().getWizardStrafeSpeed()) {
+				if (point != null && FastMath.hypot(self, point) > wizardsInfo.getMe().getMoveFactor() * Constants.getGame().getWizardStrafeSpeed()) {
 					prefferedAngle = self.getAngleTo(point.getX(), point.getY());
 				}
 				leftSide = prefferedAngle > 0;
@@ -711,7 +704,7 @@ public class StrategyImplement implements Strategy {
 		if (currentAction.getActionType() == CurrentAction.ActionType.RUN_FROM_PROJECTILE) {
 			return;
 		}
-		move.setTurn(Utils.updateMaxModule(angle, Constants.getGame().getWizardMaxTurnAngle() * Variables.turnFactor));
+		move.setTurn(Utils.updateMaxModule(angle, Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor()));
 	}
 
 	private void findTargets() {
@@ -721,8 +714,8 @@ public class StrategyImplement implements Strategy {
 		iceTargets = new ArrayList<>();
 		missileTargets = new ArrayList<>();
 		staffTargets = new ArrayList<>();
-		int missileDamage = Utils.getSelfProjectileDamage(ProjectileType.MAGIC_MISSILE);
-		int frostBoltDamage = Utils.SKILLS_LEARNED.contains(SkillType.FROST_BOLT) ? Utils.getSelfProjectileDamage(ProjectileType.FROST_BOLT) : 0;
+		int missileDamage = wizardsInfo.getMe().getMagicalMissileDamage();
+		int frostBoltDamage = wizardsInfo.getMe().getFrostBoltDamage();
 		treeCut = (myLineCalc == PositionMoveLine.INSTANCE &&
 				(Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), new Point(self.getX(), self.getY())) > 0 ||
 						Utils.unitsCountAtDistance(filteredWorld.getTrees(), self, Constants.TREES_DISTANCE_TO_CUT) >= 3)) ||
@@ -734,10 +727,7 @@ public class StrategyImplement implements Strategy {
 		double score;
 		double distanceToTarget;
 
-		int staffDamage = Variables.staffDamage;
-		if (Utils.wizardHasStatus(self, StatusType.EMPOWERED)) {
-			staffDamage *= Constants.getGame().getEmpoweredDamageFactor();
-		}
+		int staffDamage = wizardsInfo.getMe().getStaffDamage();
 
 		if (treeCut) {
 			for (Tree tree : filteredWorld.getTrees()) {
@@ -830,7 +820,7 @@ public class StrategyImplement implements Strategy {
 
 		fireTargets.clear();
 
-		if (Utils.wizardHasSkill(self, SkillType.FIREBALL)) {
+		if (wizardsInfo.getMe().isHasFireball()) {
 			for (Minion minion : filteredWorld.getMinions()) {
 				if (minion.getFaction() == Constants.getCurrentFaction()) {
 					continue;
@@ -985,7 +975,7 @@ public class StrategyImplement implements Strategy {
 		if (wizard.getFaction() == Constants.getEnemyFaction()) {
 			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly];
 		} else if (wizard.isMe()) {
-			distance -= ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * Variables.moveFactor;
+			distance -= ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * wizardsInfo.getMe().getMoveFactor();
 		}
 
 		if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {

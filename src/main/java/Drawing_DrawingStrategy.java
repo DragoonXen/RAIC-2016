@@ -91,7 +91,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		Drawing_DrawingData currentDrawingData = dataToApply.clone();
 		this.self = currentDrawingData.getSelf();
 		this.currentAction = currentDrawingData.getCurrentAction();
-		this.castRange = currentDrawingData.getMaxCastRange();
 		this.world = currentDrawingData.getWorld();
 		this.projectilesDTL = currentDrawingData.getProjectilesDTL();
 		this.enemyPositionCalc = currentDrawingData.getEnemyPositionCalc();
@@ -108,13 +107,14 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		this.iceTargets = currentDrawingData.getIceTargets();
 		this.missileTargets = currentDrawingData.getMissileTargets();
 		this.staffTargets = currentDrawingData.getStaffTargets();
+		this.wizardsInfo = currentDrawingData.getWizardsInfo();
+
 		return storedData;
 	}
 
 	public Drawing_DrawingData getCurrentData(World world, Wizard self) {
 		return new Drawing_DrawingData(self,
 									   world,
-									   castRange,
 									   currentAction,
 									   projectilesDTL,
 									   enemyPositionCalc,
@@ -129,7 +129,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   missileTargets,
 									   staffTargets,
 									   iceTargets,
-									   teammateIdsContainer);
+									   teammateIdsContainer,
+									   wizardsInfo);
 	}
 
     @Override
@@ -280,6 +281,12 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		long time = System.nanoTime();
 		foundScanMatrixItems.clear();
 		super.move(self, world, game, move);
+		time = System.nanoTime() - time;
+		System.out.println("Call took " + nanosToMsec(time) + "ms");
+		if (!draw) {
+			timeSum += time;
+			System.out.println("Total took " + nanosToMsec(timeSum) + " nanos on " + world.getTickIndex() + " ticks");
+		}
 		if (move.getAction() == ActionType.FIREBALL) {
 			double angle = Utils.normalizeAngle(self.getAngle() + move.getCastAngle());
 			fireballShots.put(world.getTickIndex(),
@@ -287,12 +294,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									  new Point(self.getX() + Math.cos(angle) * move.getMaxCastDistance(),
 												self.getY() + Math.sin(angle) * move.getMaxCastDistance()),
 									  move.getMaxCastDistance()));
-		}
-		time = System.nanoTime() - time;
-		System.out.println("Call took " + nanosToMsec(time) + "ms");
-		if (!draw) {
-			timeSum += time;
-			System.out.println("Total took " + nanosToMsec(timeSum) + " nanos on " + world.getTickIndex() + " ticks");
 		}
 
 		if (draw) {

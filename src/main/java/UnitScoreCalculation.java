@@ -3,7 +3,6 @@ import model.Building;
 import model.BuildingType;
 import model.Faction;
 import model.Minion;
-import model.SkillType;
 import model.StatusType;
 import model.Wizard;
 
@@ -35,6 +34,7 @@ public class UnitScoreCalculation {
 	public void updateScores(FilteredWorld filteredWorld, Wizard self, boolean enemyFound, AgressiveNeutralsCalcs agressiveCalcs, int addTicks) {
 		unitsScoreCalc.clear();
 
+		WizardsInfo.WizardInfo myWizardInfo = Variables.wizardsInfo.getMe();
 		for (Bonus bonus : filteredWorld.getBonuses()) {
 			if (FastMath.hypot(self.getX() - bonus.getX(), self.getY() - bonus.getY()) > Constants.getFightDistanceFilter()) {
 				continue;
@@ -52,7 +52,8 @@ public class UnitScoreCalculation {
 				ScoreCalcStructure structure = new ScoreCalcStructure();
 				structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(self.getRadius() + Constants.getGame().getBonusRadius() + .1, 100.));
 				structure.putItem(ScoreCalcStructure
-										  .createOtherBonusApplyer(self.getRadius() + Constants.getGame().getBonusRadius() + Constants.getGame().getWizardBackwardSpeed() * Variables.moveFactor,
+										  .createOtherBonusApplyer(self.getRadius() + Constants.getGame().getBonusRadius() + Constants.getGame().getWizardBackwardSpeed() *
+																		   myWizardInfo.getMoveFactor(),
 																   (350 - Utils.getTicksToBonusSpawn(filteredWorld.getTickIndex())) * .75));
 				unitsScoreCalc.put((long) (i - 5), structure);
 			}
@@ -62,13 +63,8 @@ public class UnitScoreCalculation {
 			return;
 		}
 
-		double myDamage = 12. + Variables.magicDamageBonus;
-		double staffDamage = Variables.staffDamage;
-		if (Utils.wizardStatusTicks(self, StatusType.EMPOWERED) >= addTicks) {
-			myDamage *= Constants.getGame().getEmpoweredDamageFactor();
-			staffDamage *= Constants.getGame().getEmpoweredDamageFactor();
-		}
-
+		int myDamage = myWizardInfo.getMagicalMissileDamage(addTicks);
+		int staffDamage = myWizardInfo.getStaffDamage(addTicks);
 		double shieldBonus = Utils.wizardStatusTicks(self, StatusType.SHIELDED) >= addTicks ?
 				(1. - Constants.getGame().getShieldedDirectDamageAbsorptionFactor()) : 1.;
 
@@ -117,7 +113,7 @@ public class UnitScoreCalculation {
 			unitsScoreCalc.put(minion.getId(), structure);
 		}
 
-		boolean meHasFrostSkill = Utils.wizardHasSkill(self, SkillType.FROST_BOLT);
+		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
 
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
@@ -129,17 +125,21 @@ public class UnitScoreCalculation {
 			if (expBonus > 0.) {
 				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(Constants.EXPERIENCE_DISTANCE - movePenalty, expBonus));
 			}
-			double wizardDamage = 16.;
-			boolean frost = Utils.wizardHasSkill(wizard, SkillType.FROST_BOLT);
-			boolean fire = Utils.wizardHasSkill(wizard, SkillType.FIREBALL);
-			if (frost || fire) {
-				wizardDamage *= 1.75;
+			WizardsInfo.WizardInfo wizardInfo = Variables.wizardsInfo.getWizardInfo(wizard.getId());
+			double wizardDamage = wizardInfo.getMagicalMissileDamage();
+			if (wizardInfo.isHasFastMissileCooldown()) {
+				wizardDamage *= 2; // x2 shot speed
 			}
-			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
-				wizardDamage *= Constants.getGame().getEmpoweredDamageFactor();
+			boolean frost = wizardInfo.isHasFrostBolt();
+			if (frost) {
+				wizardDamage = wizardInfo.getFrostBoltDamage() * 2; // very dangerous cause freezing
+			}
+			boolean fire = wizardInfo.isHasFireball();
+			if (fire) {
+				wizardDamage = wizardInfo.getFireballMaxDamage() + Constants.getGame().getBurningSummaryDamage();
 			}
 			if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
-				double range = wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * 2;
+				double range = wizard.getCastRange() + self.getRadius() + Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
 				if (fire) {
 					range = Math.min(range + 50, 600);
 				} else {
@@ -151,7 +151,7 @@ public class UnitScoreCalculation {
 			} else {
 				int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
 				double range = Math.min(wizard.getCastRange() +
-												Constants.getGame().getWizardForwardSpeed() *
+												Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() *
 														Math.min(2,
 																 -Math.max(wizard.getRemainingActionCooldownTicks(),
 																		   freezeStatus) - addTicks + 4),
