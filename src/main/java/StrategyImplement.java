@@ -526,6 +526,21 @@ public class StrategyImplement implements Strategy {
 		if (wizardsInfo.getMe().isHasHasteSkill() && wizardsInfo.getMe().getHastened() == 0 && Constants.getGame().getHasteManacost() <= self.getMana()) {
 			if (self.getRemainingActionCooldownTicks() == 0) {
 				move.setAction(ActionType.HASTE);
+				Wizard allyWizardCastTo = null;
+				for (Wizard wizard : filteredWorld.getWizards()) {
+					if (wizard.getFaction() == Constants.getCurrentFaction() && FastMath.hypot(self, wizard) + .1 < self.getCastRange()) {
+						if (allyWizardCastTo == null) {
+							allyWizardCastTo = wizard;
+						} else {
+							if (allyWizardCastTo.getLife() > wizard.getLife()) {
+								allyWizardCastTo = wizard;
+							}
+						}
+					}
+				}
+				if (allyWizardCastTo != null) {
+					move.setStatusTargetId(allyWizardCastTo.getId());
+				}
 			}
 		} else {
 			if (fireTarget != null && fireTarget.getFirst() < 40) {
