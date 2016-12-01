@@ -19,14 +19,14 @@ public class SkillsLearning {
 			SkillType.FIREBALL,
 			SkillType.RANGE_BONUS_PASSIVE_1,
 			SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
-			SkillType.RANGE_BONUS_AURA_1,
-			SkillType.RANGE_BONUS_PASSIVE_2,
 			SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
 			SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
 			SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
+			SkillType.HASTE,
+			SkillType.RANGE_BONUS_AURA_1,
+			SkillType.RANGE_BONUS_PASSIVE_2,
 			SkillType.RANGE_BONUS_AURA_2,
-			SkillType.ADVANCED_MAGIC_MISSILE,
-			SkillType.HASTE};
+			SkillType.ADVANCED_MAGIC_MISSILE,};
 
 	private static final SkillType[] thirdSkillsToLearn = new SkillType[]{
 			SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
