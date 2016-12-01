@@ -198,7 +198,7 @@ public class ShootEvasionMatrix {
 		double forwardDistance = distanceFromCenter + Constants.getGame().getWizardRadius() +
 				Constants.getGame().getMagicMissileRadius();
 		double backwardDistance = Constants.getGame().getWizardRadius() +
-				Constants.getGame().getMagicMissileRadius() +
+				Constants.getGame().getMagicMissileRadius() -
 				distanceFromCenter;
 
 		double[] speedFactors = new double[5];

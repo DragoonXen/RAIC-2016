@@ -221,6 +221,21 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			polygonX[2] = polygonX[3] = polygonX[0] + (livingUnit.getLife() / (double) livingUnit.getMaxLife()) * unit.getRadius() * 2.;
 			drawPanel.addFigure(new Drawing_Polygon(polygonX, polygonY, true, Color.RED));
 		}
+		if (unit instanceof Wizard) {
+			double[] polygonX = new double[4];
+			polygonX[0] = polygonX[1] = position.getX() - unit.getRadius();
+			polygonX[2] = polygonX[3] = position.getX() + unit.getRadius();
+			double[] polygonY = new double[4];
+			double wide = unit.getRadius() / 10.;
+			polygonY[0] = polygonY[3] = position.getY() - unit.getRadius();
+			polygonY[1] = polygonY[2] = position.getY() - unit.getRadius() - wide;
+
+			drawPanel.addFigure(new Drawing_Polygon(polygonX, polygonY, true, Color.black));
+			LivingUnit livingUnit = (LivingUnit) unit;
+			polygonX = Arrays.copyOf(polygonX, polygonX.length);
+			polygonX[2] = polygonX[3] = polygonX[0] + (livingUnit.getLife() / (double) livingUnit.getMaxLife()) * unit.getRadius() * 2.;
+			drawPanel.addFigure(new Drawing_Polygon(polygonX, polygonY, true, Color.BLUE));
+		}
 
 		if (visibleDistance != null) {
 			drawPanel.addFigure(new Drawing_Circle(position.getX(),
@@ -413,7 +428,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
 		sb.append("]");
 		textInfoPanel.putText(sb.toString(), 1);
-		textInfoPanel.putText(String.format("hp:%d/%d", self.getLife(), self.getMaxLife()), 2);
+		textInfoPanel.putText(String.format("hp:%d/%d mana:%d/%d", self.getLife(), self.getMaxLife(), self.getMana(), self.getMaxMana()), 2);
 
 		sb = new StringBuilder("Staff hits ticks: ");
 		if (staffHits.isEmpty()) {
