@@ -150,8 +150,15 @@ public class UnitScoreCalculation {
 						range + movePenalty,
 						wizardDamage * 3. * shieldBonus));
 			} else {
-				double range = Math.min(ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()),
-										wizardInfo.getCastRange() + ShootEvasionMatrix.distanceFromCenter * 2.) +
+				double evasionRange = ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor());
+
+				double range = wizardInfo.getCastRange();
+				int ticksToFly = Utils.getTicksToFly(range - self.getRadius(), Constants.getGame().getMagicMissileSpeed());
+				range += self.getRadius() +
+						Constants.getGame().getMagicMissileRadius() -
+						ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFly - 1, myWizardInfo.getMoveFactor()) +
+						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
+				range = Math.min(evasionRange, range) +
 						Constants.getGame().getWizardForwardSpeed() * myWizardInfo.getMoveFactor() * .5 *
 								Math.min(2,
 										 -Math.max(wizard.getRemainingActionCooldownTicks(),

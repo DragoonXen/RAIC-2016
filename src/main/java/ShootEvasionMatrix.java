@@ -249,4 +249,12 @@ public class ShootEvasionMatrix {
 	public static double getCorrectDistance(double speedFactor) {
 		return correctEvasionDistance.lowerEntry(speedFactor + .0001).getValue();
 	}
+
+	public static double getBackwardDistanceCanWalkInTicks(int ticks, double speedFactor) {
+		if (speedFactor > 1.25) { // hastened
+			return HastenedEvasionMatrix.HASTENED_EVASION_MATRIX[180][ticks - 1];
+		} else { // not hastened
+			return EVASION_MATRIX[180][ticks - 1];
+		}
+	}
 }
