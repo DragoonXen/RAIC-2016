@@ -151,7 +151,7 @@ public class UnitScoreCalculation {
 						wizardDamage * 3. * shieldBonus));
 			} else {
 				double range = Math.min(ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()),
-										wizardInfo.getCastRange() + ShootEvasionMatrix.distanceFromCenter * 3.) +
+										wizardInfo.getCastRange() + ShootEvasionMatrix.distanceFromCenter * 2.) +
 						Constants.getGame().getWizardForwardSpeed() * myWizardInfo.getMoveFactor() * .5 *
 								Math.min(2,
 										 -Math.max(wizard.getRemainingActionCooldownTicks(),

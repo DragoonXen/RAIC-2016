@@ -691,7 +691,7 @@ public class StrategyImplement implements Strategy {
 				leftSide = nearestWizardAngle < 0;
 			}
 			nearestWizardAngle = Math.abs(nearestWizardAngle);
-			double turnAngle = Math.PI * .5 - nearestWizardAngle;
+			double turnAngle = Math.PI * .4 - nearestWizardAngle;
 			turnTo(leftSide ? turnAngle : turnAngle * -1, move);
 		} else {
 			if (point == null) {
