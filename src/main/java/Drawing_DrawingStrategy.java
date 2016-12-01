@@ -7,6 +7,7 @@ import model.LivingUnit;
 import model.Minion;
 import model.MinionType;
 import model.Move;
+import model.Player;
 import model.Projectile;
 import model.ProjectileType;
 import model.Tree;
@@ -449,6 +450,12 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 							  7);
 
 		textInfoPanel.putText(String.format("To bonus: %s, To line: %s", goToBonusActivated, moveToLineActivated), 8);
+		int idx = 9;
+		for (Player player : world.getPlayers()) {
+			textInfoPanel.putText(String.format("%s: %d", player.getName(), player.getScore()), idx++);
+		}
+
+		textInfoPanel.putText(sb.toString(), 9);
 
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			Point selfPoint = scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y];

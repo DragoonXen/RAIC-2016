@@ -146,6 +146,11 @@ public class UnitScoreCalculation {
 			unitsScoreCalc.put(building.getId(), structure);
 		}
 
+		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
+			staffDamage *= 3.;
+			myDamage *= 3.;
+		}
+
 		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
@@ -210,6 +215,12 @@ public class UnitScoreCalculation {
 			}
 
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
+
+			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + wizard.getRadius() - .1, staffDamage));
+			if (!wizardInfo.isHasFastMissileCooldown()) {
+				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(Constants.getGame().getStaffRange() + wizard.getRadius() - .1,
+																				wizardInfo.getStaffDamage(addTicks)));
+			}
 			unitsScoreCalc.put(wizard.getId(), structure);
 		}
 	}

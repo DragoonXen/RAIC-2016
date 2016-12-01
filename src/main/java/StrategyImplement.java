@@ -117,6 +117,9 @@ public class StrategyImplement implements Strategy {
 		lastTick = world.getTickIndex();
 
 		direction = myLineCalc.getMoveDirection(self);
+		if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
+			direction = Utils.normalizeAngle(direction + Math.PI);
+		}
 
 		filteredWorld = Utils.filterWorld(world,
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
