@@ -1,6 +1,5 @@
 import model.Bonus;
 import model.Building;
-import model.BuildingType;
 import model.CircularUnit;
 import model.Faction;
 import model.LaneType;
@@ -598,18 +597,6 @@ public class Utils {
 			} else {
 				score[i] = Constants.minionLineScore * currScore;
 			}
-		}
-
-		for (Building building : world.getBuildings()) {
-			if (building.getType() == BuildingType.FACTION_BASE ||
-					building.getFaction() != Constants.getCurrentFaction()) {
-				continue;
-			}
-			int line = Utils.whichLine(building);
-			score[line] -= Constants.towerLineScore;
-		}
-		for (BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
-			score[Utils.whichLine(buildingPhantom)] += Constants.towerLineScore;
 		}
 
 		for (WizardPhantom wizard : enemyPositionCalc.getDetectedWizards().values()) {
