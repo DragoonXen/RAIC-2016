@@ -113,8 +113,40 @@ public class UnitScoreCalculation {
 			unitsScoreCalc.put(minion.getId(), structure);
 		}
 
-		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
+		for (Building building : filteredWorld.getBuildings()) {
+			if (building.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
 
+			ScoreCalcStructure structure = new ScoreCalcStructure();
+			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);
+			if (expBonus > 0.) {
+				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(expBonus));
+			}
+
+			int priorityAims = 0;
+			if (self.getLife() > building.getDamage() && building.getType() == BuildingType.GUARDIAN_TOWER) {
+				priorityAims = Utils.getPrefferedUnitsCountInRange(building, filteredWorld, building.getAttackRange(), building.getDamage(), self.getLife());
+			}
+
+			if (priorityAims < 2) {
+				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(building.getAttackRange() + Math.min(2,
+																													  -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5,
+																				 building.getDamage() * shieldBonus));
+			} else if (priorityAims == 2) {
+				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer((building.getAttackRange() + Math.min(2,
+																													   -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5) * .5,
+																				 building.getDamage() * shieldBonus * .5));
+			}
+
+			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() + building.getRadius() + Constants.getGame().getMagicMissileRadius() - .1,
+																		  myDamage * Constants.BUILDING_ATTACK_FACTOR));
+			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + building.getRadius() - .1,
+																			   staffDamage * Constants.BUILDING_ATTACK_FACTOR));
+			unitsScoreCalc.put(building.getId(), structure);
+		}
+
+		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				continue;
@@ -179,39 +211,6 @@ public class UnitScoreCalculation {
 
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
 			unitsScoreCalc.put(wizard.getId(), structure);
-		}
-
-		for (Building building : filteredWorld.getBuildings()) {
-			if (building.getFaction() == Constants.getCurrentFaction()) {
-				continue;
-			}
-
-			ScoreCalcStructure structure = new ScoreCalcStructure();
-			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);
-			if (expBonus > 0.) {
-				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(expBonus));
-			}
-
-			int priorityAims = 0;
-			if (self.getLife() > building.getDamage() && building.getType() == BuildingType.GUARDIAN_TOWER) {
-				priorityAims = Utils.getPrefferedUnitsCountInRange(building, filteredWorld, building.getAttackRange(), building.getDamage(), self.getLife());
-			}
-
-			if (priorityAims < 2) {
-				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(building.getAttackRange() + Math.min(2,
-																													  -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5,
-																				 building.getDamage() * shieldBonus));
-			} else if (priorityAims == 2) {
-				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer((building.getAttackRange() + Math.min(2,
-																													   -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5) * .5,
-																				 building.getDamage() * shieldBonus * .5));
-			}
-
-			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() + building.getRadius() + Constants.getGame().getMagicMissileRadius() - .1,
-																		  myDamage * Constants.BUILDING_ATTACK_FACTOR));
-			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + building.getRadius() - .1,
-																			   staffDamage * Constants.BUILDING_ATTACK_FACTOR));
-			unitsScoreCalc.put(building.getId(), structure);
 		}
 	}
 

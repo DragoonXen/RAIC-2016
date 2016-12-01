@@ -63,6 +63,7 @@ public abstract class Constants {
     public static double EMPOWERED_AIM_PRIORITY = 1.2;
 
     public static double ATTACK_ENEMY_WIZARD_LIFE = 0.5;
+    public static double AGRESSIVE_PUSH_WIZARD_LIFE = 0.8;
 
     public static double MAX_SHOOT_ANGLE = Math.PI / 12.;
 
