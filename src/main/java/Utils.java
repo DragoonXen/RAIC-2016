@@ -630,7 +630,7 @@ public class Utils {
 		for (int i = 0; i != 3; ++i) {
 			double distancePenalty = FastMath.hypot(self.getX() - Constants.getLines()[i].getPreFightPoint().getX(),
 													self.getY() - Constants.getLines()[i].getPreFightPoint().getY());
-			distancePenalty = 1 / Math.max(1, distancePenalty / 700);
+			distancePenalty = 1 / Math.max(1, distancePenalty / 450);
 			score[i] *= distancePenalty;
 			if (Constants.getLines()[i] == previousLine) {
 				score[i] *= Constants.CURRENT_LINE_PRIORITY;
