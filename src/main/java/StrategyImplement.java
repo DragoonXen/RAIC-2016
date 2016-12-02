@@ -117,29 +117,23 @@ public class StrategyImplement implements Strategy {
 		lastTick = world.getTickIndex();
 
 		direction = myLineCalc.getMoveDirection(self);
-		if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
-			direction = Utils.normalizeAngle(direction + Math.PI);
-		}
-
 		filteredWorld = Utils.filterWorld(world,
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
 										  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
+		if (isInDanger()) {
+			direction = Utils.normalizeAngle(direction + Math.PI);
+			filteredWorld = Utils.filterWorld(world,
+											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
+														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
+											  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
+		}
+
 
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
 		enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
 				Utils.hasEnemy(filteredWorld.getWizards()) ||
 				Utils.hasEnemy(filteredWorld.getBuildings());
-		if (!enemyFound && self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
-			direction = myLineCalc.getMoveDirection(self);
-			filteredWorld = Utils.filterWorld(world,
-											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
-														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
-											  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
-			enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
-					Utils.hasEnemy(filteredWorld.getWizards()) ||
-					Utils.hasEnemy(filteredWorld.getBuildings());
-		}
 		updateProjectilesDTL(filteredWorld.getProjectiles());
 
 		unitScoreCalculation.updateScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs);
@@ -1394,5 +1388,52 @@ public class StrategyImplement implements Strategy {
 		return true;
 	}
 
+	public boolean isInDanger() {
+		List<Wizard> enemyWizards = new ArrayList<>();
+		List<Wizard> allyWizards = new ArrayList<>();
+		for (Wizard wizard : filteredWorld.getWizards()) {
+			if (wizard.getFaction() == Constants.getEnemyFaction()) {
+				enemyWizards.add(wizard);
+			} else if (!wizard.isMe()) {
+				allyWizards.add(wizard);
+			}
+		}
+		if (enemyWizards.isEmpty()) {
+			return false;
+		}
+		if (enemyWizards.size() == 1) {
+			Wizard enemyWizard = enemyWizards.get(0);
+			if (enemyWizard.getLife() < self.getLife()) {
+				return false;
+			}
+		}
+		for (Wizard wizard : enemyWizards) {
+			double distanceToMe = FastMath.hypot(self, wizard);
 
+			boolean danger = true;
+			for (Wizard allyWizard : allyWizards) {
+				double tmpDistance = FastMath.hypot(allyWizard, wizard);
+				if (tmpDistance < distanceToMe) {
+					danger = false;
+					break;
+				}
+			}
+			if (danger) {
+				for (Minion minion : filteredWorld.getMinions()) {
+					if (minion.getFaction() != Constants.getCurrentFaction()) {
+						continue;
+					}
+					double tmpDistance = FastMath.hypot(minion, wizard);
+					if (tmpDistance < distanceToMe) {
+						danger = false;
+						break;
+					}
+				}
+			}
+			if (danger) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
