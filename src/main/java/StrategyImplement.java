@@ -125,12 +125,23 @@ public class StrategyImplement implements Strategy {
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
 										  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
-		updateProjectilesDTL(filteredWorld.getProjectiles());
 
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
 		enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
 				Utils.hasEnemy(filteredWorld.getWizards()) ||
 				Utils.hasEnemy(filteredWorld.getBuildings());
+		if (!enemyFound && self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
+			direction = myLineCalc.getMoveDirection(self);
+			filteredWorld = Utils.filterWorld(world,
+											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
+														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
+											  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
+			enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
+					Utils.hasEnemy(filteredWorld.getWizards()) ||
+					Utils.hasEnemy(filteredWorld.getBuildings());
+		}
+		updateProjectilesDTL(filteredWorld.getProjectiles());
+
 		unitScoreCalculation.updateScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs);
 		evade(move, checkHitByProjectilePossible());
 

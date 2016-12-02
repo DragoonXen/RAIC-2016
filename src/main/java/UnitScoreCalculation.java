@@ -196,7 +196,7 @@ public class UnitScoreCalculation {
 						ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFly - 1, myWizardInfo.getMoveFactor()) +
 						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
 				range = Math.min(evasionRange, range) +
-						Constants.getGame().getWizardForwardSpeed() * myWizardInfo.getMoveFactor() * .5 *
+						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() *
 								Math.min(2,
 										 -Math.max(wizard.getRemainingActionCooldownTicks(),
 												   freezeStatus) - addTicks + 4);
