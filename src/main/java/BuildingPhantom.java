@@ -1,6 +1,7 @@
 import model.Building;
 
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * Created by dragoon on 11/16/16.
@@ -30,12 +31,43 @@ public class BuildingPhantom extends Building {
 		put(12L, 11L);
 	}};
 
+	public static final HashMap<Long, Long> VULNERABLE_LINK_MAPPING = new HashMap<Long, Long>() {{
+		put(17L, 18L);
+		put(23L, 24L);
+
+		put(19L, 20L);
+		put(21L, 22L);
+
+		put(13L, 15L);
+		put(14L, 16L);
+
+		put(18L, 11L);
+		put(20L, 11L);
+		put(15L, 11L);
+
+		put(24L, 12L);
+		put(22L, 12L);
+		put(16L, 12L);
+	}};
+
+	private static final HashSet<Long> VULNERABLE_TOWERS = new HashSet<Long>() {{
+		add(17L);
+		add(23L);
+
+		add(19L);
+		add(21L);
+
+		add(13L);
+		add(14L);
+	}};
+
 	private int life;
 	private int remainingActionCooldownTicks;
 	private boolean fixedRemainActionCooldownTicks;
 	private boolean updated;
 	private boolean broken;
 	private Point position;
+	private boolean isInvulnerable;
 
 	public BuildingPhantom(Building building, boolean enemy) {
 		super(enemy ? ID_MAPPING.get(building.getId()) : building.getId(),
@@ -58,6 +90,7 @@ public class BuildingPhantom extends Building {
 		this.life = building.getLife();
 		this.remainingActionCooldownTicks = building.getRemainingActionCooldownTicks();
 		this.position = new Point(getX(), getY());
+		this.isInvulnerable = !VULNERABLE_TOWERS.contains(getId());
 	}
 
 	public void updateInfo(Building building) {
@@ -96,6 +129,14 @@ public class BuildingPhantom extends Building {
 			remainingActionCooldownTicks = getCooldownTicks() - 20;
 			fixedRemainActionCooldownTicks = true;
 		}
+	}
+
+	public void makeVulnerable() {
+		this.isInvulnerable = false;
+	}
+
+	public boolean isInvulnerable() {
+		return isInvulnerable;
 	}
 
 	@Override

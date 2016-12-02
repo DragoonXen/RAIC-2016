@@ -53,7 +53,11 @@ public class EnemyPositionCalc {
 		this.buildingPhantoms = new BuildingPhantom[buildingPhantoms.length];
 		for (int i = 0; i != buildingPhantoms.length; ++i) {
 			this.buildingPhantoms[i] = new BuildingPhantom(buildingPhantoms[i], false);
+			if (!buildingPhantoms[i].isInvulnerable()) {
+				this.buildingPhantoms[i].makeVulnerable();
+			}
 		}
+
 		this.deadEnemyWizards = new ArrayList<>(deadEnemyWizards.size());
 		for (WizardPhantom w : deadEnemyWizards) {
 			this.deadEnemyWizards.add(w.clone());
@@ -116,6 +120,13 @@ public class EnemyPositionCalc {
 				for (BuildingPhantom phantom : buildingPhantoms) {
 					if (!phantom.isBroken()) {
 						updated[idx++] = phantom;
+					} else {
+						long vulnerableId = BuildingPhantom.VULNERABLE_LINK_MAPPING.get(phantom.getId());
+						for (BuildingPhantom phantomV : buildingPhantoms) {
+							if (phantomV.getId() == vulnerableId) {
+								phantomV.makeVulnerable();
+							}
+						}
 					}
 				}
 				this.buildingPhantoms = updated;

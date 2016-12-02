@@ -46,10 +46,10 @@ public abstract class Constants {
     public static int[] STEP_X_HELP = new int[]{0, 0, -1, 1};
     public static int[] STEP_Y_HELP = new int[]{-1, 1, 0, 0};
 
-    public static double WIZARD_AIM_PROIRITY = 5.;
-    public static double FROST_WIZARD_AIM_PROIRITY = 3.;
-    public static double BUILDING_AIM_PROIRITY = 6.;
-    public static double FETISH_AIM_PROIRITY = 1.1;
+	public static double WIZARD_AIM_PROIRITY = 6.;
+	public static double FROST_WIZARD_AIM_PROIRITY = 3.;
+	public static double BUILDING_AIM_PROIRITY = 5.;
+	public static double FETISH_AIM_PROIRITY = 1.1;
     public static double ORC_AIM_PROIRITY = 0.9;
     public static double LOW_AIM_SCORE = .5;
     public static double NEUTRAL_FACTION_AIM_PROIRITY = 0.2;
@@ -63,7 +63,8 @@ public abstract class Constants {
     public static double EMPOWERED_AIM_PRIORITY = 1.2;
 
     public static double ATTACK_ENEMY_WIZARD_LIFE = 0.5;
-    public static double AGRESSIVE_PUSH_WIZARD_LIFE = 0.8;
+	public static double DANGER_SAFETY_ADDIT_DISTANCE = 1.2;
+	public static double AGRESSIVE_PUSH_WIZARD_LIFE = 0.8;
 
     public static double MAX_SHOOT_ANGLE = Math.PI / 12.;
 

@@ -1,5 +1,4 @@
 import model.Bonus;
-import model.Building;
 import model.BuildingType;
 import model.Faction;
 import model.Minion;
@@ -113,16 +112,13 @@ public class UnitScoreCalculation {
 			unitsScoreCalc.put(minion.getId(), structure);
 		}
 
-		for (Building building : filteredWorld.getBuildings()) {
+		for (BuildingPhantom building : filteredWorld.getBuildings()) {
 			if (building.getFaction() == Constants.getCurrentFaction()) {
 				continue;
 			}
 
 			ScoreCalcStructure structure = new ScoreCalcStructure();
-			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);
-			if (expBonus > 0.) {
-				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(expBonus));
-			}
+			unitsScoreCalc.put(building.getId(), structure);
 
 			int priorityAims = 0;
 			if (self.getLife() > building.getDamage() && building.getType() == BuildingType.GUARDIAN_TOWER) {
@@ -138,12 +134,23 @@ public class UnitScoreCalculation {
 																													   -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5) * .5,
 																				 building.getDamage() * shieldBonus * .5));
 			}
+			if (building.isInvulnerable()) {
+				continue;
+			}
+			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);
+			if (expBonus > 0.) {
+				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(expBonus));
+			}
 
-			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() + building.getRadius() + Constants.getGame().getMagicMissileRadius() - .1,
-																		  myDamage * Constants.BUILDING_ATTACK_FACTOR));
+			if (myWizardInfo.isHasFireball()) {
+				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() + building.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .1,
+																			  myDamage * Constants.BUILDING_ATTACK_FACTOR));
+			} else {
+				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() + building.getRadius() + Constants.getGame().getMagicMissileRadius() - .1,
+																			  myDamage * Constants.BUILDING_ATTACK_FACTOR));
+			}
 			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + building.getRadius() - .1,
 																			   staffDamage * Constants.BUILDING_ATTACK_FACTOR));
-			unitsScoreCalc.put(building.getId(), structure);
 		}
 
 		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {

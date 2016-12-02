@@ -803,8 +803,8 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 
-		for (Building building : filteredWorld.getBuildings()) {
-			if (building.getFaction() == Constants.getCurrentFaction()) {
+		for (BuildingPhantom building : filteredWorld.getBuildings()) {
+			if (building.getFaction() == Constants.getCurrentFaction() || building.isInvulnerable()) {
 				continue;
 			}
 			score = Constants.LOW_AIM_SCORE;
@@ -863,9 +863,9 @@ public class StrategyImplement implements Strategy {
 				}
 				Point checkPoint = new Point(minion.getX(), minion.getY());
 				addFireTarget(checkDistances(checkPoint,
-											 minion.getRadius() + Constants.getGame().getFireballExplosionMaxDamage() - .1));
-				addFireTarget(checkDistances(new Point(minion.getX(), minion.getY()),
-											 minion.getRadius() + Constants.getGame().getFireballExplosionMinDamage() - .1));
+											 minion.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
+				addFireTarget(checkDistances(checkPoint,
+											 minion.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
 			}
 
 			for (Building building : filteredWorld.getBuildings()) {
@@ -873,8 +873,8 @@ public class StrategyImplement implements Strategy {
 					continue;
 				}
 				Point checkPoint = new Point(building.getX(), building.getY());
-				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMaxDamage() - .1));
-				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMinDamage() - .1));
+				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
+				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
 			}
 
 			for (Wizard wizard : filteredWorld.getWizards()) {
@@ -891,13 +891,13 @@ public class StrategyImplement implements Strategy {
 					fireTargets.add(new Pair<Double, Point>(damage, wizardPoint));
 				}
 				double checkDistance = wizard.getRadius() +
-						Constants.getGame().getFireballExplosionMaxDamage() -
+						Constants.getGame().getFireballExplosionMaxDamageRange() -
 						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
 				if (checkDistance > 0.) {
 					addFireTarget(checkDistances(checkPoint, checkDistance));
 				}
 				checkDistance = wizard.getRadius() +
-						Constants.getGame().getFireballExplosionMinDamage() -
+						Constants.getGame().getFireballExplosionMinDamageRange() -
 						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
 				addFireTarget(checkDistances(checkPoint, checkDistance));
 			}
@@ -964,9 +964,9 @@ public class StrategyImplement implements Strategy {
 
 			Point checkPoint = new Point(minion.getX() + minion.getSpeedY() * ticksToFly, minion.getY() + minion.getSpeedY() * ticksToFly);
 			double distance = FastMath.hypot(checkPoint, where) - minion.getRadius();
-			if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
+			if (distance < Constants.getGame().getFireballExplosionMinDamageRange()) {
 				double damage;
-				if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
+				if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
 					damage = Constants.getGame().getFireballExplosionMaxDamage();
 				} else {
 					damage = Constants.getGame().getFireballExplosionMinDamage();
@@ -975,15 +975,15 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 
-		for (Building building : filteredWorld.getBuildings()) {
-			if (building.getFaction() == Constants.getCurrentFaction()) {
+		for (BuildingPhantom building : filteredWorld.getBuildings()) {
+			if (building.getFaction() == Constants.getCurrentFaction() || building.isInvulnerable()) {
 				continue;
 			}
 
 			double distance = FastMath.hypot(building, where) - building.getRadius();
-			if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
+			if (distance < Constants.getGame().getFireballExplosionMinDamageRange()) {
 				double damage;
-				if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
+				if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
 					damage = Constants.getGame().getFireballExplosionMaxDamage();
 				} else {
 					damage = Constants.getGame().getFireballExplosionMinDamage();
@@ -1403,27 +1403,28 @@ public class StrategyImplement implements Strategy {
 		}
 		if (enemyWizards.size() == 1) {
 			Wizard enemyWizard = enemyWizards.get(0);
-			if (enemyWizard.getLife() < self.getLife()) {
+			if (enemyWizard.getLife() * .8 < self.getLife()) {
 				return false;
 			}
 		}
 		for (Wizard wizard : enemyWizards) {
-			double distanceToMe = FastMath.hypot(self, wizard);
+			double distanceToMe = FastMath.hypot(self, wizard) * 1.1;
 
 			boolean danger = true;
-			for (Wizard allyWizard : allyWizards) {
-				double tmpDistance = FastMath.hypot(allyWizard, wizard);
+			for (Minion minion : filteredWorld.getMinions()) {
+				if (minion.getFaction() != Constants.getCurrentFaction()) {
+					continue;
+				}
+				double tmpDistance = FastMath.hypot(minion, wizard);
 				if (tmpDistance < distanceToMe) {
 					danger = false;
 					break;
 				}
 			}
 			if (danger) {
-				for (Minion minion : filteredWorld.getMinions()) {
-					if (minion.getFaction() != Constants.getCurrentFaction()) {
-						continue;
-					}
-					double tmpDistance = FastMath.hypot(minion, wizard);
+				distanceToMe *= Constants.DANGER_SAFETY_ADDIT_DISTANCE;
+				for (Wizard allyWizard : allyWizards) {
+					double tmpDistance = FastMath.hypot(allyWizard, wizard);
 					if (tmpDistance < distanceToMe) {
 						danger = false;
 						break;

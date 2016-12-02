@@ -43,7 +43,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
     private static Drawing_DrawingStrategy instance;
 	protected TreeMap<Double, ScanMatrixItem> foundScanMatrixItems = new TreeMap<>();
 
-	private final static Color FOUND_DISTANCE_COLOR = new Color(100, 0, 0);
+	private final static Color DARK_GREEN = new Color(0, 100, 0);
+	private final static Color DARK_RED = new Color(100, 0, 0);
 	private final static Color FIREBALL_SHOT_COLOR = new Color(230, 100, 0);
 	private final static Color FIREBALL_EXPLODE_COLOR = new Color(200, 50, 0);
 	private TreeMap<Integer, Pair<Point, Double>> fireballShots = new TreeMap<>();
@@ -320,11 +321,23 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 
 	private void drawUpdatedData(Wizard self) {
 		for (BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
-			if (buildingPhantom.isUpdated()) {
-				drawUnit(buildingPhantom);
-			} else {
-				drawUnit(buildingPhantom, Color.pink);
+			if (buildingPhantom.getFaction() == Constants.getCurrentFaction()) {
+				drawUnit(buildingPhantom, buildingPhantom.isInvulnerable() ? DARK_GREEN : Color.green);
+				continue;
 			}
+			Color color = Color.RED;
+			if (buildingPhantom.isUpdated()) {
+				if (buildingPhantom.isInvulnerable()) {
+					color = DARK_RED;
+				}
+			} else {
+				if (buildingPhantom.isInvulnerable()) {
+					color = Color.white;
+				} else {
+					color = Color.pink;
+				}
+			}
+			drawUnit(buildingPhantom, color);
 		}
 
 		if (currentAction.getActionType().moveCalc) {
@@ -455,8 +468,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			textInfoPanel.putText(String.format("%s: %d", player.getName(), player.getScore()), idx++);
 		}
 
-		textInfoPanel.putText(sb.toString(), 9);
-
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			Point selfPoint = scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y];
 			if (maxAngle - minAngle > Constants.MOVE_ANGLE_PRECISE) {
@@ -480,7 +491,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			drawPanel.addFigure(new Drawing_Circle(minionPhantom.getPosition().getX(),
 												   minionPhantom.getPosition().getY(),
 												   Constants.getGame().getMinionSpeed() * (world.getTickIndex() - minionPhantom.getLastSeenTick()) + .1,
-												   FOUND_DISTANCE_COLOR));
+												   DARK_RED));
 		}
 
 		for (WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
@@ -493,7 +504,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 				drawPanel.addFigure(new Drawing_Circle(wizardPhantom.getPosition().getX(),
 													   wizardPhantom.getPosition().getY(),
 													   checkDistance,
-													   FOUND_DISTANCE_COLOR));
+													   DARK_RED));
 			}
 		}
 

@@ -1,5 +1,4 @@
 import model.Bonus;
-import model.Building;
 import model.CircularUnit;
 import model.Minion;
 import model.Player;
@@ -20,6 +19,8 @@ public class FilteredWorld extends World {
 
 	private List<Tree> shootingTreeList;
 
+	private BuildingPhantom[] castedBuildings;
+
 	public FilteredWorld(int tickIndex,
 						 int tickCount,
 						 double width,
@@ -29,7 +30,7 @@ public class FilteredWorld extends World {
 						 List<Minion> minions,
 						 List<Projectile> projectiles,
 						 List<Bonus> bonuses,
-						 List<Building> buildings,
+						 List<BuildingPhantom> buildings,
 						 List<Tree> trees,
 						 List<Tree> shootingTreeList,
 						 Point point) {
@@ -42,8 +43,9 @@ public class FilteredWorld extends World {
 			  minions.toArray(new Minion[minions.size()]),
 			  projectiles.toArray(new Projectile[projectiles.size()]),
 			  bonuses.toArray(new Bonus[bonuses.size()]),
-			  buildings.toArray(new Building[buildings.size()]),
+			  buildings.toArray(new BuildingPhantom[buildings.size()]),
 			  trees.toArray(new Tree[trees.size()]));
+		this.castedBuildings = (BuildingPhantom[]) super.getBuildings();
 		this.shootingTreeList = shootingTreeList;
 		allBlocksList = new ArrayList<>();
 		allBlocksList.addAll(Utils.filterUnit(getWizards(), point, FilterType.MOVE));
@@ -54,6 +56,11 @@ public class FilteredWorld extends World {
 
 	public List<CircularUnit> getAllBlocksList() {
 		return allBlocksList;
+	}
+
+	@Override
+	public BuildingPhantom[] getBuildings() {
+		return castedBuildings;
 	}
 
 	public List<Tree> getShootingTreeList() {
