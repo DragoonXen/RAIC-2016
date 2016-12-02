@@ -14,14 +14,14 @@ public class UnitScoreCalculationTickSupport {
 		unitScoreCalculations.put(0, current);
 	}
 
-	public UnitScoreCalculation getScores(FilteredWorld filteredWorld, Wizard self, boolean enemyFound, AgressiveNeutralsCalcs agressiveCalcs, int addTicks) {
+	public UnitScoreCalculation getScores(FilteredWorld filteredWorld, Wizard self, FightStatus status, AgressiveNeutralsCalcs agressiveCalcs, int addTicks) {
 		UnitScoreCalculation result = unitScoreCalculations.get(addTicks);
 		if (result != null) {
 			return result;
 		}
 
 		result = new UnitScoreCalculation();
-		result.updateScores(filteredWorld, self, enemyFound, agressiveCalcs, addTicks);
+		result.updateScores(filteredWorld, self, status, agressiveCalcs, addTicks);
 		unitScoreCalculations.put(addTicks, result);
 		return result;
 	}

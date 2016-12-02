@@ -39,8 +39,6 @@ public class StrategyImplement implements Strategy {
 
 	protected int lastTick;
 
-	protected boolean enemyFound;
-
 	protected ScanMatrixItem pointToReach;
 
 	private ScanMatrixItem testScanItem = new ScanMatrixItem(0, 0, 1.);
@@ -78,6 +76,7 @@ public class StrategyImplement implements Strategy {
 	protected boolean treeCut;
 	protected boolean goToBonusActivated = false;
 	protected boolean moveToLineActivated = false;
+	protected FightStatus fightStatus;
 
 	protected WizardsInfo wizardsInfo = new WizardsInfo();
 
@@ -93,7 +92,7 @@ public class StrategyImplement implements Strategy {
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
 		teammateIdsContainer.updateTeammatesIds(world);
 		SkillsLearning.updateSkills(self, move);
-		enemyFound = false;
+		fightStatus = FightStatus.NO_ENEMY;
 		treeCut = false;
 		moveToPoint = null;
 		minAngle = 0.;
@@ -122,6 +121,7 @@ public class StrategyImplement implements Strategy {
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
 										  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
 		if (isInDanger()) {
+			fightStatus = FightStatus.IN_DANGER;
 			direction = Utils.normalizeAngle(direction + Math.PI);
 			filteredWorld = Utils.filterWorld(world,
 											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
@@ -131,12 +131,10 @@ public class StrategyImplement implements Strategy {
 
 
 		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
-		enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
-				Utils.hasEnemy(filteredWorld.getWizards()) ||
-				Utils.hasEnemy(filteredWorld.getBuildings());
+		updateFightStatus();
 		updateProjectilesDTL(filteredWorld.getProjectiles());
 
-		unitScoreCalculation.updateScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs);
+		unitScoreCalculation.updateScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs);
 		evade(move, checkHitByProjectilePossible());
 
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
@@ -220,10 +218,8 @@ public class StrategyImplement implements Strategy {
 												  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 															self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
 												  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
-				enemyFound = Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
-						Utils.hasEnemy(filteredWorld.getWizards()) ||
-						Utils.hasEnemy(filteredWorld.getBuildings());
-				unitScoreCalculation.updateScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs);
+				updateFightStatus();
+				unitScoreCalculation.updateScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs);
 			}
 
 			if (goToBonusActivated && FastMath.hypot(self, PositionMoveLine.INSTANCE.getPositionToMove()) <= self.getRadius() +
@@ -366,8 +362,8 @@ public class StrategyImplement implements Strategy {
 								filteredWorld,
 								myLineCalc,
 								self,
-								unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks),
-								enemyFound);
+								unitScoreCalculationTickSupport.getScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs, ticks),
+								fightStatus);
 			bestScore = testScanItem.getTotalScore(self);
 			bestDangerOnWay += testScanItem.getAllDangers();
 			bestDamage += Utils.checkProjectiveCollision(position, ticks++);
@@ -405,8 +401,8 @@ public class StrategyImplement implements Strategy {
 										filteredWorld,
 										myLineCalc,
 										self,
-										unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks),
-										enemyFound);
+										unitScoreCalculationTickSupport.getScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs, ticks),
+										fightStatus);
 					if (!testScanItem.isAvailable()) {
 						stuck = true;
 						position.negate(moveVector);
@@ -470,8 +466,8 @@ public class StrategyImplement implements Strategy {
 										filteredWorld,
 										myLineCalc,
 										self,
-										unitScoreCalculationTickSupport.getScores(filteredWorld, self, enemyFound, agressiveNeutralsCalcs, ticks),
-										enemyFound);
+										unitScoreCalculationTickSupport.getScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs, ticks),
+										fightStatus);
 					if (testScanItem.isAvailable()) {
 						currScore = testScanItem.getTotalScore(self);
 						currDangerOnWay += testScanItem.getAllDangers();
@@ -1086,7 +1082,7 @@ public class StrategyImplement implements Strategy {
 		if (Math.abs(Utils.normalizeAngle(maxAngle - minAngle)) > Constants.MOVE_ANGLE_PRECISE) {
 			changePosition = accAndStrafe.getCoordChange(self.getAngle());
 			testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
-			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, enemyFound);
+			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, fightStatus);
 
 			double bestDanger = testScanItem.getAllDangers();
 			double bestScore = testScanItem.getTotalScore(self);
@@ -1100,7 +1096,7 @@ public class StrategyImplement implements Strategy {
 				accAndStrafe = AccAndSpeedWithFix.getAccAndSpeedByAngle(newAngle, 100.);
 				changePosition = accAndStrafe.getCoordChange(self.getAngle());
 				testScanItem.setPoint(self.getX() + changePosition.getX(), self.getY() + changePosition.getY());
-				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, enemyFound);
+				Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, fightStatus);
 				if (!testScanItem.isAvailable() || bestDanger < testScanItem.getAllDangers()) { //run???
 					continue;
 				}
@@ -1142,7 +1138,7 @@ public class StrategyImplement implements Strategy {
 
 	private void findAWay() {
 		wayPoints.clear();
-		if (!enemyFound) {
+		if (fightStatus == FightStatus.NO_ENEMY) {
 			ScanMatrixItem item = null;
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				for (int j = 0; j != scan_matrix[0].length; ++j) {
@@ -1275,7 +1271,7 @@ public class StrategyImplement implements Strategy {
 					if (FastMath.hypot(self.getX() - myLineCalc.getFightPoint().getX(), self.getY() - myLineCalc.getFightPoint().getY()) > 200) {
 						item.addOtherBonus(item.getForwardDistanceDivision() * 140);
 					}
-				} else if (!enemyFound) {
+				} else if (fightStatus == FightStatus.NO_ENEMY) {
 					item.addOtherBonus(item.getForwardDistanceDivision() * .01);
 				}
 			}
@@ -1307,7 +1303,7 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 
-		if (!enemyFound) {
+		if (fightStatus == FightStatus.NO_ENEMY) {
 			return;
 		}
 
@@ -1436,5 +1432,14 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 		return false;
+	}
+
+	public void updateFightStatus() {
+		if (fightStatus != FightStatus.IN_DANGER &&
+				Utils.hasEnemy(filteredWorld.getMinions(), agressiveNeutralsCalcs) ||
+				Utils.hasEnemy(filteredWorld.getWizards()) ||
+				Utils.hasEnemy(filteredWorld.getBuildings())) {
+			fightStatus = FightStatus.ENEMY_FOUND;
+		}
 	}
 }

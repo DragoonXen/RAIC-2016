@@ -26,11 +26,11 @@ public class UnitScoreCalculation {
 		return unitsScoreCalc.get(id);
 	}
 
-	public void updateScores(FilteredWorld filteredWorld, Wizard self, boolean enemyFound, AgressiveNeutralsCalcs agressiveCalcs) {
-		updateScores(filteredWorld, self, enemyFound, agressiveCalcs, 0);
+	public void updateScores(FilteredWorld filteredWorld, Wizard self, FightStatus status, AgressiveNeutralsCalcs agressiveCalcs) {
+		updateScores(filteredWorld, self, status, agressiveCalcs, 0);
 	}
 
-	public void updateScores(FilteredWorld filteredWorld, Wizard self, boolean enemyFound, AgressiveNeutralsCalcs agressiveCalcs, int addTicks) {
+	public void updateScores(FilteredWorld filteredWorld, Wizard self, FightStatus status, AgressiveNeutralsCalcs agressiveCalcs, int addTicks) {
 		unitsScoreCalc.clear();
 
 		WizardsInfo.WizardInfo myWizardInfo = Variables.wizardsInfo.getMe();
@@ -58,7 +58,7 @@ public class UnitScoreCalculation {
 			}
 		}
 
-		if (!enemyFound) {
+		if (status == FightStatus.NO_ENEMY) {
 			return;
 		}
 
@@ -203,7 +203,7 @@ public class UnitScoreCalculation {
 						ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFly - 1, myWizardInfo.getMoveFactor()) +
 						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
 				range = Math.min(evasionRange, range) +
-						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() *
+						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() * .5 *
 								Math.min(2,
 										 -Math.max(wizard.getRemainingActionCooldownTicks(),
 												   freezeStatus) - addTicks + 4);

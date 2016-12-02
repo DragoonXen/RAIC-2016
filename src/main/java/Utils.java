@@ -306,7 +306,7 @@ public class Utils {
 									 BaseLine myLineCalc,
 									 Wizard self,
 									 UnitScoreCalculation unitScoreCalculation,
-									 boolean enemyFound) {
+									 FightStatus fightStatus) {
 		item.setAvailable(Utils.isAvailableTile(filteredWorld.getAllBlocksList(), item.getX(), item.getY()));
 		if (!item.isAvailable()) {
 			return;
@@ -334,7 +334,7 @@ public class Utils {
 			}
 		}
 
-		if (!enemyFound) {
+		if (fightStatus == FightStatus.NO_ENEMY) {
 			return;
 		}
 
