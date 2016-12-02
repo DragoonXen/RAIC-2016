@@ -718,7 +718,7 @@ public class Utils {
 		double score = Constants.LOW_AIM_SCORE;
 		double tmp = (minion.getMaxLife() - Math.max(minion.getLife(), damage)) / (double) minion.getMaxLife();
 		if (minion.getLife() < damage) {
-			tmp *= 1 - (damage - minion.getLife()) / damage * .3;
+			tmp -= (damage - minion.getLife()) * .00001;
 		}
 		score += tmp * tmp;
 		if (minion.getType() == MinionType.FETISH_BLOWDART) {
