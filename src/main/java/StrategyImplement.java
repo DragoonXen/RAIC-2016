@@ -9,15 +9,12 @@ import model.Move;
 import model.Projectile;
 import model.ProjectileType;
 import model.StatusType;
-import model.Tree;
 import model.Wizard;
 import model.World;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -48,14 +45,6 @@ public class StrategyImplement implements Strategy {
 	protected Point moveToPoint;
 
 	private PriorityQueue<WayPoint> queue = new PriorityQueue<>();
-
-	protected List<Pair<Double, CircularUnit>> missileTargets = new ArrayList<>();
-	protected List<Pair<Double, CircularUnit>> staffTargets = new ArrayList<>();
-	protected List<Pair<Double, CircularUnit>> iceTargets = new ArrayList<>();
-	protected List<Pair<Double, Point>> fireTargets = new LinkedList<>();
-	protected List<Pair<Double, CircularUnit>> prevMissileTargets = new ArrayList<>();
-	protected List<Pair<Double, CircularUnit>> prevStaffTargets = new ArrayList<>();
-	protected List<Pair<Double, CircularUnit>> prevIceTargets = new ArrayList<>();
 
 	protected double minAngle = 0.;
 	protected double maxAngle = 0.;
@@ -290,8 +279,6 @@ public class StrategyImplement implements Strategy {
 				}
 			}
 		}
-		findTargets();
-		shotAndTurn(move);
 	}
 
 	private void updateProjectilesDTL(Projectile[] projectiles) {
@@ -512,80 +499,6 @@ public class StrategyImplement implements Strategy {
 		}
 	}
 
-	private void shotAndTurn(Move move) {
-		if (missileTargets.isEmpty()) {
-			turnTo(moveToPoint, move);
-			return;
-		}
-		CircularUnit target = missileTargets.get(0).getSecond();
-		Point targetShootPoint = Utils.getShootPoint(target, self, Utils.PROJECTIVE_RADIUS[ProjectileType.MAGIC_MISSILE.ordinal()]);
-		CircularUnit frostTarget = iceTargets.isEmpty() ? null : iceTargets.get(0).getSecond();
-		Point frostTargetShootPoint = frostTarget != null ?
-				Utils.getShootPoint(frostTarget, self, Utils.PROJECTIVE_RADIUS[ProjectileType.FROST_BOLT.ordinal()]) :
-				null;
-		CircularUnit meleeTarget = staffTargets.isEmpty() ? null : staffTargets.get(0).getSecond();
-
-		Pair<Double, Point> fireTarget = fireTargets.isEmpty() ? null : fireTargets.get(0);
-
-		if (wizardsInfo.getMe().isHasHasteSkill() && wizardsInfo.getMe().getHastened() == 0 && Constants.getGame().getHasteManacost() <= self.getMana()) {
-			if (self.getRemainingActionCooldownTicks() == 0) {
-				move.setAction(ActionType.HASTE);
-				Wizard allyWizardCastTo = null;
-				for (Wizard wizard : filteredWorld.getWizards()) {
-					if (wizard.getFaction() == Constants.getCurrentFaction() && FastMath.hypot(self, wizard) + .1 < self.getCastRange()) {
-						if (allyWizardCastTo == null) {
-							allyWizardCastTo = wizard;
-						} else {
-							if (allyWizardCastTo.getLife() > wizard.getLife()) {
-								allyWizardCastTo = wizard;
-							}
-						}
-					}
-				}
-				if (allyWizardCastTo != null) {
-					move.setStatusTargetId(allyWizardCastTo.getId());
-				}
-			}
-		} else {
-			if (fireTarget != null && fireTarget.getFirst() < 40) {
-				fireTarget = null;
-			}
-
-			if (fireTarget != null) {
-				if (fireTarget.getFirst() > 90. || self.getMana() > self.getMaxMana() * .9) {
-					if (applyTargetAction(ActionType.FIREBALL, FastMath.hypot(self, fireTarget.getSecond()), fireTarget.getSecond(), move)) {
-						return;
-					}
-				}
-			}
-
-			if (frostTarget != null) {
-				if (frostTarget instanceof Wizard || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
-					if (applyTargetAction(ActionType.FROST_BOLT, FastMath.hypot(self, target) - target.getRadius(), frostTargetShootPoint, move)) {
-						return;
-					}
-				}
-			}
-
-			if (fireTarget == null || fireTarget.getFirst() < 70. || self.getMana() > self.getMaxMana() * .9) {
-				if (applyTargetAction(ActionType.MAGIC_MISSILE, target instanceof Tree ?
-											  1000. :
-											  FastMath.hypot(self, target) - target.getRadius(),
-									  targetShootPoint, move)) {
-					return;
-				}
-			}
-
-			if (meleeTarget != null) {
-				if (applyMeleeAction(meleeTarget, move)) {
-					return;
-				}
-			}
-		}
-
-		turnTo(moveToPoint, move);
-	}
-
 	private boolean applyMeleeAction(CircularUnit target, Move move) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
@@ -732,196 +645,6 @@ public class StrategyImplement implements Strategy {
 		}
 		move.setTurn(Utils.updateMaxModule(angle, Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor()));
 	}
-
-	private void findTargets() {
-		prevIceTargets = iceTargets;
-		prevMissileTargets = missileTargets;
-		prevStaffTargets = staffTargets;
-		iceTargets = new ArrayList<>();
-		missileTargets = new ArrayList<>();
-		staffTargets = new ArrayList<>();
-		int missileDamage = wizardsInfo.getMe().getMagicalMissileDamage();
-		int frostBoltDamage = wizardsInfo.getMe().getFrostBoltDamage();
-		treeCut = (myLineCalc == PositionMoveLine.INSTANCE &&
-				(Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), new Point(self.getX(), self.getY())) > 0 ||
-						Utils.unitsCountAtDistance(filteredWorld.getTrees(), self, Constants.TREES_DISTANCE_TO_CUT) >= 3)) ||
-				Utils.unitsCountAtDistance(filteredWorld.getTrees(),
-										   self,
-										   Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
-				Utils.unitsCountCloseToDestination(filteredWorld.getAllBlocksList(), pointToReach) >= 2 && // can't go throught obstacles
-						Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), pointToReach) > 0; // one of them - tree
-		double score;
-		double distanceToTarget;
-
-		int staffDamage = wizardsInfo.getMe().getStaffDamage();
-
-		if (treeCut) {
-			for (Tree tree : filteredWorld.getTrees()) {
-
-				// distance to destination
-				// distance to me
-				score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(pointToReach.getX() - tree.getX(),
-																					 pointToReach.getY() - tree.getY());
-				distanceToTarget = FastMath.hypot(self, tree);
-				score += Constants.CUT_SELF_DISTANCE_PRIORITY / distanceToTarget;
-
-				score *= (tree.getRadius() + self.getRadius()) * .02;
-				missileTargets.add(new Pair<>(score / Utils.getHitsToKill(tree.getLife(), missileDamage) -
-													  Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
-											  tree));
-
-				if (distanceToTarget < Constants.getGame().getStaffRange() + tree.getRadius() + 50) {
-					distanceToTarget -= Constants.getGame().getStaffRange() + tree.getRadius();
-					if (distanceToTarget > 0) {
-						score *= 1 - distanceToTarget * .01; // divizion by 100
-					}
-					staffTargets.add(new Pair<>(score / Utils.getHitsToKill(tree.getLife(), staffDamage)
-														- Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
-												tree));
-				}
-			}
-		}
-
-		for (Minion minion : filteredWorld.getMinions()) {
-			if (minion.getFaction() == Constants.getCurrentFaction()) {
-				continue;
-			}
-			if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
-				continue;
-			}
-
-			score = Utils.getMinionAttackPriority(minion, missileDamage, self);
-			missileTargets.add(new Pair<>(score, minion));
-			Utils.appendStaffTarget(staffTargets, minion, self, Utils.getMinionAttackPriority(minion, staffDamage, self));
-			if (frostBoltDamage > 0) {
-				score = Utils.getMinionAttackPriority(minion, frostBoltDamage, self);
-				iceTargets.add(new Pair<>(score, minion));
-			}
-		}
-
-		for (BuildingPhantom building : filteredWorld.getBuildings()) {
-			if (building.getFaction() == Constants.getCurrentFaction() || building.isInvulnerable()) {
-				continue;
-			}
-			score = Constants.LOW_AIM_SCORE;
-			double tmp = (building.getMaxLife() - building.getLife()) / (double) building.getMaxLife();
-			score += tmp * tmp;
-			score *= Constants.BUILDING_AIM_PROIRITY;
-			missileTargets.add(new Pair<>(score, building));
-			Utils.appendStaffTarget(staffTargets, building, self, score);
-		}
-
-		for (Wizard wizard : filteredWorld.getWizards()) {
-			if (wizard.getFaction() == Constants.getCurrentFaction()) {
-				continue;
-			}
-			score = Constants.LOW_AIM_SCORE;
-			double tmp = (wizard.getMaxLife() - wizard.getLife()) / (double) wizard.getMaxLife();
-			score += tmp * tmp;
-			score *= Constants.WIZARD_AIM_PROIRITY;
-			if (Utils.wizardHasStatus(wizard, StatusType.SHIELDED)) {
-				score *= Constants.SHIELDENED_AIM_PRIORITY;
-			}
-			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
-				score *= Constants.EMPOWERED_AIM_PRIORITY;
-			}
-			Utils.appendStaffTarget(staffTargets, wizard, self, score);
-			missileTargets.add(new Pair<>(score, wizard));
-			if (frostBoltDamage > 0) {
-				iceTargets.add(new Pair<>(score * Constants.FROST_WIZARD_AIM_PROIRITY, wizard));
-			}
-		}
-
-		Utils.applyPreviousContainedModifier(staffTargets, prevStaffTargets);
-		Utils.applyPreviousContainedModifier(missileTargets, prevMissileTargets);
-		Utils.applyPreviousContainedModifier(iceTargets, prevIceTargets);
-
-		Collections.sort(staffTargets, Utils.AIM_SORT_COMPARATOR);
-		Collections.sort(missileTargets, Utils.AIM_SORT_COMPARATOR);
-		Collections.sort(iceTargets, Utils.AIM_SORT_COMPARATOR);
-
-		staffTargets = staffTargets.subList(0, Math.min(staffTargets.size(), 3));
-		Utils.filterTargets(missileTargets, ProjectileType.MAGIC_MISSILE, self, filteredWorld);
-		Utils.filterTargets(iceTargets, ProjectileType.FROST_BOLT, self, filteredWorld);
-
-		fireTargets.clear();
-
-		if (wizardsInfo.getMe().isHasFireball()) {
-			for (Minion minion : filteredWorld.getMinions()) {
-				if (minion.getFaction() == Constants.getCurrentFaction()) {
-					continue;
-				}
-				if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
-					continue;
-				}
-				if (minion.getSpeedX() != 0. || minion.getSpeedY() != 0) {
-					continue;
-				}
-				Point checkPoint = new Point(minion.getX(), minion.getY());
-				addFireTarget(checkDistances(checkPoint,
-											 minion.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
-				addFireTarget(checkDistances(checkPoint,
-											 minion.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
-			}
-
-			for (Building building : filteredWorld.getBuildings()) {
-				if (building.getFaction() == Constants.getCurrentFaction()) {
-					continue;
-				}
-				Point checkPoint = new Point(building.getX(), building.getY());
-				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
-				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
-			}
-
-			for (Wizard wizard : filteredWorld.getWizards()) {
-				if (wizard.getFaction() == Constants.getCurrentFaction()) {
-					continue;
-				}
-
-				Point checkPoint = new Point(wizard.getX(), wizard.getY());
-				int ticks = Utils.getTicksToFly(FastMath.hypot(self, wizard), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
-				ticks = Math.min(ticks - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
-				if (FastMath.hypot(self, wizard) < self.getCastRange()) {
-					Point wizardPoint = new Point(wizard.getX(), wizard.getY());
-					double damage = checkFireballDamage(wizardPoint);
-					fireTargets.add(new Pair<Double, Point>(damage, wizardPoint));
-				}
-				double checkDistance = wizard.getRadius() +
-						Constants.getGame().getFireballExplosionMaxDamageRange() -
-						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
-				if (checkDistance > 0.) {
-					addFireTarget(checkDistances(checkPoint, checkDistance));
-				}
-				checkDistance = wizard.getRadius() +
-						Constants.getGame().getFireballExplosionMinDamageRange() -
-						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
-				addFireTarget(checkDistances(checkPoint, checkDistance));
-			}
-			Collections.sort(fireTargets, Utils.POINT_AIM_SORT_COMPARATOR);
-			for (Iterator<Pair<Double, Point>> iterator = fireTargets.iterator(); iterator.hasNext(); ) {
-				Pair<Double, Point> fireTarget = iterator.next();
-				if (Utils.noTreesOnWay(fireTarget.getSecond(), self, ProjectileType.FIREBALL, filteredWorld)) {
-					if (iterator.hasNext()) {
-						iterator.next();
-					}
-					while (iterator.hasNext()) {
-						iterator.next();
-						iterator.remove();
-					}
-					break;
-				} else {
-					iterator.remove();
-				}
-			}
-		}
-	}
-
-	private void addFireTarget(Pair<Double, Point> target) {
-		if (target != null) {
-			fireTargets.add(target);
-		}
-	}
-
 
 	private final static int angleCheck = 20;
 	private final static int checkCount = 360 / angleCheck;

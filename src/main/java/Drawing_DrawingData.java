@@ -1,10 +1,7 @@
-import model.CircularUnit;
 import model.Wizard;
 import model.World;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,9 +22,6 @@ public class Drawing_DrawingData {
     private boolean moveToLineActivated;
     private BaseLine lastFightLine;
     private BaseLine currentCalcLine;
-	private List<Pair<Double, CircularUnit>> missileTargets;
-	private List<Pair<Double, CircularUnit>> staffTargets;
-	private List<Pair<Double, CircularUnit>> iceTargets;
 
 	private TeammateIdsContainer teammateIdsContainer;
 
@@ -47,9 +41,6 @@ public class Drawing_DrawingData {
 							   Point moveToLinePoint,
 							   Point[] linesFightPoints,
 							   AgressiveNeutralsCalcs agressiveNeutralsCalcs,
-							   List<Pair<Double, CircularUnit>> missileTargets,
-							   List<Pair<Double, CircularUnit>> staffTargets,
-							   List<Pair<Double, CircularUnit>> iceTargets,
 							   TeammateIdsContainer teammateIdsContainer,
 							   WizardsInfo wizardsInfo) {
 		this.self = self;
@@ -75,18 +66,6 @@ public class Drawing_DrawingData {
         }
         this.agressiveNeutralsCalcs = agressiveNeutralsCalcs.makeClone();
 
-		this.iceTargets = new ArrayList<>(iceTargets.size());
-		for (Pair<Double, CircularUnit> iceTarget : iceTargets) {
-			this.iceTargets.add(new Pair<>(iceTarget));
-		}
-		this.staffTargets = new ArrayList<>(staffTargets.size());
-		for (Pair<Double, CircularUnit> iceTarget : staffTargets) {
-			this.staffTargets.add(new Pair<>(iceTarget));
-		}
-		this.missileTargets = new ArrayList<>(missileTargets.size());
-		for (Pair<Double, CircularUnit> iceTarget : missileTargets) {
-			this.missileTargets.add(new Pair<>(iceTarget));
-		}
 		this.teammateIdsContainer = teammateIdsContainer.makeClone();
 		this.wizardsInfo = wizardsInfo.makeClone();
 	}
@@ -161,23 +140,8 @@ public class Drawing_DrawingData {
 									   moveToLinePoint,
 									   linesFightPoints,
 									   agressiveNeutralsCalcs,
-									   missileTargets,
-									   staffTargets,
-									   iceTargets,
 									   teammateIdsContainer,
 									   wizardsInfo);
-	}
-
-	public List<Pair<Double, CircularUnit>> getMissileTargets() {
-		return missileTargets;
-	}
-
-	public List<Pair<Double, CircularUnit>> getStaffTargets() {
-		return staffTargets;
-	}
-
-	public List<Pair<Double, CircularUnit>> getIceTargets() {
-		return iceTargets;
 	}
 
 	public WizardsInfo getWizardsInfo() {

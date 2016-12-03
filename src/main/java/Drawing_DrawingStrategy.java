@@ -106,9 +106,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			Constants.getLines()[i].fightPoint.update(currentDrawingData.getLinesFightPoints()[i]);
 		}
 		this.agressiveNeutralsCalcs = currentDrawingData.getAgressiveNeutralsCalcs();
-		this.iceTargets = currentDrawingData.getIceTargets();
-		this.missileTargets = currentDrawingData.getMissileTargets();
-		this.staffTargets = currentDrawingData.getStaffTargets();
 		this.wizardsInfo = currentDrawingData.getWizardsInfo();
 
 		return storedData;
@@ -128,9 +125,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   PositionMoveLine.INSTANCE.getPositionToMove().clonePoint(),
 									   new Point[]{Constants.getLines()[0].fightPoint, Constants.getLines()[1].fightPoint, Constants.getLines()[2].fightPoint},
 									   agressiveNeutralsCalcs,
-									   missileTargets,
-									   staffTargets,
-									   iceTargets,
 									   teammateIdsContainer,
 									   wizardsInfo);
 	}
@@ -401,24 +395,6 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			}
 		}
 
-		if (!staffTargets.isEmpty()) {
-			CircularUnit target = staffTargets.get(0).getSecond();
-			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.black);
-		}
-		if (!missileTargets.isEmpty()) {
-			CircularUnit target = missileTargets.get(0).getSecond();
-			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.MAGENTA);
-		}
-		if (!iceTargets.isEmpty()) {
-			CircularUnit target = iceTargets.get(0).getSecond();
-			drawCross(new Point(target.getX(), target.getY()), target.getRadius(), Color.BLUE);
-		}
-		if (!fireTargets.isEmpty()) {
-			Pair<Double, Point> fireTarget = fireTargets.get(0);
-			if (fireTarget.getFirst() > 90. || self.getMana() > self.getMaxMana() * .9) {
-				drawCross(fireTarget.getSecond(), 30., Color.ORANGE);
-			}
-		}
 		Map.Entry<Integer, Pair<Point, Double>> fireballShotEntry = fireballShots.floorEntry(world.getTickIndex());
 		if (fireballShotEntry != null) {
 			int ticksToFly = Utils.getTicksToFly(fireballShotEntry.getValue().getSecond(), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
