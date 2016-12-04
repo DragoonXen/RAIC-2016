@@ -91,6 +91,7 @@ public class StrategyImplement implements Strategy {
 		targetAngle = 0.;
 
 		Variables.self = self;
+		Variables.world = world;
 		this.world = world;
 		this.self = self;
 		SpawnPoint.updateTick(world.getTickIndex());
@@ -502,12 +503,12 @@ public class StrategyImplement implements Strategy {
 	private boolean applyMeleeAction(CircularUnit target, Move move) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
-		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 
 		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
 		if (hastenedTicksRemain > -1 && turnTicksCount > hastenedTicksRemain) {
 			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
-			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 		}
 
 		if (waitTimeForAction(ActionType.STAFF) <= turnTicksCount + 2) {
@@ -525,12 +526,12 @@ public class StrategyImplement implements Strategy {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
-		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 
 		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
 		if (hastenedTicksRemain > -1 && turnTicksCount > hastenedTicksRemain) {
 			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
-			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle, Constants.MAX_SHOOT_ANGLE);
+			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 		}
 
 		if (waitTimeForAction(actionType) <= turnTicksCount + 2) {
@@ -578,14 +579,14 @@ public class StrategyImplement implements Strategy {
 		return false;
 	}
 
-	private int getTurnCount(double currentAngle, double maxTurnAngle, double maxAttackAngle) {
-		if (Math.abs(currentAngle) < maxAttackAngle) {
+	private int getTurnCount(double currentAngle, double maxTurnAngle) {
+		if (Math.abs(currentAngle) < Constants.MAX_SHOOT_ANGLE) {
 			currentAngle = 0.;
 		} else {
 			if (currentAngle < 0.) {
-				currentAngle += maxAttackAngle;
+				currentAngle += Constants.MAX_SHOOT_ANGLE;
 			} else {
-				currentAngle -= maxAttackAngle;
+				currentAngle -= Constants.MAX_SHOOT_ANGLE;
 			}
 		}
 

@@ -54,9 +54,11 @@ public class WizardsInfo {
 			}
 			wizardInfos[(int) wizard.getId()].updateSkills(wizard.getSkills());
 		}
-
+		// TODO: добавить ауру от невидимых, если castRange отличается от расчётного.
 		updateWizardsStatuses(allyWizards);
 		updateWizardsStatuses(enemyWizards);
+
+		Variables.maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * me.getTurnFactor();
 	}
 
 	private void updateWizardsStatuses(List<Wizard> allyWizards) {

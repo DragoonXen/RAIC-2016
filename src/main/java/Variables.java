@@ -1,5 +1,6 @@
 import model.Projectile;
 import model.Wizard;
+import model.World;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.List;
 public class Variables {
 
 	public static Wizard self;
+	public static World world;
 
 	public static List<AbstractMap.SimpleEntry<Projectile, Double>> projectilesSim = new LinkedList<>();
 	public static HashSet<Long> fireballHitDamageCheck = new HashSet<>();
@@ -20,6 +22,8 @@ public class Variables {
 	public static List<Long> projectiles = new ArrayList<>();
 
 	public static WizardsInfo wizardsInfo;
+
+	public static double maxTurnAngle;
 
 	public static double maxDangerMatrixScore;
 }

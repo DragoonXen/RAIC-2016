@@ -47,6 +47,7 @@ public abstract class Constants {
     public static int[] STEP_Y_HELP = new int[]{-1, 1, 0, 0};
 
 	public static double WIZARD_AIM_PROIRITY = 6.;
+	public static double PER_TURN_TICK_PENALTY = .01;
 	public static double FROST_WIZARD_AIM_PROIRITY = 3.;
 	public static double BUILDING_AIM_PROIRITY = 5.;
 	public static double FETISH_AIM_PROIRITY = 1.1;

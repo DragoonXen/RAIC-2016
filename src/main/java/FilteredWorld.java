@@ -21,6 +21,8 @@ public class FilteredWorld extends World {
 
 	private BuildingPhantom[] castedBuildings;
 
+	public static FilteredWorld lastInstance;
+
 	public FilteredWorld(int tickIndex,
 						 int tickCount,
 						 double width,
@@ -52,6 +54,7 @@ public class FilteredWorld extends World {
 		allBlocksList.addAll(Utils.filterUnit(getMinions(), point, FilterType.MOVE));
 		allBlocksList.addAll(Utils.filterUnit(getBuildings(), point, FilterType.MOVE));
 		allBlocksList.addAll(Utils.filterUnit(getTrees(), point, FilterType.MOVE));
+		lastInstance = this;
 	}
 
 	public List<CircularUnit> getAllBlocksList() {

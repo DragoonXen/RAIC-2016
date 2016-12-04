@@ -188,18 +188,20 @@ public class ShootEvasionMatrix {
 			{3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 33.0, 36.0, 39.0, 42.0, 45.0, 48.0, 51.00719612807619, 54.03597284163122, 57.10067362907966, 60.21551303082833, 63.39439068778444, 66.65055585454463, 69.99606337562638, 73.44096290029871, 76.99218511763875, 80.65215080562126, 84.41724828954948, 88.27649934099416, 92.21090634825879, 96.19401760418755}};
 
 	private final static TreeMap<Double, Double> correctEvasionDistance;
-	public final static double distanceFromCenter;
+	public final static double mmDistanceFromCenter;
+	public final static double frostBoltDistanceFromCenter;
+	public final static double fireballDistanceFromCenter;
 
 	static {
 		correctEvasionDistance = new TreeMap<>();
-		distanceFromCenter = Constants.getGame().getWizardRadius() +
+		mmDistanceFromCenter = Constants.getGame().getWizardRadius() +
 				Constants.getGame().getMagicMissileRadius() - (Constants.getGame().getWizardRadius() +
 				Constants.getGame().getMagicMissileRadius()) * 6. / 7.;
-		double forwardDistance = distanceFromCenter + Constants.getGame().getWizardRadius() +
+		double forwardDistance = mmDistanceFromCenter + Constants.getGame().getWizardRadius() +
 				Constants.getGame().getMagicMissileRadius();
 		double backwardDistance = Constants.getGame().getWizardRadius() +
 				Constants.getGame().getMagicMissileRadius() -
-				distanceFromCenter;
+				mmDistanceFromCenter;
 
 		double[] speedFactors = new double[5];
 		double[] hasteSpeedFactors = new double[5];
@@ -214,16 +216,23 @@ public class ShootEvasionMatrix {
 							  EVASION_MATRIX,
 							  forwardDistance,
 							  backwardDistance,
-							  distanceFromCenter,
+							  mmDistanceFromCenter,
 							  Constants.getGame().getMagicMissileSpeed(),
 							  correctEvasionDistance);
 		updateEvasionDistance(hasteSpeedFactors,
 							  HastenedEvasionMatrix.HASTENED_EVASION_MATRIX,
 							  forwardDistance,
 							  backwardDistance,
-							  distanceFromCenter,
+							  mmDistanceFromCenter,
 							  Constants.getGame().getMagicMissileSpeed(),
 							  correctEvasionDistance);
+
+		frostBoltDistanceFromCenter = Constants.getGame().getWizardRadius() +
+				Constants.getGame().getFrostBoltRadius() - (Constants.getGame().getWizardRadius() +
+				Constants.getGame().getFrostBoltRadius()) * 6. / 7.;
+		fireballDistanceFromCenter = Constants.getGame().getWizardRadius() +
+				Constants.getGame().getFireballExplosionMinDamageRange() - (Constants.getGame().getWizardRadius() +
+				Constants.getGame().getFireballExplosionMinDamageRange());
 	}
 
 	private static void updateEvasionDistance(double[] speedFactors,
@@ -255,6 +264,17 @@ public class ShootEvasionMatrix {
 			return HastenedEvasionMatrix.HASTENED_EVASION_MATRIX[180][ticks - 1];
 		} else { // not hastened
 			return EVASION_MATRIX[180][ticks - 1];
+		}
+	}
+
+	public static double getTicksForDistance(double distance, int angle, double speedFactor) {
+		int j = 0;
+		if (speedFactor > 1.25) { // hastened
+			while (HastenedEvasionMatrix.HASTENED_EVASION_MATRIX[angle][j++] < distance) ;
+			return j;
+		} else { // not hastened
+			while (EVASION_MATRIX[angle][j++] < distance) ;
+			return j;
 		}
 	}
 }
