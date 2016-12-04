@@ -587,10 +587,12 @@ public class StrategyImplement implements Strategy {
 				missileShootDesc.getWizardsDamage() > 0)) {
 			double minCastDistance = 1000.; // for trees score always negative
 			if (missileShootDesc.getScore() >= 0) {
+				minCastDistance = FastMath.hypot(self, missileShootDesc.getShootPoint()) - .1; // exact distance for building
 				if (missileShootDesc.getMinionsDamage() > 0) {
-					minCastDistance = FastMath.hypot(self, missileShootDesc.getShootPoint()) - 10.;
-				} else {
-					minCastDistance = FastMath.hypot(self, missileShootDesc.getShootPoint()) - missileShootDesc.getTarget().getRadius();
+					minCastDistance -= 10.;
+				} else if (missileShootDesc.getWizardsDamage() > 0) {
+					minCastDistance = FastMath.hypot(self, missileShootDesc.getTarget()) -
+							missileShootDesc.getTarget().getRadius();
 				}
 			}
 			if (applyTargetAction(ActionType.MAGIC_MISSILE, minCastDistance, missileShootDesc.getShootPoint(), move)) {

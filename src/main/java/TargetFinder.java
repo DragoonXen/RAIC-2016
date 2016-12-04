@@ -184,7 +184,7 @@ public class TargetFinder {
 													ActionType.MAGIC_MISSILE,
 													score,
 													building));
-			if (missileDamage <= building.getLife()) {
+			if (missileDamage >= building.getLife()) {
 				ShootDescription.lastInstance.setBuildingDamage(building.getLife());
 				ShootDescription.lastInstance.setBuildingsDestroy(1);
 			} else {
@@ -314,7 +314,7 @@ public class TargetFinder {
 											 minion.getY() + Math.sin(direction) * minion.getRadius());
 
 			staffTargets.add(new ShootDescription(backShootPoint, ActionType.STAFF, score, minion, distanceToTarget));
-			if (damage <= minion.getLife()) {
+			if (damage >= minion.getLife()) {
 				ShootDescription.lastInstance.setMinionsDamage(minion.getLife());
 				ShootDescription.lastInstance.setMinionsKills(1);
 			} else {
@@ -327,7 +327,7 @@ public class TargetFinder {
 		double distanceToTarget = FastMath.hypot(Variables.self, shootPoint) - Constants.getGame().getStaffRange();
 		if (distanceToTarget < 50) {
 			staffTargets.add(new ShootDescription(shootPoint, ActionType.STAFF, score, building, distanceToTarget));
-			if (damage <= building.getLife()) {
+			if (damage >= building.getLife()) {
 				ShootDescription.lastInstance.setBuildingDamage(building.getLife());
 				ShootDescription.lastInstance.setBuildingsDestroy(1);
 			} else {
@@ -340,7 +340,7 @@ public class TargetFinder {
 		double distanceToTarget = FastMath.hypot(Variables.self, shootPoint) - Constants.getGame().getStaffRange();
 		if (distanceToTarget < 50) {
 			staffTargets.add(new ShootDescription(shootPoint, ActionType.STAFF, score, wizard, distanceToTarget));
-			if (damage <= wizard.getLife()) {
+			if (damage >= wizard.getLife()) {
 				ShootDescription.lastInstance.setWizardsDamage(wizard.getLife());
 				ShootDescription.lastInstance.setWizardsKills(1);
 			} else {
@@ -356,7 +356,7 @@ public class TargetFinder {
 		} else {
 			iceTargets.add(sd);
 		}
-		if (damage <= wizard.getLife()) {
+		if (damage >= wizard.getLife()) {
 			sd.setWizardsDamage(wizard.getLife());
 			sd.setWizardsKills(1);
 		} else {
