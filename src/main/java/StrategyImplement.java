@@ -63,9 +63,12 @@ public class StrategyImplement implements Strategy {
 	protected TeammateIdsContainer teammateIdsContainer = new TeammateIdsContainer();
 
 	protected boolean treeCut;
+	protected boolean turnFixed;
 	protected boolean goToBonusActivated = false;
 	protected boolean moveToLineActivated = false;
 	protected FightStatus fightStatus;
+
+	protected TargetFinder targetFinder = new TargetFinder();
 
 	protected WizardsInfo wizardsInfo = new WizardsInfo();
 
@@ -89,6 +92,7 @@ public class StrategyImplement implements Strategy {
 		maxAngle = 0.;
 		angle = 0.;
 		targetAngle = 0.;
+		turnFixed = false;
 
 		Variables.self = self;
 		Variables.world = world;
@@ -127,6 +131,9 @@ public class StrategyImplement implements Strategy {
 		unitScoreCalculation.updateScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs);
 		evade(move, checkHitByProjectilePossible());
 
+		targetFinder.updateTargets(filteredWorld, myLineCalc, pointToReach, agressiveNeutralsCalcs);
+
+		makeShot(move);
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			int ticksToBonusSpawn = Utils.getTicksToBonusSpawn(world.getTickIndex());
 			if (goToBonusActivated) {
@@ -279,6 +286,10 @@ public class StrategyImplement implements Strategy {
 					moveTo(whichPointGoTo, move, run);
 				}
 			}
+		}
+
+		if (!turnFixed) {
+			turnTo(moveToPoint, move);
 		}
 	}
 
@@ -500,7 +511,99 @@ public class StrategyImplement implements Strategy {
 		}
 	}
 
-	private boolean applyMeleeAction(CircularUnit target, Move move) {
+	private void makeShot(Move move) {
+		List<TargetFinder.ShootDescription> targets = targetFinder.getMissileTargets();
+		TargetFinder.ShootDescription missileShootDesc = null;
+		if (!targets.isEmpty()) {
+			missileShootDesc = targets.get(targets.size() - 1);
+		}
+		targets = targetFinder.getIceTargets();
+		TargetFinder.ShootDescription iceShootDesc = null;
+		if (!targets.isEmpty()) {
+			iceShootDesc = targets.get(targets.size() - 1);
+		}
+		targets = targetFinder.getFireTargets();
+		TargetFinder.ShootDescription fireShootDesc = null;
+		if (!targets.isEmpty()) {
+			fireShootDesc = targets.get(targets.size() - 1);
+		}
+		targets = targetFinder.getStaffTargets();
+		TargetFinder.ShootDescription staffHitDesc = null;
+		if (!targets.isEmpty()) {
+			staffHitDesc = targets.get(0);
+		}
+
+		if (wizardsInfo.getMe().isHasHasteSkill() && wizardsInfo.getMe().getHastened() == 0 && Constants.getGame().getHasteManacost() <= self.getMana()) {
+			if (self.getRemainingActionCooldownTicks() == 0) {
+				move.setAction(ActionType.HASTE);
+				Wizard allyWizardCastTo = null;
+				for (Wizard wizard : filteredWorld.getWizards()) {
+					if (wizard.getFaction() == Constants.getCurrentFaction() && FastMath.hypot(self, wizard) + .1 < self.getCastRange()) {
+						if (allyWizardCastTo == null) {
+							allyWizardCastTo = wizard;
+						} else {
+							if (allyWizardCastTo.getLife() > wizard.getLife()) {
+								allyWizardCastTo = wizard;
+							}
+						}
+					}
+				}
+				if (allyWizardCastTo != null) {
+					move.setStatusTargetId(allyWizardCastTo.getId());
+				}
+				return;
+			}
+		}
+
+		if (fireShootDesc != null && fireShootDesc.getScore() < 40) {
+			fireShootDesc = null;
+		}
+
+		if (fireShootDesc != null) {
+			if (fireShootDesc.getScore() > 90. || self.getMana() > self.getMaxMana() * .9) {
+				if (applyTargetAction(ActionType.FIREBALL,
+									  FastMath.hypot(self, fireShootDesc.getShootPoint()),
+									  fireShootDesc.getShootPoint(),
+									  move)) {
+					return;
+				}
+			}
+		}
+
+		if (iceShootDesc != null) {
+			if (iceShootDesc.getWizardsDamage() > 0 || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
+				if (applyTargetAction(ActionType.FROST_BOLT,
+									  FastMath.hypot(self, iceShootDesc.getShootPoint()) - Constants.getGame().getWizardRadius(),
+									  iceShootDesc.getShootPoint(),
+									  move)) {
+					return;
+				}
+			}
+		}
+
+		if (missileShootDesc != null && (fireShootDesc == null ||
+				fireShootDesc.getScore() < 70. ||
+				self.getMana() > self.getMaxMana() * .9 ||
+				missileShootDesc.getWizardsDamage() > 0)) {
+			double minCastDistance = 1000.; // for trees score always negative
+			if (missileShootDesc.getScore() >= 0) {
+				if (missileShootDesc.getMinionsDamage() > 0) {
+					minCastDistance = FastMath.hypot(self, missileShootDesc.getShootPoint()) - 10.;
+				} else {
+					minCastDistance = FastMath.hypot(self, missileShootDesc.getShootPoint()) - missileShootDesc.getTarget().getRadius();
+				}
+			}
+			if (applyTargetAction(ActionType.MAGIC_MISSILE, minCastDistance, missileShootDesc.getShootPoint(), move)) {
+				return;
+			}
+		}
+
+		if (staffHitDesc != null) {
+			applyMeleeAction(staffHitDesc.getTarget(), move);
+		}
+	}
+
+	private void applyMeleeAction(CircularUnit target, Move move) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
@@ -513,13 +616,10 @@ public class StrategyImplement implements Strategy {
 
 		if (waitTimeForAction(ActionType.STAFF) <= turnTicksCount + 2) {
 			if (checkHit(turnAngle, target, move)) {
-				turnTo(moveToPoint, move);
-				return true;
+				return;
 			}
 			turnTo(turnAngle, move);
-			return true;
 		}
-		return false;
 	}
 
 	private boolean applyTargetAction(ActionType actionType, double minCastRange, Point target, Move move) {
@@ -536,8 +636,7 @@ public class StrategyImplement implements Strategy {
 
 		if (waitTimeForAction(actionType) <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
-			if (checkShot(turnAngle, target, minCastRange, move, actionType)) {
-				turnTo(moveToPoint, move);
+			if (checkShot(turnAngle, minCastRange, move, actionType)) {
 				return true;
 			}
 			// если не можем попасть - доворачиваем на цель
@@ -563,11 +662,11 @@ public class StrategyImplement implements Strategy {
 		return false;
 	}
 
-	private boolean checkShot(double angle, Point point, double minCastRange, Move move, ActionType actionType) {
+	private boolean checkShot(double angle, double minCastRange, Move move, ActionType actionType) {
 		if (Math.abs(angle) > Constants.MAX_SHOOT_ANGLE) {
 			return false;
 		}
-		if (FastMath.hypot(self, point) < self.getCastRange() && waitTimeForAction(actionType) == 0) {
+		if (waitTimeForAction(actionType) == 0) {
 			move.setCastAngle(angle);
 			move.setAction(actionType);
 			move.setMinCastDistance(minCastRange);//self.getCastRange() - .01
@@ -591,6 +690,14 @@ public class StrategyImplement implements Strategy {
 		}
 
 		return (int) ((maxTurnAngle - .001 + Math.abs(currentAngle)) / maxTurnAngle);
+	}
+
+	private void turnTo(double angle, Move move) {
+		if (currentAction.getActionType() == CurrentAction.ActionType.RUN_FROM_PROJECTILE) {
+			return;
+		}
+		turnFixed = true;
+		move.setTurn(Utils.updateMaxModule(angle, Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor()));
 	}
 
 	private void turnTo(Point point, Move move) {
@@ -638,13 +745,6 @@ public class StrategyImplement implements Strategy {
 			}
 			turnTo(self.getAngleTo(point.getX(), point.getY()), move);
 		}
-	}
-
-	private void turnTo(double angle, Move move) {
-		if (currentAction.getActionType() == CurrentAction.ActionType.RUN_FROM_PROJECTILE) {
-			return;
-		}
-		move.setTurn(Utils.updateMaxModule(angle, Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor()));
 	}
 
 	private final static int angleCheck = 20;

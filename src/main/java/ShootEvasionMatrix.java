@@ -269,6 +269,7 @@ public class ShootEvasionMatrix {
 
 	public static double getTicksForDistance(double distance, int angle, double speedFactor) {
 		int j = 0;
+		angle = Math.abs(angle);
 		if (speedFactor > 1.25) { // hastened
 			while (HastenedEvasionMatrix.HASTENED_EVASION_MATRIX[angle][j++] < distance) ;
 			return j;

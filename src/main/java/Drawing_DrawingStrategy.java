@@ -106,6 +106,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			Constants.getLines()[i].fightPoint.update(currentDrawingData.getLinesFightPoints()[i]);
 		}
 		this.agressiveNeutralsCalcs = currentDrawingData.getAgressiveNeutralsCalcs();
+		this.teammateIdsContainer = currentDrawingData.getTeammateIdsContainer();
+		this.targetFinder = currentDrawingData.getTargetFinder();
 		this.wizardsInfo = currentDrawingData.getWizardsInfo();
 
 		return storedData;
@@ -126,7 +128,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   new Point[]{Constants.getLines()[0].fightPoint, Constants.getLines()[1].fightPoint, Constants.getLines()[2].fightPoint},
 									   agressiveNeutralsCalcs,
 									   teammateIdsContainer,
-									   wizardsInfo);
+									   wizardsInfo,
+									   targetFinder);
 	}
 
     @Override

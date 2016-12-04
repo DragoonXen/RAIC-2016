@@ -767,12 +767,7 @@ public class Utils {
 			CircularUnit target = item.getSecond();
 			Point pointB = getShootPoint(target, self, projectileRadius);
 
-			if (target instanceof Building) {
-				if (FastMath.hypot(self, pointB) > self.getCastRange()) { // не дострельнем
-					iterator.remove();
-					continue;
-				}
-			} else if (FastMath.hypot(self, pointB) > self.getCastRange()) { // не дострельнем
+			if (FastMath.hypot(self, pointB) > self.getCastRange()) { // не дострельнем
 				iterator.remove();
 				continue;
 			}

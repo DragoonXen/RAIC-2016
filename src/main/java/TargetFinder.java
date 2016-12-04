@@ -1,6 +1,8 @@
 import model.ActionType;
 import model.Building;
+import model.CircularUnit;
 import model.Faction;
+import model.LivingUnit;
 import model.Minion;
 import model.ProjectileType;
 import model.StatusType;
@@ -8,6 +10,8 @@ import model.Tree;
 import model.Wizard;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -15,27 +19,59 @@ import java.util.List;
  */
 public class TargetFinder {
 
-	private List<ShootDescription> foundShoots;
-	private List<ShootDescription> prevFoundShoots;
+	//public final static Comparator<Pair<Double, Point>> POINT_AIM_SORT_COMPARATOR = (o1, o2) -> o2.getFirst().compareTo(o1.getFirst());
+	//protected Comparator<ShootDescription> TARGET_SCORE_COMPARATOR = (o1, o2) -> o1.getScore() == o2.getScore() ? o1.getI
+
+	protected List<ShootDescription> missileTargets;
+	protected List<ShootDescription> staffTargets;
+	protected List<ShootDescription> iceTargets;
+	protected List<ShootDescription> prevMissileTargets;
+	protected List<ShootDescription> prevStaffTargets;
+	protected List<ShootDescription> prevIceTargets;
+	protected List<ShootDescription> fireTargets;
 
 	public TargetFinder() {
-		foundShoots = new ArrayList<>();
-		prevFoundShoots = new ArrayList<>();
+		missileTargets = new ArrayList<>();
+		staffTargets = new ArrayList<>();
+		iceTargets = new ArrayList<>();
+		prevMissileTargets = new ArrayList<>();
+		prevStaffTargets = new ArrayList<>();
+		prevIceTargets = new ArrayList<>();
+		fireTargets = new ArrayList<>();
 	}
 
-	public TargetFinder(List<ShootDescription> foundShoots, List<ShootDescription> prevFoundShoots) {
-		this.foundShoots = new ArrayList<>(foundShoots);
-		this.prevFoundShoots = new ArrayList<>(prevFoundShoots);
+	public TargetFinder(List<ShootDescription> missileTargets,
+						List<ShootDescription> staffTargets,
+						List<ShootDescription> iceTargets,
+						List<ShootDescription> prevMissileTargets,
+						List<ShootDescription> prevStaffTargets,
+						List<ShootDescription> prevIceTargets,
+						List<ShootDescription> fireTargets) {
+		this.missileTargets = new ArrayList<>(missileTargets);
+		this.staffTargets = new ArrayList<>(staffTargets);
+		this.iceTargets = new ArrayList<>(iceTargets);
+		this.prevMissileTargets = new ArrayList<>(prevMissileTargets);
+		this.prevStaffTargets = new ArrayList<>(prevStaffTargets);
+		this.prevIceTargets = new ArrayList<>(prevIceTargets);
+		this.fireTargets = new LinkedList<>(fireTargets);
 	}
 
 	public void updateTargets(FilteredWorld filteredWorld, BaseLine myLineCalc, Point pointToReach, AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
 		Wizard self = Variables.self;
 
 		{
-			List<ShootDescription> tmpSwap = prevFoundShoots;
-			prevFoundShoots = foundShoots;
-			foundShoots = tmpSwap;
-			foundShoots.clear();
+			List<ShootDescription> tmp = prevMissileTargets;
+			prevMissileTargets = missileTargets;
+			missileTargets = tmp;
+			tmp.clear();
+			tmp = prevIceTargets;
+			prevIceTargets = iceTargets;
+			iceTargets = tmp;
+			tmp.clear();
+			tmp = prevStaffTargets;
+			prevStaffTargets = staffTargets;
+			staffTargets = tmp;
+			tmp.clear();
 		}
 
 		WizardsInfo.WizardInfo myWizardInfo = Variables.wizardsInfo.getMe();
@@ -69,18 +105,20 @@ public class TargetFinder {
 				direction = tree.getAngleTo(self);
 				Point backShootPoint = new Point(tree.getX() + Math.cos(direction) * tree.getRadius(),
 												 tree.getY() + Math.sin(direction) * tree.getRadius());
-				foundShoots.add(new ShootDescription(backShootPoint,
-													 ActionType.MAGIC_MISSILE,
-													 score / Utils.getHitsToKill(tree.getLife(), missileDamage) -
-															 Constants.CUT_REACH_POINT_DISTANCE_PTIORITY));
+				missileTargets.add(new ShootDescription(backShootPoint,
+														ActionType.MAGIC_MISSILE,
+														score / Utils.getHitsToKill(tree.getLife(), missileDamage) -
+																Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
+														tree));
 
 				if (distanceToTarget < Constants.getGame().getStaffRange() + tree.getRadius() + 50) {
 					distanceToTarget -= Constants.getGame().getStaffRange() + tree.getRadius();
-					foundShoots.add(new ShootDescription(backShootPoint,
-														 ActionType.STAFF,
-														 score / Utils.getHitsToKill(tree.getLife(), staffDamage) -
-																 Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
-														 distanceToTarget));
+					staffTargets.add(new ShootDescription(backShootPoint,
+														  ActionType.STAFF,
+														  score / Utils.getHitsToKill(tree.getLife(), staffDamage) -
+																  Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
+														  tree,
+														  distanceToTarget));
 				}
 			}
 		}
@@ -92,12 +130,17 @@ public class TargetFinder {
 			if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
 				continue;
 			}
+			Point shootPoint = new Point(minion.getX() + Math.cos(minion.getAngle()) * minion.getRadius(),
+										 minion.getY() + Math.sin(minion.getAngle()) * minion.getRadius());
 
+			if (self.getCastRange() < FastMath.hypot(self, shootPoint)) {
+				continue;
+			}
 			score = Utils.getMinionAttackPriority(minion, missileDamage, self);
-			foundShoots.add(new ShootDescription(new Point(minion.getX() + Math.cos(minion.getAngle()) * minion.getRadius(),
-														   minion.getY() + Math.sin(minion.getAngle()) * minion.getRadius()),
-												 ActionType.MAGIC_MISSILE,
-												 score));
+			missileTargets.add(new ShootDescription(shootPoint,
+													ActionType.MAGIC_MISSILE,
+													score,
+													minion));
 			if (missileDamage >= minion.getLife()) {
 				ShootDescription.lastInstance.setMinionsKills(1);
 				ShootDescription.lastInstance.setMinionsDamage(minion.getLife());
@@ -114,9 +157,10 @@ public class TargetFinder {
 				} else {
 					ShootDescription.lastInstance.setMinionsDamage(frostBoltDamage);
 				}
-				foundShoots.add(new ShootDescription(new Point(minion.getX(), minion.getY()),
-													 ActionType.FROST_BOLT,
-													 score));
+				iceTargets.add(new ShootDescription(shootPoint,
+													ActionType.FROST_BOLT,
+													score,
+													minion));
 			}
 		}
 
@@ -131,10 +175,21 @@ public class TargetFinder {
 			direction = building.getAngleTo(self);
 			Point backShootPoint = new Point(building.getX() + Math.cos(direction) * building.getRadius(),
 											 building.getY() + Math.sin(direction) * building.getRadius());
+			if (self.getCastRange() + Utils.PROJECTIVE_RADIUS[ProjectileType.MAGIC_MISSILE.ordinal()]
+					< FastMath.hypot(self, backShootPoint) + .1) {
+				continue;
+			}
 
-			foundShoots.add(new ShootDescription(backShootPoint,
-												 ActionType.MAGIC_MISSILE,
-												 score));
+			missileTargets.add(new ShootDescription(backShootPoint,
+													ActionType.MAGIC_MISSILE,
+													score,
+													building));
+			if (missileDamage <= building.getLife()) {
+				ShootDescription.lastInstance.setBuildingDamage(building.getLife());
+				ShootDescription.lastInstance.setBuildingsDestroy(1);
+			} else {
+				ShootDescription.lastInstance.setBuildingDamage(missileDamage);
+			}
 
 			appendStaffTarget(building, score, backShootPoint, staffDamage);
 		}
@@ -173,28 +228,92 @@ public class TargetFinder {
 							  staffDamage);
 			EnemyEvasionFilteredWorld evastionFiltering = new EnemyEvasionFilteredWorld(wizard, Variables.world);
 			// MM
-			Point pointToShoot = new Point(wizard.getX(), wizard.getY());
-
 			Point pointFwdToShoot = new Point(wizard.getX() + Math.cos(wizard.getAngle()) * ShootEvasionMatrix.mmDistanceFromCenter,
 											  wizard.getY() + Math.sin(wizard.getAngle()) * ShootEvasionMatrix.mmDistanceFromCenter);
-			//(Wizard wizard, double score, Point shootPoint, int damage) {
+			int checked = checkEnemyWizardEvasion(wizard, pointFwdToShoot, oneStepMoving, evastionFiltering, ProjectileType.MAGIC_MISSILE);
+			int checkedSecond;
+			if (checked == 0) {
+				appendShootTarget(wizard, score, pointFwdToShoot, missileDamage, ActionType.MAGIC_MISSILE);
+			} else {
+				Point pointToShoot = new Point(wizard.getX(), wizard.getY());
+				checkedSecond = checkEnemyWizardEvasion(wizard, pointToShoot, oneStepMoving, evastionFiltering, ProjectileType.MAGIC_MISSILE);
+				if (checkedSecond < 2) {
+					appendShootTarget(wizard, score, pointToShoot, missileDamage, ActionType.MAGIC_MISSILE);
+				} else if (checked < 2) {
+					appendShootTarget(wizard, score, pointFwdToShoot, missileDamage, ActionType.MAGIC_MISSILE);
+				}
+			}
+
+			// Frost
 			if (frostBoltDamage > 0) {
-				// Frost
 				pointFwdToShoot = new Point(wizard.getX() + Math.cos(wizard.getAngle()) * ShootEvasionMatrix.frostBoltDistanceFromCenter,
 											wizard.getY() + Math.sin(wizard.getAngle()) * ShootEvasionMatrix.frostBoltDistanceFromCenter);
+				checked = checkEnemyWizardEvasion(wizard, pointFwdToShoot, oneStepMoving, evastionFiltering, ProjectileType.FROST_BOLT);
+				if (checked == 0) {
+					appendShootTarget(wizard, score, pointFwdToShoot, missileDamage, ActionType.FROST_BOLT);
+				} else {
+					Point pointToShoot = new Point(wizard.getX(), wizard.getY());
+					checkedSecond = checkEnemyWizardEvasion(wizard, pointToShoot, oneStepMoving, evastionFiltering, ProjectileType.FROST_BOLT);
+					if (checkedSecond < 2) {
+						appendShootTarget(wizard, score, pointToShoot, missileDamage, ActionType.FROST_BOLT);
+					} else if (checked < 2) {
+						appendShootTarget(wizard, score, pointFwdToShoot, missileDamage, ActionType.FROST_BOLT);
+					}
+				}
 			}
 		}
+
+		Collections.sort(staffTargets);
+		Collections.sort(missileTargets);
+		Collections.sort(iceTargets);
+		Collections.sort(fireTargets);
+
+		missileTargets = filterTargets(missileTargets);
+		iceTargets = filterTargets(iceTargets);
+		fireTargets = filterTargets(fireTargets);
+	}
+
+	private List<ShootDescription> filterTargets(List<ShootDescription> shootDescriptions) {
+		List<ShootDescription> filtered = new ArrayList<>();
+		ShootDescription lastAdded = null;
+		Point selfPoint = new Point(Variables.self.getX(), Variables.self.getY());
+		for (ShootDescription shootDescription : shootDescriptions) {
+			if (lastAdded != null && lastAdded.getTicksToGo() <= shootDescription.getTicksToGo()) {
+				continue;
+			}
+			Point shootTo = shootDescription.getShootPoint();
+			boolean canShoot = true;
+			double radius = Utils.PROJECTIVE_RADIUS[shootDescription.getActionType().ordinal() - 2];
+			for (Tree tree : FilteredWorld.lastInstance.getShootingTreeList()) {
+				if (tree == shootDescription.getTarget()) {
+					// skip tree if it's a target
+					continue;
+				}
+				double distance = Utils.distancePointToSegment(new Point(tree.getX(), tree.getY()), shootTo, selfPoint);
+				if (distance < radius + tree.getRadius()) {
+					canShoot = false;
+					break;
+				}
+			}
+			if (canShoot) {
+				filtered.add(shootDescription);
+				if (shootDescription.getTicksToGo() == 0) {
+					break;
+				}
+				lastAdded = shootDescription;
+			}
+		}
+		return filtered;
 	}
 
 	private void appendStaffTarget(Minion minion, double score, int damage) {
 		double distanceToTarget = FastMath.hypot(Variables.self, minion) - minion.getRadius() - Constants.getGame().getStaffRange();
 		if (distanceToTarget < 50) {
 			double direction = Utils.normalizeAngle(minion.getAngleTo(Variables.self) + minion.getAngle());
-			;
 			Point backShootPoint = new Point(minion.getX() + Math.cos(direction) * minion.getRadius(),
 											 minion.getY() + Math.sin(direction) * minion.getRadius());
 
-			foundShoots.add(new ShootDescription(backShootPoint, ActionType.STAFF, score, distanceToTarget));
+			staffTargets.add(new ShootDescription(backShootPoint, ActionType.STAFF, score, minion, distanceToTarget));
 			if (damage <= minion.getLife()) {
 				ShootDescription.lastInstance.setMinionsDamage(minion.getLife());
 				ShootDescription.lastInstance.setMinionsKills(1);
@@ -207,7 +326,7 @@ public class TargetFinder {
 	private void appendStaffTarget(Building building, double score, Point shootPoint, int damage) {
 		double distanceToTarget = FastMath.hypot(Variables.self, shootPoint) - Constants.getGame().getStaffRange();
 		if (distanceToTarget < 50) {
-			foundShoots.add(new ShootDescription(shootPoint, ActionType.STAFF, score, distanceToTarget));
+			staffTargets.add(new ShootDescription(shootPoint, ActionType.STAFF, score, building, distanceToTarget));
 			if (damage <= building.getLife()) {
 				ShootDescription.lastInstance.setBuildingDamage(building.getLife());
 				ShootDescription.lastInstance.setBuildingsDestroy(1);
@@ -220,12 +339,30 @@ public class TargetFinder {
 	private void appendStaffTarget(Wizard wizard, double score, Point shootPoint, int damage) {
 		double distanceToTarget = FastMath.hypot(Variables.self, shootPoint) - Constants.getGame().getStaffRange();
 		if (distanceToTarget < 50) {
-			foundShoots.add(new ShootDescription(shootPoint, ActionType.STAFF, score, distanceToTarget));
+			staffTargets.add(new ShootDescription(shootPoint, ActionType.STAFF, score, wizard, distanceToTarget));
 			if (damage <= wizard.getLife()) {
 				ShootDescription.lastInstance.setWizardsDamage(wizard.getLife());
 				ShootDescription.lastInstance.setWizardsKills(1);
 			} else {
 				ShootDescription.lastInstance.setBuildingDamage(damage);
+			}
+		}
+	}
+
+	private void appendShootTarget(Wizard wizard, double score, Point shootPoint, int damage, ActionType actionType) {
+		ShootDescription sd = new ShootDescription(shootPoint, actionType, score, wizard);
+		if (actionType == ActionType.MAGIC_MISSILE) {
+			missileTargets.add(sd);
+		} else {
+			iceTargets.add(sd);
+		}
+		if (damage <= wizard.getLife()) {
+			sd.setWizardsDamage(wizard.getLife());
+			sd.setWizardsKills(1);
+		} else {
+			sd.setBuildingDamage(damage);
+			if (actionType == ActionType.FROST_BOLT) {
+				sd.multScore(Constants.FROST_WIZARD_AIM_PROIRITY);
 			}
 		}
 	}
@@ -239,71 +376,139 @@ public class TargetFinder {
 										EnemyEvasionFilteredWorld evasionFilter,
 										ProjectileType projectileType) {
 		Wizard self = Variables.self;
-		Point shootingPosition = new Point(self.getX(), self.getY());
-		Point projectilePoint = shootingPosition;
-		double direction = Utils.normalizeAngle(self.getAngleTo(shootPoint.getX(), shootPoint.getY()) + self.getAngle());
 		double projectileSpeed = Utils.PROJECTIVE_SPEED[projectileType.ordinal()];
-		double projectileRadius = Utils.PROJECTIVE_RADIUS[projectileType.ordinal()];
-		Point projectileVector = new Point(Math.cos(direction) * projectileRadius,
-										   Math.sin(direction) * projectileRadius);
+		int checkCount = (int) ((self.getCastRange() + projectileSpeed - .1) / projectileSpeed);
+		double shootDirection = Utils.normalizeAngle(self.getAngleTo(shootPoint.getX(), shootPoint.getY()) + self.getAngle());
+		Point projectileVector = new Point(Math.cos(shootDirection) * projectileSpeed,
+										   Math.sin(shootDirection) * projectileSpeed);
+		WizardsInfo.WizardInfo wizardInfo = Variables.wizardsInfo.getWizardInfo(wizard.getId());
+		boolean hastened = wizardInfo.getHastened() > 0;
+		double[][] evasionMatrix = hastened ? HastenedEvasionMatrix.HASTENED_EVASION_MATRIX : ShootEvasionMatrix.EVASION_MATRIX;
+		Point prevProjectilePoint = new Point();
 		Point movementVector = new Point();
+		Point startPosition = new Point();
+		Point wizardPosition = new Point();
+		Point projectilePoint = new Point();
+		double distance;
+		double prevDistance;
 
-		for (int i = 0; i != EVASION_CHECK_COUNT; ++i) {
-			int intAngle = i * EVASION_CHECK_ANGLE_STEP;
-			double angle = intAngle / 180 * Math.PI;
-			movementVector.update(Math.cos(angle + wizard.getAngle()), Math.sin(angle + wizard.getAngle()));
-		}
+		int idx = 0;
+		do {
+			Point shootingPosition = new Point(self.getX() + idx * stepDistance * Math.cos(shootDirection),
+											   self.getY() + idx * stepDistance * Math.sin(shootDirection));
+
+			double criticalDistance = Utils.PROJECTIVE_RADIUS[projectileType.ordinal()] + wizard.getRadius();
+			boolean hitConfirmed = false;
+			for (int i = 0; i != EVASION_CHECK_COUNT; ++i) {
+				int intAngle = i * EVASION_CHECK_ANGLE_STEP;
+				double angle = intAngle * Math.PI / 180;
+				movementVector.update(Math.cos(angle + wizard.getAngle()), Math.sin(angle + wizard.getAngle()));
+				distance = getDoubleDistance(intAngle, evasionMatrix, 0) * .5 * wizardInfo.getMoveFactor();
+				startPosition.update(wizard.getX() + movementVector.getX() * distance,
+									 wizard.getY() + movementVector.getY() * distance);
+				boolean stuck = false;
+				hitConfirmed = false;
+				wizardPosition.update(startPosition);
+				projectilePoint.update(shootingPosition);
+				distance = 0;
+				for (int j = 0; j != checkCount; ++j) {
+					if (j > 0 && !stuck) {
+						prevDistance = distance;
+						distance = getDoubleDistance(intAngle, evasionMatrix, j - 1) * wizardInfo.getMoveFactor();
+						wizardPosition.update(startPosition.getX() + movementVector.getX() * distance,
+											  startPosition.getY() + movementVector.getY() * distance);
+						stuck = checkStuck(evasionFilter, wizardPosition, j + 1);
+						if (stuck) {
+							wizardPosition.update(startPosition.getX() + movementVector.getX() * prevDistance,
+												  startPosition.getY() + movementVector.getY() * prevDistance);
+						}
+					}
+					prevProjectilePoint.update(projectilePoint);
+					if (j + 1 == checkCount) {
+						distance = self.getCastRange() - j * projectileSpeed;
+						projectilePoint.update(projectilePoint.getX() + Math.cos(shootDirection) * distance,
+											   projectilePoint.getY() + Math.sin(shootDirection) * distance);
+					} else {
+						projectilePoint.update(projectilePoint.getX() + projectileVector.getX(),
+											   projectilePoint.getY() + projectileVector.getY());
+					}
+
+					if (Utils.distancePointToSegment(wizardPosition, prevProjectilePoint, projectilePoint) < criticalDistance) {
+						hitConfirmed = true;
+						break;
+					}
+				}
+				if (!hitConfirmed) {
+					break;
+				}
+			}
+			if (hitConfirmed) {
+				return idx;
+			}
+		} while (++idx < 2);
 
 		return 2;
 	}
 
-	/*
-	private void findTargets() {
-		prevIceTargets = iceTargets;
-		prevMissileTargets = missileTargets;
-		prevStaffTargets = staffTargets;
-		iceTargets = new ArrayList<>();
-		missileTargets = new ArrayList<>();
-		staffTargets = new ArrayList<>();
-		int missileDamage = wizardsInfo.getMe().getMagicalMissileDamage();
-		int frostBoltDamage = wizardsInfo.getMe().getFrostBoltDamage();
-		double distanceToTarget;
+	private double getDoubleDistance(int angle, double[][] evasionMatrix, int tick) {
+		if (angle > 180) {
+			angle = 360 - angle;
+		}
+		return evasionMatrix[angle][tick];
+	}
 
-		for (Wizard wizard : filteredWorld.getWizards()) {
-			if (wizard.getFaction() == Constants.getCurrentFaction()) {
-				continue;
-			}
-			score = Constants.LOW_AIM_SCORE;
-			double tmp = (wizard.getMaxLife() - wizard.getLife()) / (double) wizard.getMaxLife();
-			score += tmp * tmp;
-			score *= Constants.WIZARD_AIM_PROIRITY;
-			if (Utils.wizardHasStatus(wizard, StatusType.SHIELDED)) {
-				score *= Constants.SHIELDENED_AIM_PRIORITY;
-			}
-			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
-				score *= Constants.EMPOWERED_AIM_PRIORITY;
-			}
-			Utils.appendStaffTarget(staffTargets, wizard, self, score);
-			missileTargets.add(new Pair<>(score, wizard));
-			if (frostBoltDamage > 0) {
-				iceTargets.add(new Pair<>(score * Constants.FROST_WIZARD_AIM_PROIRITY, wizard));
+	private boolean checkStuck(EnemyEvasionFilteredWorld enemyEvasionFilteredWorld, Point where, int ticks) {
+		double distance;
+		for (Building building : enemyEvasionFilteredWorld.getBuildingsEvasionCalc()) {
+			distance = FastMath.hypot(building, where);
+			if (distance < building.getRadius() + Constants.getGame().getWizardRadius()) {
+				return true;
 			}
 		}
+		for (Tree tree : enemyEvasionFilteredWorld.getTreesEvasionCalc()) {
+			distance = FastMath.hypot(tree, where);
+			if (distance < tree.getRadius() + Constants.getGame().getWizardRadius()) {
+				return true;
+			}
+		}
+		Point updatedPosition = new Point();
+		for (Minion minion : enemyEvasionFilteredWorld.getMinionsEvasionCalc()) {
+			updatedPosition.update(minion.getX() + minion.getSpeedX() * ticks,
+								   minion.getY() + minion.getSpeedY() * ticks);
+			distance = FastMath.hypot(where, updatedPosition);
+			if (distance < minion.getRadius() + Constants.getGame().getWizardRadius()) {
+				return true;
+			}
+		}
+		for (Wizard wizard : enemyEvasionFilteredWorld.getWizardsEvasionCalc()) {
+			updatedPosition.update(wizard.getX() + wizard.getSpeedX() * ticks,
+								   wizard.getY() + wizard.getSpeedY() * ticks);
+			distance = FastMath.hypot(where, updatedPosition);
+			if (distance < wizard.getRadius() + wizard.getRadius()) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-		Utils.applyPreviousContainedModifier(staffTargets, prevStaffTargets);
-		Utils.applyPreviousContainedModifier(missileTargets, prevMissileTargets);
-		Utils.applyPreviousContainedModifier(iceTargets, prevIceTargets);
+	public List<ShootDescription> getMissileTargets() {
+		return missileTargets;
+	}
 
-		Collections.sort(staffTargets, Utils.AIM_SORT_COMPARATOR);
-		Collections.sort(missileTargets, Utils.AIM_SORT_COMPARATOR);
-		Collections.sort(iceTargets, Utils.AIM_SORT_COMPARATOR);
+	public List<ShootDescription> getStaffTargets() {
+		return staffTargets;
+	}
 
-		staffTargets = staffTargets.subList(0, Math.min(staffTargets.size(), 3));
-		Utils.filterTargets(missileTargets, ProjectileType.MAGIC_MISSILE, self, filteredWorld);
-		Utils.filterTargets(iceTargets, ProjectileType.FROST_BOLT, self, filteredWorld);
+	public List<ShootDescription> getIceTargets() {
+		return iceTargets;
+	}
 
-		fireTargets.clear();
+	public List<ShootDescription> getFireTargets() {
+		return fireTargets;
+	}
 
+	/*
+	private void findTargets() {
 		if (wizardsInfo.getMe().isHasFireball()) {
 			for (Minion minion : filteredWorld.getMinions()) {
 				if (minion.getFaction() == Constants.getCurrentFaction()) {
@@ -379,10 +584,19 @@ public class TargetFinder {
 			fireTargets.add(target);
 		}
 	}
-
 	 */
 
-	public static class ShootDescription {
+	public TargetFinder makeClone() {
+		return new TargetFinder(missileTargets,
+								staffTargets,
+								iceTargets,
+								prevMissileTargets,
+								prevStaffTargets,
+								prevIceTargets,
+								fireTargets);
+	}
+
+	public static class ShootDescription implements Comparable<ShootDescription> {
 		private int minionsDamage;
 		private int wizardsDamage;
 		private int buildingDamage;
@@ -398,13 +612,15 @@ public class TargetFinder {
 
 		private Point shootPoint;
 		private ActionType actionType;
+		private CircularUnit target;
 
 		private double score;
 
 		private static ShootDescription lastInstance;
 
-		public ShootDescription(Point shootPoint, ActionType actionType, double score) {
+		public ShootDescription(Point shootPoint, ActionType actionType, double score, LivingUnit target) {
 			lastInstance = this;
+			this.target = target;
 			this.shootPoint = shootPoint;
 			this.actionType = actionType;
 			this.score = score;
@@ -416,12 +632,16 @@ public class TargetFinder {
 			this.score -= Constants.PER_TURN_TICK_PENALTY * ticksToTurn;
 		}
 
-		public ShootDescription(Point shootPoint, ActionType actionType, double score, double walkingDistance) {
-			this(shootPoint, actionType, score);
+		public ShootDescription(Point shootPoint, ActionType actionType, double score, LivingUnit target, double walkingDistance) {
+			this(shootPoint, actionType, score, target);
 			this.distanceWalkToShoot = walkingDistance;
 			if (walkingDistance > 0.) {
 				ShootEvasionMatrix.getTicksForDistance(walkingDistance, (int) Math.round(turnAngle), Variables.wizardsInfo.getMe().getMoveFactor());
 			}
+		}
+
+		public void multScore(double mult) {
+			this.score *= mult;
 		}
 
 		public void setMinionsDamage(int minionsDamage) {
@@ -500,8 +720,19 @@ public class TargetFinder {
 			return actionType;
 		}
 
+		public CircularUnit getTarget() {
+			return target;
+		}
+
 		public double getScore() {
 			return score;
+		}
+
+		@Override
+		public int compareTo(ShootDescription o) {
+			return o.getScore() == this.score ?
+					(target == null ? 0 : Long.compare(o.target.getId(), target.getId())) :
+					Double.compare(o.score, score);
 		}
 	}
 }
