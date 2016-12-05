@@ -734,7 +734,7 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 
-		if (minDistance < 600 && minDistance > 400.) {
+		if (minDistance < 580 && minDistance > 450.) {
 			//turn to side
 			double nearestWizardAngle = self.getAngleTo(nearestEnemyWizard);
 			boolean leftSide;
