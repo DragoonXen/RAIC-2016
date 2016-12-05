@@ -180,7 +180,7 @@ public class TargetFinder {
 			double tmp = (building.getMaxLife() - building.getLife()) / (double) building.getMaxLife();
 			score += tmp * tmp;
 			score *= Constants.BUILDING_AIM_PROIRITY;
-			direction = building.getAngleTo(self);
+			direction = Utils.normalizeAngle(building.getAngleTo(self) + building.getAngle());
 			Point backShootPoint = new Point(building.getX() + Math.cos(direction) * building.getRadius(),
 											 building.getY() + Math.sin(direction) * building.getRadius());
 			if (self.getCastRange() + Utils.PROJECTIVE_RADIUS[ProjectileType.MAGIC_MISSILE.ordinal()]
