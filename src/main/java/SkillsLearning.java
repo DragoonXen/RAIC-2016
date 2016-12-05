@@ -112,7 +112,7 @@ public class SkillsLearning {
 					if (wizard.getFaction() != Constants.getCurrentFaction()) {
 						continue;
 					}
-					if (Utils.whichLine(wizard) == myLine) {
+					if (!wizard.isMe() && Utils.whichLine(wizard) == myLine) {
 						allyWizards.add(wizard);
 					}
 				}
