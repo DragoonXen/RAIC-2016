@@ -581,6 +581,16 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 
+		if (staffHitDesc != null && staffHitDesc.getTicksToGo() < 1 &&
+				(missileShootDesc == null ||
+						staffHitDesc.getMinionsKills() > 0 ||
+						staffHitDesc.getMinionsDamage() >= missileShootDesc.getMinionsDamage() ||
+						self.getMana() < self.getMaxMana() * .9)) {
+			if (applyMeleeAction(staffHitDesc.getTarget(), move)) {
+				return;
+			}
+		}
+
 		if (missileShootDesc != null && (fireShootDesc == null ||
 				fireShootDesc.getScore() < 70. ||
 				self.getMana() > self.getMaxMana() * .9 ||
@@ -605,7 +615,7 @@ public class StrategyImplement implements Strategy {
 		}
 	}
 
-	private void applyMeleeAction(CircularUnit target, Move move) {
+	private boolean applyMeleeAction(CircularUnit target, Move move) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
@@ -618,10 +628,12 @@ public class StrategyImplement implements Strategy {
 
 		if (waitTimeForAction(ActionType.STAFF) <= turnTicksCount + 2) {
 			if (checkHit(turnAngle, target, move)) {
-				return;
+				return true;
 			}
 			turnTo(turnAngle, move);
+			return true;
 		}
+		return false;
 	}
 
 	private boolean applyTargetAction(ActionType actionType, double minCastRange, Point target, Move move) {
@@ -712,6 +724,9 @@ public class StrategyImplement implements Strategy {
 			if (wizard.getFaction() != Constants.getEnemyFaction()) {
 				continue;
 			}
+			if (Math.abs(wizard.getAngleTo(self)) > Math.PI * .4) { // 0.4 = 72 degrees
+				continue;
+			}
 			double distance = FastMath.hypot(wizard, self);
 			if (distance < minDistance) {
 				nearestEnemyWizard = wizard;
@@ -733,7 +748,7 @@ public class StrategyImplement implements Strategy {
 				leftSide = nearestWizardAngle < 0;
 			}
 			nearestWizardAngle = Math.abs(nearestWizardAngle);
-			double turnAngle = Math.PI * .4 - nearestWizardAngle;
+			double turnAngle = Math.PI * .5 - nearestWizardAngle; // 90 degrees
 			turnTo(leftSide ? turnAngle : turnAngle * -1, move);
 		} else {
 			if (point == null) {

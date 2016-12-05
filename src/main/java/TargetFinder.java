@@ -636,7 +636,9 @@ public class TargetFinder {
 			this(shootPoint, actionType, score, target);
 			this.distanceWalkToShoot = walkingDistance;
 			if (walkingDistance > 0.) {
-				ShootEvasionMatrix.getTicksForDistance(walkingDistance, (int) Math.round(turnAngle), Variables.wizardsInfo.getMe().getMoveFactor());
+				this.ticksToGo = ShootEvasionMatrix.getTicksForDistance(walkingDistance,
+																		(int) Math.round(turnAngle),
+																		Variables.wizardsInfo.getMe().getMoveFactor());
 			}
 		}
 
