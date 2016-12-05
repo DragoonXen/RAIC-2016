@@ -2,7 +2,6 @@ import model.ActionType;
 import model.Bonus;
 import model.Building;
 import model.CircularUnit;
-import model.Faction;
 import model.Game;
 import model.Minion;
 import model.Move;
@@ -83,7 +82,7 @@ public class StrategyImplement implements Strategy {
 		wizardsInfo.updateData(world, enemyPositionCalc);
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
 		teammateIdsContainer.updateTeammatesIds(world);
-		SkillsLearning.updateSkills(self, move);
+		SkillsLearning.updateSkills(self, enemyPositionCalc, world.getWizards(), move);
 		fightStatus = FightStatus.NO_ENEMY;
 		treeCut = false;
 		moveToPoint = null;
@@ -591,10 +590,11 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 
-		if (missileShootDesc != null && (fireShootDesc == null ||
-				fireShootDesc.getScore() < 70. ||
-				self.getMana() > self.getMaxMana() * .9 ||
-				missileShootDesc.getWizardsDamage() > 0)) {
+		if (missileShootDesc != null &&
+				(missileShootDesc.getMinionsDamage() == 0 ||
+						fireShootDesc == null ||
+						fireShootDesc.getScore() < 70. ||
+						self.getMana() > self.getMaxMana() * .9)) {
 			double minCastDistance = 1000.; // for trees score always negative
 			if (missileShootDesc.getScore() >= 0) {
 				minCastDistance = FastMath.hypot(self, missileShootDesc.getShootPoint()) - .1; // exact distance for building
@@ -762,112 +762,6 @@ public class StrategyImplement implements Strategy {
 			}
 			turnTo(self.getAngleTo(point.getX(), point.getY()), move);
 		}
-	}
-
-	private final static int angleCheck = 20;
-	private final static int checkCount = 360 / angleCheck;
-	private final static double angleCheckRadians = Math.PI / 180. * angleCheck;
-
-	private Pair<Double, Point> checkDistances(Point point, double distance) {
-		double maxPriority = 0.;
-		Point bestPoint = null;
-		for (int i = 0; i != checkCount; ++i) {
-			Point checkPoint = new Point(point.getX() + distance * Math.cos(angleCheckRadians * i), point.getY() + distance * Math.sin(angleCheckRadians * i));
-			if (FastMath.hypot(self, checkPoint) > self.getCastRange()) {
-				continue;
-			}
-			double temp = checkFireballDamage(checkPoint);
-			if (temp > maxPriority) {
-				maxPriority = temp;
-				bestPoint = checkPoint;
-			}
-		}
-		if (bestPoint == null) {
-			return null;
-		}
-		return new Pair<Double, Point>(maxPriority, bestPoint);
-	}
-
-	public double checkFireballDamage(Point where) {
-		int ticksToFly = Utils.getTicksToFly(FastMath.hypot(self, where), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
-		double totalDamage = 0.;
-		for (Minion minion : filteredWorld.getMinions()) {
-			if (minion.getFaction() == Constants.getCurrentFaction()) {
-				continue;
-			}
-			if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
-				continue;
-			}
-
-			Point checkPoint = new Point(minion.getX() + minion.getSpeedY() * ticksToFly, minion.getY() + minion.getSpeedY() * ticksToFly);
-			double distance = FastMath.hypot(checkPoint, where) - minion.getRadius();
-			if (distance < Constants.getGame().getFireballExplosionMinDamageRange()) {
-				double damage;
-				if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
-					damage = Constants.getGame().getFireballExplosionMaxDamage();
-				} else {
-					damage = Constants.getGame().getFireballExplosionMinDamage();
-				}
-				totalDamage += Math.min(damage + Constants.getGame().getBurningSummaryDamage() / 2, minion.getLife());
-			}
-		}
-
-		for (BuildingPhantom building : filteredWorld.getBuildings()) {
-			if (building.getFaction() == Constants.getCurrentFaction() || building.isInvulnerable()) {
-				continue;
-			}
-
-			double distance = FastMath.hypot(building, where) - building.getRadius();
-			if (distance < Constants.getGame().getFireballExplosionMinDamageRange()) {
-				double damage;
-				if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
-					damage = Constants.getGame().getFireballExplosionMaxDamage();
-				} else {
-					damage = Constants.getGame().getFireballExplosionMinDamage();
-				}
-				totalDamage += Math.min(damage + Constants.getGame().getBurningSummaryDamage(), building.getLife()) * 1.5;
-			}
-		}
-
-		for (Wizard wizard : filteredWorld.getWizards()) {
-			totalDamage += checkFirePointsWizard(wizard, where, ticksToFly);
-		}
-		totalDamage += checkFirePointsWizard(self, where, ticksToFly);
-		return totalDamage;
-	}
-
-	private double checkFirePointsWizard(Wizard wizard, Point where, int ticksToFly) {
-		ticksToFly = Math.min(ticksToFly - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
-		double distance = FastMath.hypot(wizard, where) - wizard.getRadius();
-		if (wizard.getFaction() == Constants.getEnemyFaction()) {
-			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly];
-		} else if (wizard.isMe()) {
-			distance -= ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * wizardsInfo.getMe().getMoveFactor();
-		}
-
-		if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
-			double score;
-			if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
-				score = Constants.getGame().getFireballExplosionMaxDamage();
-			} else {
-				score = Constants.getGame().getFireballExplosionMinDamage();
-			}
-			score = Math.min(score + Constants.getGame().getBurningSummaryDamage(), wizard.getLife()) * 3.;
-			if (wizard.getLife() < score + Constants.getGame().getBurningSummaryDamage() * .5 &&
-					wizard.getFaction() == Constants.getEnemyFaction()) {
-				score += 65.;
-			}
-			if (wizard.getFaction() == Constants.getCurrentFaction()) {
-				if (wizard.isMe()) {
-					return -score * 5;
-				} else {
-					return -score;
-				}
-			} else {
-				return score;
-			}
-		}
-		return 0;
 	}
 
 	protected void moveTo(int pointIdx, Move move, boolean run) {

@@ -4,6 +4,10 @@ import model.SkillType;
 import model.Wizard;
 import model.World;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Created by dragoon on 11/27/16.
  */
@@ -11,24 +15,24 @@ public class SkillsLearning {
 
 	private static SkillType[] currentSkillsToLearn;
 
-	private static final SkillType[] skillsToLearn = new SkillType[]{
-			SkillType.RANGE_BONUS_PASSIVE_1,
-			SkillType.RANGE_BONUS_AURA_1,
-			SkillType.RANGE_BONUS_PASSIVE_2,
-			SkillType.RANGE_BONUS_AURA_2,
-			SkillType.ADVANCED_MAGIC_MISSILE,
+	private static final SkillType[] FIRE_RANGE_MOVEMENT = new SkillType[]{
 			SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
 			SkillType.STAFF_DAMAGE_BONUS_AURA_1,
 			SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
 			SkillType.STAFF_DAMAGE_BONUS_AURA_2,
 			SkillType.FIREBALL,
+			SkillType.RANGE_BONUS_PASSIVE_1,
+			SkillType.RANGE_BONUS_AURA_1,
+			SkillType.RANGE_BONUS_PASSIVE_2,
+			SkillType.RANGE_BONUS_AURA_2,
 			SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
 			SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
 			SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
 			SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
-			SkillType.HASTE};
+			SkillType.HASTE,
+			SkillType.ADVANCED_MAGIC_MISSILE};
 
-	private static final SkillType[] thirdSkillsToLearn = new SkillType[]{
+	private static final SkillType[] FROST_MOVEMENT_RANGE = new SkillType[]{
 			SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
 			SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
 			SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
@@ -39,13 +43,17 @@ public class SkillsLearning {
 			SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
 			SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
 			SkillType.HASTE,
+			SkillType.RANGE_BONUS_PASSIVE_1,
+			SkillType.RANGE_BONUS_AURA_1,
+			SkillType.RANGE_BONUS_PASSIVE_2,
+			SkillType.RANGE_BONUS_AURA_2,
 			SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
 			SkillType.STAFF_DAMAGE_BONUS_AURA_1,
 			SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
 			SkillType.STAFF_DAMAGE_BONUS_AURA_2,
 			SkillType.FIREBALL};
 
-	private static final SkillType[] secondSkillsToLearn = new SkillType[]{
+	private static final SkillType[] RANGE_FIRE_HASTE = new SkillType[]{
 			SkillType.RANGE_BONUS_PASSIVE_1,
 			SkillType.RANGE_BONUS_AURA_1,
 			SkillType.RANGE_BONUS_PASSIVE_2,
@@ -62,7 +70,9 @@ public class SkillsLearning {
 			SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
 			SkillType.HASTE};
 
-	private static final SkillType[][] arraySkillsToLearn = new SkillType[][]{skillsToLearn, secondSkillsToLearn, thirdSkillsToLearn};
+	private static final SkillType[][] arraySkillsToLearn = new SkillType[][]{FIRE_RANGE_MOVEMENT, RANGE_FIRE_HASTE, FROST_MOVEMENT_RANGE};
+
+	private static int cntMe = 0;
 
 	public static void init(World world) {
 		Player[] players = new Player[11];
@@ -79,7 +89,6 @@ public class SkillsLearning {
 		myId /= 6;
 		int from = 1 + (int) myId * 5;
 		int to = from + 5;
-		int cntMe = 0;
 		int myNom = 0;
 		for (int i = from; i != to; ++i) {
 			if (players[i].getName().startsWith(name)) {
@@ -92,8 +101,45 @@ public class SkillsLearning {
 		currentSkillsToLearn = arraySkillsToLearn[myNom % 3];
 	}
 
-	public static void updateSkills(Wizard self, Move move) {
-		if (self.getLevel() > self.getSkills().length && self.getLevel() <= skillsToLearn.length) {
+	public static void updateSkills(Wizard self, EnemyPositionCalc enemyPositionCalc, Wizard[] wizards, Move move) {
+		if (self.getLevel() > self.getSkills().length && self.getLevel() <= currentSkillsToLearn.length) {
+			if (self.getSkills().length == 0 && cntMe == 1) {
+				currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+				int enemiesOnLine = 0;
+				int myLine = Utils.whichLine(self);
+				List<Wizard> allyWizards = new ArrayList<>();
+				for (Wizard wizard : wizards) {
+					if (wizard.getFaction() != Constants.getCurrentFaction()) {
+						continue;
+					}
+					if (Utils.whichLine(wizard) == myLine) {
+						allyWizards.add(wizard);
+					}
+				}
+				for (WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
+					if (Utils.whichLine(wizardPhantom.getPosition()) == myLine) {
+						++enemiesOnLine;
+					}
+				}
+				if (allyWizards.isEmpty() && enemiesOnLine > 1) {
+					currentSkillsToLearn = RANGE_FIRE_HASTE;
+				} else {
+					if (allyWizards.size() + 1 < enemiesOnLine) { // preferred range, if have not yet
+						boolean hasRange = false;
+						for (Wizard allyWizard : allyWizards) {
+							hasRange = Arrays.asList(allyWizard.getSkills()).contains(SkillType.RANGE_BONUS_PASSIVE_1);
+							if (hasRange) {
+								break;
+							}
+						}
+						if (hasRange) {
+							currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+						} else {
+							currentSkillsToLearn = RANGE_FIRE_HASTE;
+						}
+					}
+				}
+			}
 			move.setSkillToLearn(currentSkillsToLearn[self.getSkills().length]);
 		}
 	}

@@ -11,6 +11,7 @@ import model.Wizard;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -30,6 +31,11 @@ public class TargetFinder {
 	protected List<ShootDescription> prevIceTargets;
 	protected List<ShootDescription> fireTargets;
 
+	private Wizard self;
+	private FilteredWorld filteredWorld;
+	private AgressiveNeutralsCalcs agressiveNeutralsCalcs;
+	private WizardsInfo.WizardInfo myWizardInfo;
+
 	public TargetFinder() {
 		missileTargets = new ArrayList<>();
 		staffTargets = new ArrayList<>();
@@ -37,7 +43,7 @@ public class TargetFinder {
 		prevMissileTargets = new ArrayList<>();
 		prevStaffTargets = new ArrayList<>();
 		prevIceTargets = new ArrayList<>();
-		fireTargets = new ArrayList<>();
+		fireTargets = new LinkedList<>();
 	}
 
 	public TargetFinder(List<ShootDescription> missileTargets,
@@ -57,7 +63,10 @@ public class TargetFinder {
 	}
 
 	public void updateTargets(FilteredWorld filteredWorld, BaseLine myLineCalc, Point pointToReach, AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
-		Wizard self = Variables.self;
+		this.self = Variables.self;
+		this.filteredWorld = filteredWorld;
+		this.agressiveNeutralsCalcs = agressiveNeutralsCalcs;
+		this.myWizardInfo = Variables.wizardsInfo.getMe();
 
 		{
 			List<ShootDescription> tmp = prevMissileTargets;
@@ -74,7 +83,6 @@ public class TargetFinder {
 			tmp.clear();
 		}
 
-		WizardsInfo.WizardInfo myWizardInfo = Variables.wizardsInfo.getMe();
 		int missileDamage = myWizardInfo.getMagicalMissileDamage();
 		int frostBoltDamage = myWizardInfo.getFrostBoltDamage();
 		int staffDamage = myWizardInfo.getStaffDamage();
@@ -220,7 +228,7 @@ public class TargetFinder {
 			}
 
 			// staff
-			direction = Utils.normalizeAngle(wizard.getAngleTo(Variables.self) + wizard.getAngle());
+			direction = Utils.normalizeAngle(wizard.getAngleTo(self) + wizard.getAngle());
 			appendStaffTarget(wizard,
 							  score,
 							  new Point(wizard.getX() + Math.cos(direction) * wizard.getRadius(),
@@ -263,20 +271,246 @@ public class TargetFinder {
 			}
 		}
 
+		if (myWizardInfo.isHasFireball()) {
+			fireTargets.clear();
+			for (Minion minion : filteredWorld.getMinions()) {
+				if (minion.getFaction() == Constants.getCurrentFaction()) {
+					continue;
+				}
+				if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
+					continue;
+				}
+				if (minion.getSpeedX() != 0. || minion.getSpeedY() != 0) {
+					continue;
+				}
+				Point checkPoint = new Point(minion.getX(), minion.getY());
+				addFireTarget(checkDistances(checkPoint,
+											 minion.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
+				addFireTarget(checkDistances(checkPoint,
+											 minion.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
+			}
+
+			for (Building building : filteredWorld.getBuildings()) {
+				if (building.getFaction() == Constants.getCurrentFaction()) {
+					continue;
+				}
+				Point checkPoint = new Point(building.getX(), building.getY());
+				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
+				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
+			}
+
+			for (Wizard wizard : filteredWorld.getWizards()) {
+				if (wizard.getFaction() == Constants.getCurrentFaction()) {
+					continue;
+				}
+
+				Point checkPoint = new Point(wizard.getX(), wizard.getY());
+				int ticks = Utils.getTicksToFly(FastMath.hypot(self, wizard), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+				ticks = Math.min(ticks - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
+				if (FastMath.hypot(self, wizard) < self.getCastRange()) {
+					Point wizardPoint = new Point(wizard.getX(), wizard.getY());
+					ShootDescription shootDescription = checkFireballDamage(wizardPoint);
+					fireTargets.add(shootDescription);
+				}
+				double checkDistance = wizard.getRadius() +
+						Constants.getGame().getFireballExplosionMaxDamageRange() -
+						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
+				if (checkDistance > 0.) {
+					addFireTarget(checkDistances(checkPoint, checkDistance));
+				}
+				checkDistance = wizard.getRadius() +
+						Constants.getGame().getFireballExplosionMinDamageRange() -
+						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
+				addFireTarget(checkDistances(checkPoint, checkDistance));
+			}
+			Collections.sort(fireTargets);
+			for (Iterator<ShootDescription> iterator = fireTargets.iterator(); iterator.hasNext(); ) {
+				ShootDescription fireTarget = iterator.next();
+				if (Utils.noTreesOnWay(fireTarget.getShootPoint(), self, ProjectileType.FIREBALL, filteredWorld)) {
+					if (iterator.hasNext()) {
+						iterator.next();
+					}
+					while (iterator.hasNext()) {
+						iterator.next();
+						iterator.remove();
+					}
+					break;
+				} else {
+					iterator.remove();
+				}
+			}
+		}
+
 		Collections.sort(staffTargets);
 		Collections.sort(missileTargets);
 		Collections.sort(iceTargets);
-		Collections.sort(fireTargets);
 
 		missileTargets = filterTargets(missileTargets);
 		iceTargets = filterTargets(iceTargets);
 		fireTargets = filterTargets(fireTargets);
 	}
 
+	private final static int angleCheck = 20;
+	private final static int checkCount = 360 / angleCheck;
+	private final static double angleCheckRadians = Math.PI / 180. * angleCheck;
+
+	private ShootDescription checkDistances(Point point, double distance) {
+		ShootDescription bestPoint = null;
+		for (int i = 0; i != checkCount; ++i) {
+			Point checkPoint = new Point(point.getX() + distance * Math.cos(angleCheckRadians * i), point.getY() + distance * Math.sin(angleCheckRadians * i));
+			if (FastMath.hypot(self, checkPoint) > self.getCastRange()) {
+				continue;
+			}
+			ShootDescription temp = checkFireballDamage(checkPoint);
+			if (bestPoint == null || temp.getScore() > bestPoint.getScore()) {
+				bestPoint = temp;
+			}
+		}
+		return bestPoint;
+	}
+
+	public ShootDescription checkFireballDamage(Point where) {
+		int ticksToFly = Utils.getTicksToFly(FastMath.hypot(self, where), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+		int minionsDamage = 0;
+		int minionKills = 0;
+		int buildingsDamage = 0;
+		int buildingsDestroys = 0;
+		int wizardsDamage = 0;
+		int wizardsKills = 0;
+		double score = 0.;
+		for (Minion minion : filteredWorld.getMinions()) {
+			if (minion.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
+			if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
+				continue;
+			}
+
+			Point checkPoint = new Point(minion.getX() + minion.getSpeedY() * ticksToFly, minion.getY() + minion.getSpeedY() * ticksToFly);
+			double distance = FastMath.hypot(checkPoint, where) - minion.getRadius();
+			if (distance < Constants.getGame().getFireballExplosionMinDamageRange()) {
+				double damage;
+				if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
+					damage = myWizardInfo.getFireballMaxDamage();
+				} else {
+					damage = myWizardInfo.getFireballMinDamage();
+				}
+				if (damage + Constants.getGame().getBurningSummaryDamage() / 2 >= minion.getLife()) {
+					minionsDamage += minion.getLife();
+					++minionKills;
+				} else {
+					minionsDamage += damage + Constants.getGame().getBurningSummaryDamage() / 2;
+				}
+				minionsDamage += Math.min(damage + Constants.getGame().getBurningSummaryDamage() / 2, minion.getLife());
+				score += Math.min(damage + Constants.getGame().getBurningSummaryDamage() / 2, minion.getLife());
+			}
+		}
+
+		for (BuildingPhantom building : filteredWorld.getBuildings()) {
+			if (building.getFaction() == Constants.getCurrentFaction() || building.isInvulnerable()) {
+				continue;
+			}
+
+			double distance = FastMath.hypot(building, where) - building.getRadius();
+			if (distance < Constants.getGame().getFireballExplosionMinDamageRange()) {
+				double damage;
+				if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
+					damage = Constants.getGame().getFireballExplosionMaxDamage();
+				} else {
+					damage = Constants.getGame().getFireballExplosionMinDamage();
+				}
+				damage = Math.min(damage + Constants.getGame().getBurningSummaryDamage(), building.getLife());
+				if (damage == building.getLife()) {
+					++buildingsDestroys;
+				}
+				buildingsDamage += damage;
+				score += damage * 1.5;
+			}
+		}
+		Pair<Double, Pair<Integer, Boolean>> wizardsDamageCalc;
+		for (Wizard wizard : filteredWorld.getWizards()) {
+			wizardsDamageCalc = checkFirePointsWizard(wizard, where, ticksToFly);
+			if (wizardsDamageCalc != null) {
+				if (wizardsDamageCalc.getSecond() != null) {
+					wizardsDamage += wizardsDamageCalc.getSecond().getFirst();
+					if (wizardsDamageCalc.getSecond().getSecond()) {
+						++wizardsKills;
+					}
+				}
+				score += wizardsDamageCalc.getFirst();
+			}
+		}
+		wizardsDamageCalc = checkFirePointsWizard(self, where, ticksToFly);
+		if (wizardsDamageCalc != null) {
+			if (wizardsDamageCalc.getSecond() != null) {
+				wizardsDamage += wizardsDamageCalc.getSecond().getFirst();
+				if (wizardsDamageCalc.getSecond().getSecond()) {
+					++wizardsKills;
+				}
+			}
+			score += wizardsDamageCalc.getFirst();
+		}
+		return new ShootDescription(minionsDamage,
+									wizardsDamage,
+									buildingsDamage,
+									minionKills,
+									wizardsKills,
+									buildingsDestroys,
+									where,
+									score);
+	}
+
+	private Pair<Double, Pair<Integer, Boolean>> checkFirePointsWizard(Wizard wizard, Point where, int ticksToFly) {
+		ticksToFly = Math.min(ticksToFly - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
+		double distance = FastMath.hypot(wizard, where) - wizard.getRadius();
+		if (wizard.getFaction() == Constants.getEnemyFaction()) {
+			// TODO: fix this calculation
+			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly];
+		} else if (wizard.isMe()) {
+			distance -= ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * Variables.wizardsInfo.getMe().getMoveFactor();
+		}
+
+		int damage;
+
+		if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
+			double score;
+			if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
+				score = Constants.getGame().getFireballExplosionMaxDamage();
+			} else {
+				score = Constants.getGame().getFireballExplosionMinDamage();
+			}
+			damage = Math.min((int) score + Constants.getGame().getBurningSummaryDamage(),
+							  wizard.getLife() + Constants.getGame().getBurningSummaryDamage() / 2);
+			boolean killed = false;
+			score = Math.min(score + Constants.getGame().getBurningSummaryDamage(), wizard.getLife()) * 3.;
+			if (wizard.getLife() < score + Constants.getGame().getBurningSummaryDamage() * .5 &&
+					wizard.getFaction() == Constants.getEnemyFaction()) {
+				killed = true;
+				score += 65.;
+			}
+			if (wizard.getFaction() == Constants.getCurrentFaction()) {
+				if (wizard.isMe()) {
+					return new Pair<>(-score * 5, null);
+				} else {
+					return new Pair<>(-score, null);
+				}
+			} else {
+				return new Pair<>(score, new Pair<>(damage, killed));
+			}
+		}
+		return null;
+	}
+
+	private void addFireTarget(ShootDescription shootDescription) {
+		if (shootDescription != null) {
+			fireTargets.add(shootDescription);
+		}
+	}
+
 	private List<ShootDescription> filterTargets(List<ShootDescription> shootDescriptions) {
 		List<ShootDescription> filtered = new ArrayList<>();
 		ShootDescription lastAdded = null;
-		Point selfPoint = new Point(Variables.self.getX(), Variables.self.getY());
+		Point selfPoint = new Point(self.getX(), self.getY());
 		for (ShootDescription shootDescription : shootDescriptions) {
 			if (lastAdded != null && lastAdded.getTicksToGo() <= shootDescription.getTicksToGo()) {
 				continue;
@@ -307,9 +541,9 @@ public class TargetFinder {
 	}
 
 	private void appendStaffTarget(Minion minion, double score, int damage) {
-		double distanceToTarget = FastMath.hypot(Variables.self, minion) - minion.getRadius() - Constants.getGame().getStaffRange();
+		double distanceToTarget = FastMath.hypot(self, minion) - minion.getRadius() - Constants.getGame().getStaffRange();
 		if (distanceToTarget < 50) {
-			double direction = Utils.normalizeAngle(minion.getAngleTo(Variables.self) + minion.getAngle());
+			double direction = Utils.normalizeAngle(minion.getAngleTo(self) + minion.getAngle());
 			Point backShootPoint = new Point(minion.getX() + Math.cos(direction) * minion.getRadius(),
 											 minion.getY() + Math.sin(direction) * minion.getRadius());
 
@@ -324,7 +558,7 @@ public class TargetFinder {
 	}
 
 	private void appendStaffTarget(Building building, double score, Point shootPoint, int damage) {
-		double distanceToTarget = FastMath.hypot(Variables.self, shootPoint) - Constants.getGame().getStaffRange();
+		double distanceToTarget = FastMath.hypot(self, shootPoint) - Constants.getGame().getStaffRange();
 		if (distanceToTarget < 50) {
 			staffTargets.add(new ShootDescription(shootPoint, ActionType.STAFF, score, building, distanceToTarget));
 			if (damage >= building.getLife()) {
@@ -337,14 +571,14 @@ public class TargetFinder {
 	}
 
 	private void appendStaffTarget(Wizard wizard, double score, Point shootPoint, int damage) {
-		double distanceToTarget = FastMath.hypot(Variables.self, shootPoint) - Constants.getGame().getStaffRange();
+		double distanceToTarget = FastMath.hypot(self, shootPoint) - Constants.getGame().getStaffRange();
 		if (distanceToTarget < 50) {
 			staffTargets.add(new ShootDescription(shootPoint, ActionType.STAFF, score, wizard, distanceToTarget));
 			if (damage >= wizard.getLife()) {
 				ShootDescription.lastInstance.setWizardsDamage(wizard.getLife());
 				ShootDescription.lastInstance.setWizardsKills(1);
 			} else {
-				ShootDescription.lastInstance.setBuildingDamage(damage);
+				ShootDescription.lastInstance.setWizardsDamage(damage);
 			}
 		}
 	}
@@ -360,7 +594,7 @@ public class TargetFinder {
 			sd.setWizardsDamage(wizard.getLife());
 			sd.setWizardsKills(1);
 		} else {
-			sd.setBuildingDamage(damage);
+			sd.setWizardsDamage(damage);
 			if (actionType == ActionType.FROST_BOLT) {
 				sd.multScore(Constants.FROST_WIZARD_AIM_PROIRITY);
 			}
@@ -375,7 +609,6 @@ public class TargetFinder {
 										double stepDistance,
 										EnemyEvasionFilteredWorld evasionFilter,
 										ProjectileType projectileType) {
-		Wizard self = Variables.self;
 		double projectileSpeed = Utils.PROJECTIVE_SPEED[projectileType.ordinal()];
 		int checkCount = (int) ((self.getCastRange() + projectileSpeed - .1) / projectileSpeed);
 		double shootDirection = Utils.normalizeAngle(self.getAngleTo(shootPoint.getX(), shootPoint.getY()) + self.getAngle());
@@ -507,85 +740,6 @@ public class TargetFinder {
 		return fireTargets;
 	}
 
-	/*
-	private void findTargets() {
-		if (wizardsInfo.getMe().isHasFireball()) {
-			for (Minion minion : filteredWorld.getMinions()) {
-				if (minion.getFaction() == Constants.getCurrentFaction()) {
-					continue;
-				}
-				if (minion.getFaction() == Faction.NEUTRAL && !agressiveNeutralsCalcs.isMinionAgressive(minion.getId())) {
-					continue;
-				}
-				if (minion.getSpeedX() != 0. || minion.getSpeedY() != 0) {
-					continue;
-				}
-				Point checkPoint = new Point(minion.getX(), minion.getY());
-				addFireTarget(checkDistances(checkPoint,
-											 minion.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
-				addFireTarget(checkDistances(checkPoint,
-											 minion.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
-			}
-
-			for (Building building : filteredWorld.getBuildings()) {
-				if (building.getFaction() == Constants.getCurrentFaction()) {
-					continue;
-				}
-				Point checkPoint = new Point(building.getX(), building.getY());
-				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
-				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
-			}
-
-			for (Wizard wizard : filteredWorld.getWizards()) {
-				if (wizard.getFaction() == Constants.getCurrentFaction()) {
-					continue;
-				}
-
-				Point checkPoint = new Point(wizard.getX(), wizard.getY());
-				int ticks = Utils.getTicksToFly(FastMath.hypot(self, wizard), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
-				ticks = Math.min(ticks - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
-				if (FastMath.hypot(self, wizard) < self.getCastRange()) {
-					Point wizardPoint = new Point(wizard.getX(), wizard.getY());
-					double damage = checkFireballDamage(wizardPoint);
-					fireTargets.add(new Pair<Double, Point>(damage, wizardPoint));
-				}
-				double checkDistance = wizard.getRadius() +
-						Constants.getGame().getFireballExplosionMaxDamageRange() -
-						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
-				if (checkDistance > 0.) {
-					addFireTarget(checkDistances(checkPoint, checkDistance));
-				}
-				checkDistance = wizard.getRadius() +
-						Constants.getGame().getFireballExplosionMinDamageRange() -
-						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
-				addFireTarget(checkDistances(checkPoint, checkDistance));
-			}
-			Collections.sort(fireTargets, Utils.POINT_AIM_SORT_COMPARATOR);
-			for (Iterator<Pair<Double, Point>> iterator = fireTargets.iterator(); iterator.hasNext(); ) {
-				Pair<Double, Point> fireTarget = iterator.next();
-				if (Utils.noTreesOnWay(fireTarget.getSecond(), self, ProjectileType.FIREBALL, filteredWorld)) {
-					if (iterator.hasNext()) {
-						iterator.next();
-					}
-					while (iterator.hasNext()) {
-						iterator.next();
-						iterator.remove();
-					}
-					break;
-				} else {
-					iterator.remove();
-				}
-			}
-		}
-	}
-
-	private void addFireTarget(Pair<Double, Point> target) {
-		if (target != null) {
-			fireTargets.add(target);
-		}
-	}
-	 */
-
 	public TargetFinder makeClone() {
 		return new TargetFinder(missileTargets,
 								staffTargets,
@@ -627,7 +781,7 @@ public class TargetFinder {
 
 			turnAngle = Variables.self.getAngleTo(shootPoint.getX(), shootPoint.getY());
 
-			this.ticksToTurn = (int) ((Math.abs(turnAngle) - Constants.MAX_SHOOT_ANGLE + Variables.maxTurnAngle - .1) / Variables.maxTurnAngle);
+			this.ticksToTurn = Math.max((int) ((Math.abs(turnAngle) - Constants.MAX_SHOOT_ANGLE + Variables.maxTurnAngle - .1) / Variables.maxTurnAngle), 0);
 
 			this.score -= Constants.PER_TURN_TICK_PENALTY * ticksToTurn;
 		}
@@ -640,6 +794,32 @@ public class TargetFinder {
 																		(int) Math.round(turnAngle),
 																		Variables.wizardsInfo.getMe().getMoveFactor());
 			}
+		}
+
+		// for fireball
+		public ShootDescription(int minionsDamage,
+								int wizardsDamage,
+								int buildingDamage,
+								int minionsKills,
+								int wizardsKills,
+								int buildingsDestroy,
+								Point shootPoint,
+								double score) {
+			this.actionType = ActionType.FIREBALL;
+			this.minionsDamage = minionsDamage;
+			this.wizardsDamage = wizardsDamage;
+			this.buildingDamage = buildingDamage;
+			this.minionsKills = minionsKills;
+			this.wizardsKills = wizardsKills;
+			this.buildingsDestroy = buildingsDestroy;
+			this.shootPoint = shootPoint;
+			this.score = score;
+
+			turnAngle = Variables.self.getAngleTo(shootPoint.getX(), shootPoint.getY());
+
+			this.ticksToTurn = Math.max((int) ((Math.abs(turnAngle) - Constants.MAX_SHOOT_ANGLE + Variables.maxTurnAngle - .1) / Variables.maxTurnAngle), 0);
+
+			this.score -= Constants.PER_TURN_TICK_PENALTY * ticksToTurn;
 		}
 
 		public void multScore(double mult) {

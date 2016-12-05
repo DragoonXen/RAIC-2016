@@ -45,6 +45,18 @@ public class Utils {
 		return min;
 	}
 
+	public static int whichLine(Point point) {
+		int min = 0;
+		lineDistance[0] = Constants.getLines()[0].getDistanceTo(point.getX(), point.getY());
+		for (int i = 1; i != Constants.getLines().length; ++i) {
+			lineDistance[i] = Constants.getLines()[i].getDistanceTo(point.getX(), point.getY());
+			if (lineDistance[min] > lineDistance[i]) {
+				min = i;
+			}
+		}
+		return min;
+	}
+
 	public static LaneType getDefaultMyLine(int selfId) {
 		switch (selfId) {
 			case 1:
