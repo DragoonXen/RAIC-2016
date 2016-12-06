@@ -866,7 +866,7 @@ public class Utils {
 	}
 
 	public static int getTicksToFly(double distance, double speed) {
-		return (int) Math.floor(distance / speed + .99);
+		return (int) Math.floor(distance / speed + .99999999);
 	}
 
 	public static int actionsCoolDown(Wizard wizard, ActionType actionType) {
