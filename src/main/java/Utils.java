@@ -1,3 +1,4 @@
+import model.ActionType;
 import model.Bonus;
 import model.Building;
 import model.CircularUnit;
@@ -585,11 +586,17 @@ public class Utils {
 		return false;
 	}
 
-	public static double cooldownDistanceCalculation(double baseDistance, int coolDownRemaining) {
+	public static double cooldownDistanceMinionsCalculation(double baseDistance, int coolDownRemaining) {
 		return baseDistance + Math.min(1, -coolDownRemaining + 3) *
 				Constants.getGame().getWizardBackwardSpeed() *
 				Variables.wizardsInfo.getMe().getMoveFactor() *
 				.66;
+	}
+
+	public static double cooldownDistanceWizardCalculation(double moveFactor, int coolDownRemaining) {
+		return Math.min(2, -coolDownRemaining + 4) *
+				Constants.getGame().getWizardForwardSpeed() *
+				moveFactor * .6;
 	}
 
 	public static int getTicksToBonusSpawn(int tickNo) {
@@ -860,5 +867,9 @@ public class Utils {
 
 	public static int getTicksToFly(double distance, double speed) {
 		return (int) Math.floor(distance / speed + .99);
+	}
+
+	public static int actionsCoolDown(Wizard wizard, ActionType actionType) {
+		return Math.max(wizard.getRemainingActionCooldownTicks(), wizard.getRemainingCooldownTicksByAction()[actionType.ordinal()]);
 	}
 }

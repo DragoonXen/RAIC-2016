@@ -1,3 +1,4 @@
+import model.ActionType;
 import model.SkillType;
 import model.Status;
 import model.Wizard;
@@ -112,6 +113,7 @@ public class WizardsInfo {
 
 		private HashSet<SkillType> knownSkills;
 
+		private int[] actionCooldown;
 		private int[] skillsCount;
 		private int[] aurasCount;
 		private int[] otherAurasCount;
@@ -122,6 +124,7 @@ public class WizardsInfo {
 			skillsCount = new int[5];
 			aurasCount = new int[5];
 			otherAurasCount = new int[5];
+			actionCooldown = new int[7];
 			castRange = 500.;
 		}
 
@@ -147,7 +150,8 @@ public class WizardsInfo {
 						  int[] skillsCount,
 						  int[] aurasCount,
 						  int[] otherAurasCount,
-						  double castRange) {
+						  double castRange,
+						  int[] actionCooldown) {
 			this.hastened = hastened;
 			this.shielded = shielded;
 			this.frozen = frozen;
@@ -171,6 +175,7 @@ public class WizardsInfo {
 			this.aurasCount = Arrays.copyOf(aurasCount, aurasCount.length);
 			this.otherAurasCount = Arrays.copyOf(otherAurasCount, otherAurasCount.length);
 			this.castRange = castRange;
+			this.actionCooldown = Arrays.copyOf(actionCooldown, actionCooldown.length);
 		}
 
 		public void finalCalculation(Wizard wizard) {
@@ -229,6 +234,33 @@ public class WizardsInfo {
 							Constants.getGame().getMovementBonusFactorPerSkillLevel();
 
 			castRange = wizard.getCastRange();
+
+			double manaRegeneration = Constants.getGame().getWizardBaseManaRegeneration()
+					+ Constants.getGame().getWizardManaGrowthPerLevel() * wizard.getLevel();
+			this.actionCooldown[1] = Math.max(wizard.getRemainingActionCooldownTicks(),
+											  wizard.getRemainingCooldownTicksByAction()[ActionType.STAFF.ordinal()]);
+			this.actionCooldown[2] = Math.max(wizard.getRemainingActionCooldownTicks(),
+											  wizard.getRemainingCooldownTicksByAction()[ActionType.MAGIC_MISSILE.ordinal()]);
+			updateActionCooldownWithManacost(2, Constants.getGame().getMagicMissileManacost(), wizard.getMana(), manaRegeneration);
+			this.actionCooldown[3] = Math.max(wizard.getRemainingActionCooldownTicks(),
+											  wizard.getRemainingCooldownTicksByAction()[ActionType.FROST_BOLT.ordinal()]);
+			updateActionCooldownWithManacost(3, Constants.getGame().getFrostBoltManacost(), wizard.getMana(), manaRegeneration);
+			this.actionCooldown[4] = Math.max(wizard.getRemainingActionCooldownTicks(),
+											  wizard.getRemainingCooldownTicksByAction()[ActionType.FIREBALL.ordinal()]);
+			updateActionCooldownWithManacost(4, Constants.getGame().getFireballManacost(), wizard.getMana(), manaRegeneration);
+			this.actionCooldown[5] = Math.max(wizard.getRemainingActionCooldownTicks(),
+											  wizard.getRemainingCooldownTicksByAction()[ActionType.HASTE.ordinal()]);
+			updateActionCooldownWithManacost(5, Constants.getGame().getHasteManacost(), wizard.getMana(), manaRegeneration);
+			this.actionCooldown[6] = Math.max(wizard.getRemainingActionCooldownTicks(),
+											  wizard.getRemainingCooldownTicksByAction()[ActionType.SHIELD.ordinal()]);
+			updateActionCooldownWithManacost(6, Constants.getGame().getShieldManacost(), wizard.getMana(), manaRegeneration);
+		}
+
+		private void updateActionCooldownWithManacost(int nom, int manaCost, int currentMana, double manaRegeneration) {
+			int remainMana = manaCost - currentMana;
+			if (remainMana > 0) {
+				this.actionCooldown[nom] = Math.max(actionCooldown[nom], (int) Math.floor((remainMana - 1) / manaRegeneration + .9999));
+			}
 		}
 
 		public void updateAuras(WizardInfo other) {
@@ -383,6 +415,10 @@ public class WizardsInfo {
 			return magicalMissileDamage;
 		}
 
+		public int getActionCooldown(ActionType actionType) {
+			return this.actionCooldown[actionType.ordinal()];
+		}
+
 		public int getFrostBoltDamage() {
 			return frostBoltDamage;
 		}
@@ -458,7 +494,8 @@ public class WizardsInfo {
 					skillsCount,
 					aurasCount,
 					otherAurasCount,
-					castRange);
+					castRange,
+					actionCooldown);
 		}
 	}
 }

@@ -1,7 +1,9 @@
+import model.ActionType;
 import model.Bonus;
 import model.BuildingType;
 import model.Faction;
 import model.Minion;
+import model.ProjectileType;
 import model.StatusType;
 import model.Wizard;
 
@@ -84,15 +86,15 @@ public class UnitScoreCalculation {
 				case ORC_WOODCUTTER:
 					damage = minion.getDamage() * shieldBonus * .5;
 					structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(
-							Utils.cooldownDistanceCalculation(Constants.getGame().getOrcWoodcutterAttackRange() + self.getRadius(),
-															  minion.getRemainingActionCooldownTicks() - addTicks) + movePenalty,
+							Utils.cooldownDistanceMinionsCalculation(Constants.getGame().getOrcWoodcutterAttackRange() + self.getRadius(),
+																	 minion.getRemainingActionCooldownTicks() - addTicks) + movePenalty,
 							damage));
 					break;
 				case FETISH_BLOWDART:
 					damage = Constants.getGame().getDartDirectDamage() * shieldBonus; // damage x2 (cd 30)
 					structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(
-							Utils.cooldownDistanceCalculation(Constants.getGame().getFetishBlowdartAttackRange() + self.getRadius(),
-															  minion.getRemainingActionCooldownTicks() - addTicks) + movePenalty,
+							Utils.cooldownDistanceMinionsCalculation(Constants.getGame().getFetishBlowdartAttackRange() + self.getRadius(),
+																	 minion.getRemainingActionCooldownTicks() - addTicks) + movePenalty,
 							damage));
 					break;
 			}
@@ -170,29 +172,20 @@ public class UnitScoreCalculation {
 				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(Constants.EXPERIENCE_DISTANCE - movePenalty, expBonus));
 			}
 			WizardsInfo.WizardInfo wizardInfo = Variables.wizardsInfo.getWizardInfo(wizard.getId());
-			double wizardDamage = wizardInfo.getMagicalMissileDamage();
+
+			// create missile danger description
+			WizardsDangerInfo missileDangerInfo;
+			int wizardDamage = wizardInfo.getMagicalMissileDamage();
 			if (wizardInfo.isHasFastMissileCooldown()) {
 				wizardDamage *= 2; // x2 shot speed
 			}
-			boolean frost = wizardInfo.isHasFrostBolt();
-			if (frost) {
-				wizardDamage = wizardInfo.getFrostBoltDamage() * 2; // very dangerous cause freezing
-			}
-			boolean fire = wizardInfo.isHasFireball();
-			if (fire) {
-				wizardDamage = wizardInfo.getFireballMaxDamage() + Constants.getGame().getBurningSummaryDamage();
-			}
 			int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
+
 			if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
 				double range = ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()) +
 						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() * 3. +
 						self.getRadius();
-				if (fire) {
-					range = wizardInfo.getCastRange() + Constants.getGame().getFireballExplosionMinDamageRange() + self.getRadius();
-				}
-				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(
-						range + movePenalty,
-						wizardDamage * 3. * shieldBonus));
+				missileDangerInfo = new WizardsDangerInfo(wizardDamage, range);
 			} else {
 				double evasionRange = ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor());
 
@@ -203,22 +196,76 @@ public class UnitScoreCalculation {
 						ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFly - 1, myWizardInfo.getMoveFactor()) +
 						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
 				range = Math.min(evasionRange, range) +
-						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() * .5 *
-								Math.min(2,
-										 -Math.max(wizard.getRemainingActionCooldownTicks(),
-												   freezeStatus) - addTicks + 4);
-				if (fire) {
+						Utils.cooldownDistanceWizardCalculation(wizardInfo.getMoveFactor(),
+																Math.max(wizardInfo.getActionCooldown(ActionType.MAGIC_MISSILE), freezeStatus) - addTicks);
+				missileDangerInfo = new WizardsDangerInfo(wizardDamage, range);
+			}
+
+			// create frost danger description
+			boolean frost = wizardInfo.isHasFrostBolt();
+			WizardsDangerInfo frostDangerInfo = null;
+			if (frost) {
+				wizardDamage = wizardInfo.getFrostBoltDamage() * 2; // very dangerous cause freezing
+				// TODO: change frost danger radius
+				// same range as magic missile, but more dangerous
+				if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
+					double range = ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()) +
+							Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() * 3. +
+							self.getRadius();
+					frostDangerInfo = new WizardsDangerInfo(wizardDamage, range);
+				} else {
+					double evasionRange = ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor());
+
+					double range = wizardInfo.getCastRange();
+					int ticksToFly = Utils.getTicksToFly(range - self.getRadius(), Constants.getGame().getMagicMissileSpeed());
+					range += self.getRadius() +
+							Constants.getGame().getMagicMissileRadius() -
+							ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFly - 1, myWizardInfo.getMoveFactor()) +
+							Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
+					range = Math.min(evasionRange, range) +
+							Utils.cooldownDistanceWizardCalculation(wizardInfo.getMoveFactor(),
+																	Math.max(wizardInfo.getActionCooldown(ActionType.FROST_BOLT), freezeStatus) - addTicks);
+					frostDangerInfo = new WizardsDangerInfo(wizardDamage, range);
+				}
+			}
+
+			boolean fire = wizardInfo.isHasFireball();
+			WizardsDangerInfo fireDangerInfo = null;
+			if (fire) {
+				wizardDamage = wizardInfo.getFireballMaxDamage() + Constants.getGame().getBurningSummaryDamage();
+				if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
+					// keep as far as possible
+					fireDangerInfo = new WizardsDangerInfo(wizardDamage,
+														   wizardInfo.getCastRange() + Constants.getGame().getFireballExplosionMinDamageRange() + self.getRadius());
+				} else {
+					double range;
 					if (meHasFrostSkill && self.getMana() >= Constants.getGame().getFrostBoltManacost()) {
 						range = 450;
 					} else {
-						range = wizardInfo.getCastRange() + Constants.getGame().getFireballExplosionMinDamageRange();
+						int ticksToFlly = Utils.getTicksToFly(wizardInfo.getCastRange(), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+						double distance = ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFlly, myWizardInfo.getMoveFactor());
+						range = wizardInfo.getCastRange() + Constants.getGame().getFireballExplosionMinDamageRange() - distance +
+								Utils.cooldownDistanceWizardCalculation(wizardInfo.getMoveFactor(),
+																		Math.max(wizardInfo.getActionCooldown(ActionType.FIREBALL), freezeStatus) - addTicks);
 					}
+					fireDangerInfo = new WizardsDangerInfo(wizardDamage, range);
 				}
-				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(range + movePenalty, wizardDamage * shieldBonus));
 			}
 
+			// TODO: fix this, innacurate
 			if (!frost && meHasFrostSkill && self.getMana() >= Constants.getGame().getFrostBoltManacost()) {
 				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(500, 12));
+			}
+			if (frostDangerInfo != null) {
+				if (fireDangerInfo != null) {
+					structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(fireDangerInfo.dangerRadius, fireDangerInfo.dangerDamage));
+				}
+				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(frostDangerInfo.dangerRadius, frostDangerInfo.dangerDamage));
+			} else {
+				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(missileDangerInfo.dangerRadius, missileDangerInfo.dangerDamage));
+				if (fireDangerInfo != null) {
+					structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(fireDangerInfo.dangerRadius, fireDangerInfo.dangerDamage));
+				}
 			}
 
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
@@ -234,5 +281,15 @@ public class UnitScoreCalculation {
 
 	public UnitScoreCalculation makeClone() {
 		return new UnitScoreCalculation(unitsScoreCalc);
+	}
+
+	private static class WizardsDangerInfo {
+		private int dangerDamage;
+		private double dangerRadius;
+
+		public WizardsDangerInfo(int dangerDamage, double dangerRadius) {
+			this.dangerDamage = dangerDamage;
+			this.dangerRadius = dangerRadius;
+		}
 	}
 }
