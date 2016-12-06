@@ -179,8 +179,12 @@ public class UnitScoreCalculation {
 			if (wizardInfo.isHasFastMissileCooldown()) {
 				wizardDamage *= 2; // x2 shot speed
 			}
-			int freezeStatus = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
 
+			int addCooldownTurnOrFreeze = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
+			int ticksToTurn = Math.max((int) ((Math.abs(wizard.getAngleTo(self)) - Constants.MAX_SHOOT_ANGLE + Variables.maxTurnAngle - .1) /
+											   Variables.maxTurnAngle) - addTicks,
+									   0);
+			addCooldownTurnOrFreeze = Math.max(addCooldownTurnOrFreeze, ticksToTurn);
 			if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
 				double range = ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor()) +
 						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor() * 3. +
@@ -197,7 +201,8 @@ public class UnitScoreCalculation {
 						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
 				range = Math.min(evasionRange, range) +
 						Utils.cooldownDistanceWizardCalculation(wizardInfo.getMoveFactor(),
-																Math.max(wizardInfo.getActionCooldown(ActionType.MAGIC_MISSILE), freezeStatus) - addTicks);
+																Math.max(wizardInfo.getActionCooldown(ActionType.MAGIC_MISSILE),
+																		 addCooldownTurnOrFreeze) - addTicks);
 				missileDangerInfo = new WizardsDangerInfo(wizardDamage, range);
 			}
 
@@ -224,7 +229,8 @@ public class UnitScoreCalculation {
 							Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
 					range = Math.min(evasionRange, range) +
 							Utils.cooldownDistanceWizardCalculation(wizardInfo.getMoveFactor(),
-																	Math.max(wizardInfo.getActionCooldown(ActionType.FROST_BOLT), freezeStatus) - addTicks);
+																	Math.max(wizardInfo.getActionCooldown(ActionType.FROST_BOLT),
+																			 addCooldownTurnOrFreeze) - addTicks);
 					frostDangerInfo = new WizardsDangerInfo(wizardDamage, range);
 				}
 			}
@@ -246,7 +252,8 @@ public class UnitScoreCalculation {
 						double distance = ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFlly, myWizardInfo.getMoveFactor());
 						range = wizardInfo.getCastRange() + Constants.getGame().getFireballExplosionMinDamageRange() - distance +
 								Utils.cooldownDistanceWizardCalculation(wizardInfo.getMoveFactor(),
-																		Math.max(wizardInfo.getActionCooldown(ActionType.FIREBALL), freezeStatus) - addTicks);
+																		Math.max(wizardInfo.getActionCooldown(ActionType.FIREBALL),
+																				 addCooldownTurnOrFreeze) - addTicks);
 					}
 					fireDangerInfo = new WizardsDangerInfo(wizardDamage, range);
 				}
