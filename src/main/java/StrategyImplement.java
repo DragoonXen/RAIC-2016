@@ -1166,6 +1166,14 @@ public class StrategyImplement implements Strategy {
 				return true;
 			}
 		}
+
+		if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
+			testScanItem.setPoint(self.getX(), self.getY());
+			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, fightStatus);
+			if (testScanItem.getWizardsDanger() > 0.) {
+				return true;
+			}
+		}
 		return false;
 	}
 
