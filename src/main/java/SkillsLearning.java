@@ -70,6 +70,23 @@ public class SkillsLearning {
 			SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
 			SkillType.HASTE};
 
+	private static final SkillType[] HASTE_RANGE_FIRE = new SkillType[]{
+			SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
+			SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
+			SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
+			SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
+			SkillType.HASTE,
+			SkillType.RANGE_BONUS_PASSIVE_1,
+			SkillType.RANGE_BONUS_AURA_1,
+			SkillType.RANGE_BONUS_PASSIVE_2,
+			SkillType.RANGE_BONUS_AURA_2,
+			SkillType.ADVANCED_MAGIC_MISSILE,
+			SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
+			SkillType.STAFF_DAMAGE_BONUS_AURA_1,
+			SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
+			SkillType.STAFF_DAMAGE_BONUS_AURA_2,
+			SkillType.FIREBALL};
+
 	private static final SkillType[][] arraySkillsToLearn = new SkillType[][]{FIRE_RANGE_MOVEMENT, RANGE_FIRE_HASTE, FROST_MOVEMENT_RANGE};
 
 	private static int cntMe = 0;
@@ -124,18 +141,28 @@ public class SkillsLearning {
 				if (allyWizards.isEmpty() && enemiesOnLine > 1) {
 					currentSkillsToLearn = RANGE_FIRE_HASTE;
 				} else {
-					if (allyWizards.size() + 1 < enemiesOnLine) { // preferred range, if have not yet
+					if (allyWizards.size() + 1 < enemiesOnLine) { // preferred haste or range, if have not yet
 						boolean hasRange = false;
+						boolean hasHaste = false;
 						for (Wizard allyWizard : allyWizards) {
-							hasRange = Arrays.asList(allyWizard.getSkills()).contains(SkillType.RANGE_BONUS_PASSIVE_1);
-							if (hasRange) {
+							hasRange |= Arrays.asList(allyWizard.getSkills()).contains(SkillType.RANGE_BONUS_PASSIVE_1);
+							hasHaste |= Arrays.asList(allyWizard.getSkills()).contains(SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1);
+							if (hasRange && hasHaste) {
 								break;
 							}
 						}
 						if (hasRange) {
-							currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+							if (hasHaste) {
+								currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+							} else {
+								currentSkillsToLearn = HASTE_RANGE_FIRE;
+							}
 						} else {
-							currentSkillsToLearn = RANGE_FIRE_HASTE;
+							if (hasHaste) {
+								currentSkillsToLearn = RANGE_FIRE_HASTE;
+							} else {
+								currentSkillsToLearn = HASTE_RANGE_FIRE;
+							}
 						}
 					}
 				}
