@@ -86,6 +86,7 @@ public class StrategyImplement implements Strategy {
 		fightStatus = FightStatus.NO_ENEMY;
 		treeCut = false;
 		moveToPoint = null;
+		pointToReach = null;
 		minAngle = 0.;
 		wayPoints.clear();
 		maxAngle = 0.;
@@ -757,10 +758,10 @@ public class StrategyImplement implements Strategy {
 			if (point == null) {
 				return;
 			}
-			if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
+			if (FastMath.hypot(self, point) < Constants.getGame().getWizardStrafeSpeed()) {
 				point = pointToReach;
 			}
-			if (FastMath.hypot(point.getX() - self.getX(), point.getY() - self.getY()) < Constants.getGame().getWizardStrafeSpeed()) {
+			if (FastMath.hypot(self, point) < Constants.getGame().getWizardStrafeSpeed()) {
 				return;
 			}
 			turnTo(self.getAngleTo(point.getX(), point.getY()), move);
@@ -890,6 +891,7 @@ public class StrategyImplement implements Strategy {
 				}
 			}
 			if (testPointDirectAvailable(item)) {
+				pointToReach = item;
 				wayPoints.add(new WayPoint(1, scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y], null));
 				wayPoints.add(new WayPoint(2, item, wayPoints.get(0)));
 				return;
