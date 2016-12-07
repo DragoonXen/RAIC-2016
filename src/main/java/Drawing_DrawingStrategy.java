@@ -109,6 +109,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		this.teammateIdsContainer = currentDrawingData.getTeammateIdsContainer();
 		this.targetFinder = currentDrawingData.getTargetFinder();
 		this.wizardsInfo = currentDrawingData.getWizardsInfo();
+		this.prevPointToReach = currentDrawingData.getPrevPointToReach();
 
 		return storedData;
 	}
@@ -129,7 +130,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   agressiveNeutralsCalcs,
 									   teammateIdsContainer,
 									   wizardsInfo,
-									   targetFinder);
+									   targetFinder,
+									   pointToReach);
 	}
 
     @Override

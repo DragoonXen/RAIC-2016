@@ -22,6 +22,7 @@ public class Drawing_DrawingData {
     private boolean moveToLineActivated;
     private BaseLine lastFightLine;
     private BaseLine currentCalcLine;
+	private Point prevPointToReach;
 	private TargetFinder targetFinder;
 
 	private TeammateIdsContainer teammateIdsContainer;
@@ -44,7 +45,8 @@ public class Drawing_DrawingData {
 							   AgressiveNeutralsCalcs agressiveNeutralsCalcs,
 							   TeammateIdsContainer teammateIdsContainer,
 							   WizardsInfo wizardsInfo,
-							   TargetFinder targetFinder) {
+							   TargetFinder targetFinder,
+							   Point prevPointToReach) {
 		this.self = self;
 		this.world = world;
         this.currentAction = currentAction.clone();
@@ -71,6 +73,7 @@ public class Drawing_DrawingData {
 		this.teammateIdsContainer = teammateIdsContainer.makeClone();
 		this.wizardsInfo = wizardsInfo.makeClone();
 		this.targetFinder = targetFinder.makeClone();
+		this.prevPointToReach = prevPointToReach == null ? null : prevPointToReach.clonePoint();
 	}
 
     public Wizard getSelf() {
@@ -133,6 +136,10 @@ public class Drawing_DrawingData {
 		return targetFinder;
 	}
 
+	public Point getPrevPointToReach() {
+		return prevPointToReach;
+	}
+
 	public Drawing_DrawingData clone() {
 		return new Drawing_DrawingData(self,
 									   world,
@@ -149,7 +156,8 @@ public class Drawing_DrawingData {
 									   agressiveNeutralsCalcs,
 									   teammateIdsContainer,
 									   wizardsInfo,
-									   targetFinder);
+									   targetFinder,
+									   prevPointToReach);
 	}
 
 	public WizardsInfo getWizardsInfo() {

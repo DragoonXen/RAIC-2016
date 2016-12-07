@@ -104,8 +104,7 @@ public class TargetFinder {
 
 				// distance to destination
 				// distance to me
-				score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(pointToReach.getX() - tree.getX(),
-																					 pointToReach.getY() - tree.getY());
+				score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(tree, pointToReach);
 				distanceToTarget = FastMath.hypot(self, tree);
 				score += Constants.CUT_SELF_DISTANCE_PRIORITY / distanceToTarget;
 

@@ -36,6 +36,7 @@ public class StrategyImplement implements Strategy {
 	protected int lastTick;
 
 	protected ScanMatrixItem pointToReach;
+	protected Point prevPointToReach;
 
 	private ScanMatrixItem testScanItem = new ScanMatrixItem(0, 0, 1.);
 
@@ -86,6 +87,7 @@ public class StrategyImplement implements Strategy {
 		fightStatus = FightStatus.NO_ENEMY;
 		treeCut = false;
 		moveToPoint = null;
+		prevPointToReach = pointToReach == null ? prevPointToReach : pointToReach.clonePoint();
 		pointToReach = null;
 		minAngle = 0.;
 		wayPoints.clear();
@@ -134,7 +136,7 @@ public class StrategyImplement implements Strategy {
 		unitScoreCalculation.updateScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs);
 		evade(move, checkHitByProjectilePossible());
 
-		targetFinder.updateTargets(filteredWorld, myLineCalc, pointToReach, agressiveNeutralsCalcs);
+		targetFinder.updateTargets(filteredWorld, myLineCalc, prevPointToReach, agressiveNeutralsCalcs);
 
 		makeShot(move);
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
