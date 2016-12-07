@@ -113,6 +113,8 @@ public class StrategyImplement implements Strategy {
 										  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
 													self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
 										  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
+		currentAction.setActionType(CurrentAction.ActionType.FIGHT); // default state
+		updateFightStatus();
 		unitScoreCalculation.updateScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs);
 		if (isInDanger()) {
 			fightStatus = FightStatus.IN_DANGER;
