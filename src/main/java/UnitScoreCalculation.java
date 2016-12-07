@@ -66,7 +66,7 @@ public class UnitScoreCalculation {
 
 		int myDamage = myWizardInfo.getMagicalMissileDamage(addTicks);
 		int staffDamage = myWizardInfo.getStaffDamage(addTicks);
-		double shieldBonus = Utils.wizardStatusTicks(self, StatusType.SHIELDED) >= addTicks ?
+		double shieldBonus = Utils.wizardStatusTicks(self, StatusType.SHIELDED) > addTicks ?
 				(1. - Constants.getGame().getShieldedDirectDamageAbsorptionFactor()) : 1.;
 
 		for (Minion minion : filteredWorld.getMinions()) {

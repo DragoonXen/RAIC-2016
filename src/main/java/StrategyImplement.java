@@ -392,7 +392,7 @@ public class StrategyImplement implements Strategy {
 			while (!Variables.projectilesSim.isEmpty()) {
 				if (!stuck) {
 					position.add(moveVector);
-					if (--currHastenedTicks == -1) {
+					if (--currHastenedTicks == 0) {
 						moveVector.fixVectorLength((moveFactor - Constants.getGame().getHastenedMovementBonusFactor()) * Constants.getGame().getWizardStrafeSpeed());
 					}
 					testScanItem.setPoint(position.getX(), position.getY());
@@ -454,10 +454,10 @@ public class StrategyImplement implements Strategy {
 					positionChange = accAndSpeed.getCoordChange(curentAngle);
 					position.add(positionChange);
 					curentAngle += Utils.updateMaxModule(Utils.normalizeAngle(moveAngle - curentAngle), // angle to turn
-														 currHastenedTicks >= 0. ?
+														 currHastenedTicks > 0 ?
 																 wizardsInfo.getMe().getTurnFactor() * Constants.getGame().getWizardMaxTurnAngle() :
 																 Constants.getGame().getWizardMaxTurnAngle());
-					if (--currHastenedTicks == -1) {
+					if (--currHastenedTicks == 0) {
 						currMoveFactor -= Constants.getGame().getHastenedMovementBonusFactor();
 					}
 					testScanItem.setPoint(position.getX(), position.getY());
@@ -622,7 +622,7 @@ public class StrategyImplement implements Strategy {
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 
 		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
-		if (hastenedTicksRemain > -1 && turnTicksCount > hastenedTicksRemain) {
+		if (hastenedTicksRemain > 0 && turnTicksCount > hastenedTicksRemain) {
 			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
 			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 		}
@@ -644,7 +644,7 @@ public class StrategyImplement implements Strategy {
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 
 		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
-		if (hastenedTicksRemain > -1 && turnTicksCount > hastenedTicksRemain) {
+		if (hastenedTicksRemain > 0 && turnTicksCount > hastenedTicksRemain) {
 			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
 			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 		}
