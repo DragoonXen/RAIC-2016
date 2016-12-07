@@ -763,7 +763,7 @@ public class StrategyImplement implements Strategy {
 			if (FastMath.hypot(self, point) < Constants.getGame().getWizardStrafeSpeed()) {
 				point = pointToReach;
 			}
-			if (FastMath.hypot(self, point) < Constants.getGame().getWizardStrafeSpeed()) {
+			if (point == null || FastMath.hypot(self, point) < Constants.getGame().getWizardStrafeSpeed()) {
 				return;
 			}
 			turnTo(self.getAngleTo(point.getX(), point.getY()), move);
@@ -772,7 +772,6 @@ public class StrategyImplement implements Strategy {
 
 	protected void moveTo(int pointIdx, Move move, boolean run) {
 		if (wayPoints.size() < 2) {
-
 			return;
 		}
 		ScanMatrixItem point = wayPoints.get(pointIdx).getPoint();
@@ -893,7 +892,6 @@ public class StrategyImplement implements Strategy {
 				}
 			}
 			if (testPointDirectAvailable(item)) {
-				pointToReach = item;
 				wayPoints.add(new WayPoint(1, scan_matrix[Constants.CURRENT_PT_X][Constants.CURRENT_PT_Y], null));
 				wayPoints.add(new WayPoint(2, item, wayPoints.get(0)));
 				return;
