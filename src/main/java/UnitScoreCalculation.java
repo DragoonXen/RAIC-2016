@@ -161,6 +161,7 @@ public class UnitScoreCalculation {
 		}
 
 		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
+		int absorbMagicDamageBonus = myWizardInfo.getAbsorbMagicBonus();
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				continue;
@@ -178,6 +179,10 @@ public class UnitScoreCalculation {
 			int wizardDamage = wizardInfo.getMagicalMissileDamage();
 			if (wizardInfo.isHasFastMissileCooldown()) {
 				wizardDamage *= 2; // x2 shot speed
+			}
+			wizardDamage *= shieldBonus;
+			if (absorbMagicDamageBonus > 0) {
+				wizardDamage -= absorbMagicDamageBonus;
 			}
 
 			int addCooldownTurnOrFreeze = Utils.wizardStatusTicks(wizard, StatusType.FROZEN);
@@ -211,6 +216,10 @@ public class UnitScoreCalculation {
 			WizardsDangerInfo frostDangerInfo = null;
 			if (frost) {
 				wizardDamage = wizardInfo.getFrostBoltDamage() * 2; // very dangerous cause freezing
+				wizardDamage *= shieldBonus;
+				if (absorbMagicDamageBonus > 0) {
+					wizardDamage -= absorbMagicDamageBonus;
+				}
 				// TODO: change frost danger radius
 				// same range as magic missile, but more dangerous
 				if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
@@ -238,7 +247,12 @@ public class UnitScoreCalculation {
 			boolean fire = wizardInfo.isHasFireball();
 			WizardsDangerInfo fireDangerInfo = null;
 			if (fire) {
-				wizardDamage = wizardInfo.getFireballMaxDamage() + Constants.getGame().getBurningSummaryDamage();
+				wizardDamage = wizardInfo.getFireballMaxDamage();
+				wizardDamage *= shieldBonus;
+				if (absorbMagicDamageBonus > 0) {
+					wizardDamage -= absorbMagicDamageBonus;
+				}
+				wizardDamage += Constants.getGame().getBurningSummaryDamage();
 				if (self.getLife() < self.getMaxLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
 					// keep as far as possible
 					fireDangerInfo = new WizardsDangerInfo(wizardDamage,

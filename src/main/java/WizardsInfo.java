@@ -97,6 +97,7 @@ public class WizardsInfo {
 		private double turnFactor;
 		private double castRange;
 
+		private int absorbMagicBonus;
 		private int staffDamage;
 		private int staffDamageBonus;
 		private int magicalMissileDamage;
@@ -210,6 +211,11 @@ public class WizardsInfo {
 			magicDamageBonus = (skillsCount[SkillFork.MAGICAL_DAMAGE.ordinal()] +
 					Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()], otherAurasCount[SkillFork.MAGICAL_DAMAGE.ordinal()])) *
 					Constants.getGame().getMagicalDamageBonusPerSkillLevel();
+
+			absorbMagicBonus = (skillsCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] +
+					Math.max(aurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()], otherAurasCount[SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()])) *
+					Constants.getGame().getMagicalDamageAbsorptionPerSkillLevel();
+
 			magicalMissileDamage = Constants.getGame().getMagicMissileDirectDamage() + magicDamageBonus;
 			if (hasFireball) {
 				fireballMaxDamage = Constants.getGame().getFireballExplosionMaxDamage() + magicDamageBonus;
@@ -361,6 +367,10 @@ public class WizardsInfo {
 					}
 				}
 			}
+		}
+
+		public int getAbsorbMagicBonus() {
+			return absorbMagicBonus;
 		}
 
 		public boolean isHasFrostBolt() {
