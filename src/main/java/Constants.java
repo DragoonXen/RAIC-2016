@@ -66,6 +66,7 @@ public abstract class Constants {
     public static double ATTACK_ENEMY_WIZARD_LIFE = 0.5;
 	public static double DANGER_SAFETY_ADDIT_DISTANCE = 1.2;
 	public static double AGRESSIVE_PUSH_WIZARD_LIFE = 0.8;
+    public static int MAX_SHOOT_DETECT_STEP_DISTANCE = 20;
 
     public static double MAX_SHOOT_ANGLE = Math.PI / 12.;
 

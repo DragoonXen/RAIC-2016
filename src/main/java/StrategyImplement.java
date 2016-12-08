@@ -521,11 +521,17 @@ public class StrategyImplement implements Strategy {
 		TargetFinder.ShootDescription missileShootDesc = null;
 		if (!targets.isEmpty()) {
 			missileShootDesc = targets.get(targets.size() - 1);
+			if (missileShootDesc.getTicksToGo() > 0) {
+				missileShootDesc = null;
+			}
 		}
 		targets = targetFinder.getIceTargets();
 		TargetFinder.ShootDescription iceShootDesc = null;
 		if (!targets.isEmpty()) {
 			iceShootDesc = targets.get(targets.size() - 1);
+			if (iceShootDesc.getTicksToGo() > 0) {
+				iceShootDesc = null;
+			}
 		}
 		targets = targetFinder.getFireTargets();
 		TargetFinder.ShootDescription fireShootDesc = null;

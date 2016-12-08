@@ -217,14 +217,6 @@ public class TargetFinder {
 			if (Utils.wizardHasStatus(wizard, StatusType.EMPOWERED)) {
 				score *= Constants.EMPOWERED_AIM_PRIORITY;
 			}
-			distanceToTarget = self.getCastRange() + wizard.getRadius() + oneStepMoving;
-			if (myWizardInfo.isHasFireball()) {
-				distanceToTarget += Constants.getGame().getFireballExplosionMinDamageRange() * .5;
-			}
-
-			if (FastMath.hypot(self, wizard) > distanceToTarget) {
-				continue;
-			}
 
 			// staff
 			direction = Utils.normalizeAngle(wizard.getAngleTo(self) + wizard.getAngle());
@@ -244,10 +236,12 @@ public class TargetFinder {
 			} else {
 				Point pointToShoot = new Point(wizard.getX(), wizard.getY());
 				checkedSecond = checkEnemyWizardEvasion(wizard, pointToShoot, oneStepMoving, evastionFiltering, ProjectileType.MAGIC_MISSILE);
-				if (checkedSecond < 2) {
+				if (checkedSecond < checked) {
 					appendShootTarget(wizard, score, pointToShoot, missileDamage, ActionType.MAGIC_MISSILE);
-				} else if (checked < 2) {
+					ShootDescription.lastInstance.setTicksToGo(checkedSecond);
+				} else if (checked < Constants.MAX_SHOOT_DETECT_STEP_DISTANCE) {
 					appendShootTarget(wizard, score, pointFwdToShoot, missileDamage, ActionType.MAGIC_MISSILE);
+					ShootDescription.lastInstance.setTicksToGo(checked);
 				}
 			}
 
@@ -261,10 +255,12 @@ public class TargetFinder {
 				} else {
 					Point pointToShoot = new Point(wizard.getX(), wizard.getY());
 					checkedSecond = checkEnemyWizardEvasion(wizard, pointToShoot, oneStepMoving, evastionFiltering, ProjectileType.FROST_BOLT);
-					if (checkedSecond < 2) {
+					if (checkedSecond < checked) {
 						appendShootTarget(wizard, score, pointToShoot, missileDamage, ActionType.FROST_BOLT);
-					} else if (checked < 2) {
+						ShootDescription.lastInstance.setTicksToGo(checkedSecond);
+					} else if (checked < Constants.MAX_SHOOT_DETECT_STEP_DISTANCE) {
 						appendShootTarget(wizard, score, pointFwdToShoot, missileDamage, ActionType.FROST_BOLT);
+						ShootDescription.lastInstance.setTicksToGo(checked);
 					}
 				}
 			}
@@ -624,10 +620,17 @@ public class TargetFinder {
 		double distance;
 		double prevDistance;
 
-		int idx = 0;
+		int currStepsToAim = 0;
+		int maxStepsToAim = (int) ((FastMath.hypot(self, shootPoint) - 350.) / stepDistance);
+		if (maxStepsToAim > Constants.MAX_SHOOT_DETECT_STEP_DISTANCE) {
+			maxStepsToAim = Constants.MAX_SHOOT_DETECT_STEP_DISTANCE;
+		}
+		int minStepsToAim = 0;
+
+		boolean totalConfirmed = false;
 		do {
-			Point shootingPosition = new Point(self.getX() + idx * stepDistance * Math.cos(shootDirection),
-											   self.getY() + idx * stepDistance * Math.sin(shootDirection));
+			Point shootingPosition = new Point(self.getX() + currStepsToAim * stepDistance * Math.cos(shootDirection),
+											   self.getY() + currStepsToAim * stepDistance * Math.sin(shootDirection));
 
 			double criticalDistance = Utils.PROJECTIVE_RADIUS[projectileType.ordinal()] + wizard.getRadius();
 			boolean hitConfirmed = false;
@@ -675,11 +678,21 @@ public class TargetFinder {
 				}
 			}
 			if (hitConfirmed) {
-				return idx;
+				if (currStepsToAim == 0) {
+					return currStepsToAim;
+				}
+				totalConfirmed = true;
+				maxStepsToAim = currStepsToAim;
+			} else {
+				minStepsToAim = currStepsToAim;
 			}
-		} while (++idx < 2);
+			currStepsToAim = (maxStepsToAim + minStepsToAim + 1) / 2;
+		} while (minStepsToAim + 1 < maxStepsToAim);
+		if (totalConfirmed) {
+			return maxStepsToAim;
+		}
 
-		return 2;
+		return Constants.MAX_SHOOT_DETECT_STEP_DISTANCE;
 	}
 
 	private double getDoubleDistance(int angle, double[][] evasionMatrix, int tick) {
