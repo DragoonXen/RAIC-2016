@@ -386,7 +386,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		}
 		if (!wayPoints.isEmpty()) {
 			Iterator<WayPoint> iterator = wayPoints.iterator();
-			WayPoint curr = null, prev;
+			WayPoint prev, curr = null;
 			if (iterator.hasNext()) {
 				curr = iterator.next();
 			}

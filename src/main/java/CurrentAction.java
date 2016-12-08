@@ -18,7 +18,7 @@ public class CurrentAction {
 	}
 
 	public enum ActionType {
-		EVADE_PROJECTILE(false), RUN_FROM_PROJECTILE(false), MOVE_TO_POSITION(true), FIGHT(true);
+		EVADE_PROJECTILE(false), RUN_FROM_PROJECTILE(false), MOVE_TO_POSITION(true), FIGHT(true), PURSUIT(false);
 
 		public final boolean moveCalc;
 

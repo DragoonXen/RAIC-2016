@@ -14,6 +14,7 @@ import model.World;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -516,23 +517,59 @@ public class StrategyImplement implements Strategy {
 		}
 	}
 
+	private double
+	getWayTotalScore(Point moveDirection, int steps, double step) {
+		double angle = Utils.normalizeAngle(self.getAngleTo(moveDirection.getX(), moveDirection.getY()) + self.getAngle());
+		double score = 0.;
+		for (int i = 1; i <= steps; ++i) {
+			double stepDistance = step * i;
+			testScanItem.setPoint(self.getX() + Math.cos(angle) * stepDistance,
+								  self.getY() + Math.sin(angle) * stepDistance);
+			Utils.calcTileScore(testScanItem, filteredWorld, myLineCalc, self, unitScoreCalculation, fightStatus);
+			if (!testScanItem.isAvailable()) {
+				return Double.NEGATIVE_INFINITY;
+			}
+			score += testScanItem.getTotalScore(self);
+		}
+		return score;
+	}
+
+	private TargetFinder.ShootDescription selectTarget(List<TargetFinder.ShootDescription> targets) {
+		if (targets.isEmpty()) {
+			return null;
+		}
+		TargetFinder.ShootDescription result = null;
+		if (fightStatus == FightStatus.IN_DANGER || !currentAction.getActionType().moveCalc) {
+			result = targets.get(targets.size() - 1);
+			return result.getTicksToGo() == 0 ? result : null;
+		}
+		TargetFinder.ShootDescription tmp;
+		double currentScore = 0;
+		double tmpScore;
+		double dangerScore;
+		for (Iterator<TargetFinder.ShootDescription> iterator = targets.iterator(); iterator.hasNext(); ) {
+			tmp = iterator.next();
+			tmpScore = tmp.getScore() / Constants.PURSUIT_COEFF[tmp.getTicksToGo()];
+			if (tmpScore > currentScore) {
+				dangerScore = getWayTotalScore(tmp.getShootPoint(),
+											   tmp.getTicksToGo(),
+											   ShootEvasionMatrix.EVASION_MATRIX[6][0] * wizardsInfo.getMe().getMoveFactor());
+				if (-dangerScore * .1 < tmpScore) {
+					currentScore = tmpScore;
+					result = tmp;
+				}
+			}
+		}
+		return result;
+	}
+
 	private void makeShot(Move move) {
 		List<TargetFinder.ShootDescription> targets = targetFinder.getMissileTargets();
-		TargetFinder.ShootDescription missileShootDesc = null;
-		if (!targets.isEmpty()) {
-			missileShootDesc = targets.get(targets.size() - 1);
-			if (missileShootDesc.getTicksToGo() > 0) {
-				missileShootDesc = null;
-			}
-		}
+		TargetFinder.ShootDescription missileShootDesc = selectTarget(targets);
+
 		targets = targetFinder.getIceTargets();
-		TargetFinder.ShootDescription iceShootDesc = null;
-		if (!targets.isEmpty()) {
-			iceShootDesc = targets.get(targets.size() - 1);
-			if (iceShootDesc.getTicksToGo() > 0) {
-				iceShootDesc = null;
-			}
-		}
+		TargetFinder.ShootDescription iceShootDesc = selectTarget(targets);
+
 		targets = targetFinder.getFireTargets();
 		TargetFinder.ShootDescription fireShootDesc = null;
 		if (!targets.isEmpty()) {
@@ -574,9 +611,8 @@ public class StrategyImplement implements Strategy {
 
 		if (fireShootDesc != null) {
 			if (fireShootDesc.getScore() > 90. || self.getMana() > self.getMaxMana() * .9) {
-				if (applyTargetAction(ActionType.FIREBALL,
+				if (applyTargetAction(fireShootDesc,
 									  FastMath.hypot(self, fireShootDesc.getShootPoint()),
-									  fireShootDesc.getShootPoint(),
 									  move)) {
 					return;
 				}
@@ -585,9 +621,8 @@ public class StrategyImplement implements Strategy {
 
 		if (iceShootDesc != null) {
 			if (iceShootDesc.getWizardsDamage() > 0 || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
-				if (applyTargetAction(ActionType.FROST_BOLT,
+				if (applyTargetAction(iceShootDesc,
 									  FastMath.hypot(self, iceShootDesc.getShootPoint()) - Constants.getGame().getWizardRadius(),
-									  iceShootDesc.getShootPoint(),
 									  move)) {
 					return;
 				}
@@ -619,7 +654,7 @@ public class StrategyImplement implements Strategy {
 							missileShootDesc.getTarget().getRadius();
 				}
 			}
-			if (applyTargetAction(ActionType.MAGIC_MISSILE, minCastDistance, missileShootDesc.getShootPoint(), move)) {
+			if (applyTargetAction(missileShootDesc, minCastDistance, move)) {
 				return;
 			}
 		}
@@ -650,7 +685,9 @@ public class StrategyImplement implements Strategy {
 		return false;
 	}
 
-	private boolean applyTargetAction(ActionType actionType, double minCastRange, Point target, Move move) {
+	private boolean applyTargetAction(TargetFinder.ShootDescription shootDescription, double minCastRange, Move move) {
+		Point target = shootDescription.getShootPoint();
+		ActionType actionType = shootDescription.getActionType();
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
@@ -662,7 +699,19 @@ public class StrategyImplement implements Strategy {
 			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 		}
 
-		if (waitTimeForAction(actionType) <= turnTicksCount + 2) {
+		int waitTime = waitTimeForAction(actionType);
+
+		if (waitTime <= shootDescription.getTicksToGo() &&
+				shootDescription.getTicksToGo() > 0) {
+			AccAndSpeedWithFix accAndSpeedByAngle = AccAndSpeedWithFix.getAccAndSpeedByAngle(self.getAngleTo(target.getX(), target.getY()), 100.);
+			move.setSpeed(accAndSpeedByAngle.getSpeed());
+			move.setStrafeSpeed(accAndSpeedByAngle.getStrafe());
+			currentAction.setActionType(CurrentAction.ActionType.PURSUIT);
+			turnTo(turnAngle, move);
+			return true;
+		}
+
+		if (waitTime <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
 			if (checkShot(turnAngle, minCastRange, move, actionType)) {
 				return true;

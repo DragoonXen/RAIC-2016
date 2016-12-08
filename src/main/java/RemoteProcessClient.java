@@ -607,9 +607,9 @@ public final class RemoteProcessClient implements Closeable {
     }
 
     private void flush() throws IOException {
-        outputStream.write(outputStreamBuffer.toByteArray());
+//        outputStream.write(outputStreamBuffer.toByteArray());
         outputStreamBuffer.reset();
-        outputStream.flush();
+//        outputStream.flush();
     }
 
     private interface ElementReader<E> {

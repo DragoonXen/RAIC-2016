@@ -46,7 +46,7 @@ public abstract class Constants {
     public static int[] STEP_X_HELP = new int[]{0, 0, -1, 1};
     public static int[] STEP_Y_HELP = new int[]{-1, 1, 0, 0};
 
-	public static double WIZARD_AIM_PROIRITY = 6.;
+	public static double WIZARD_AIM_PROIRITY = 8.;
 	public static double PER_TURN_TICK_PENALTY = .01;
 	public static double FROST_WIZARD_AIM_PROIRITY = 3.;
 	public static double BUILDING_AIM_PROIRITY = 5.;
@@ -93,6 +93,8 @@ public abstract class Constants {
 
     public static int ENEMY_MINIONS_LOST_TIME = 750;
 
+	public final static double[] PURSUIT_COEFF = new double[50];
+
     private static Game game;
     private static Faction currentFaction;
     private static Faction enemyFaction;
@@ -106,6 +108,10 @@ public abstract class Constants {
     private static double fireballLowerindDamageDistance;
 
     public static void init(Game game, Wizard self) {
+		for (int i = 0; i < PURSUIT_COEFF.length; i++) {
+			PURSUIT_COEFF[i] = Math.pow(1.15, i);
+		}
+
         Constants.game = game;
         topLine = new TopLine();
         middleLine = new MiddleLine();
