@@ -388,7 +388,9 @@ public class TargetFinder {
 				if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
 					damage = myWizardInfo.getFireballMaxDamage();
 				} else {
-					damage = myWizardInfo.getFireballMinDamage();
+					distance -= Constants.getGame().getFireballExplosionMaxDamageRange();
+					damage = myWizardInfo.getFireballMaxDamage() -
+							(int) ((Constants.getFireballLowerindDamageDistance() + distance) / Constants.getFireballLowerindDamageDistance());
 				}
 				if (damage + Constants.getGame().getBurningSummaryDamage() / 2 >= minion.getLife()) {
 					minionsDamage += minion.getLife();
@@ -412,7 +414,9 @@ public class TargetFinder {
 				if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
 					damage = Constants.getGame().getFireballExplosionMaxDamage();
 				} else {
-					damage = Constants.getGame().getFireballExplosionMinDamage();
+					distance -= Constants.getGame().getFireballExplosionMaxDamageRange();
+					damage = myWizardInfo.getFireballMaxDamage() -
+							(int) ((Constants.getFireballLowerindDamageDistance() + distance) / Constants.getFireballLowerindDamageDistance());
 				}
 				damage = Math.min(damage + Constants.getGame().getBurningSummaryDamage(), building.getLife());
 				if (damage == building.getLife()) {
@@ -470,9 +474,11 @@ public class TargetFinder {
 		if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
 			double score;
 			if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
-				score = Constants.getGame().getFireballExplosionMaxDamage();
+				score = myWizardInfo.getFireballMaxDamage();
 			} else {
-				score = Constants.getGame().getFireballExplosionMinDamage();
+				distance -= Constants.getGame().getFireballExplosionMaxDamageRange();
+				score = myWizardInfo.getFireballMaxDamage() -
+						(int) ((Constants.getFireballLowerindDamageDistance() + distance) / Constants.getFireballLowerindDamageDistance());
 			}
 			damage = Math.min((int) score + Constants.getGame().getBurningSummaryDamage(),
 							  wizard.getLife() + Constants.getGame().getBurningSummaryDamage() / 2);
