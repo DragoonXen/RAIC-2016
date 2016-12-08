@@ -51,11 +51,11 @@ public class UnitScoreCalculation {
 					continue;
 				}
 				ScoreCalcStructure structure = new ScoreCalcStructure();
-				structure.putItem(ScoreCalcStructure.createMinionDangerApplyer(self.getRadius() + Constants.getGame().getBonusRadius() + .1, 100.));
+				structure.putItem(ScoreCalcStructure.createOtherDangerApplyer(self.getRadius() + Constants.getGame().getBonusRadius() + .1, 100.));
 				structure.putItem(ScoreCalcStructure
 										  .createOtherBonusApplyer(self.getRadius() + Constants.getGame().getBonusRadius() + Constants.getGame().getWizardBackwardSpeed() *
 																		   myWizardInfo.getMoveFactor(),
-																   (350 - Utils.getTicksToBonusSpawn(filteredWorld.getTickIndex())) * .75));
+																   (266. - Utils.getTicksToBonusSpawn(filteredWorld.getTickIndex())) * .75));
 				unitsScoreCalc.put((long) (i - 5), structure);
 			}
 		}
