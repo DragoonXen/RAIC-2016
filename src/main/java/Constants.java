@@ -102,6 +102,7 @@ public abstract class Constants {
     private static double fightDistanceFilter;
     private static double staffHitSector;
     private static double doubledMapSize;
+    private static double fireballLowerindDamageDistance;
 
     public static void init(Game game, Wizard self) {
         Constants.game = game;
@@ -114,6 +115,10 @@ public abstract class Constants {
         fightDistanceFilter = MOVE_DISTANCE_FILTER + game.getWizardCastRange() + game.getRangeBonusPerSkillLevel() * 4;
         staffHitSector = game.getStaffSector() / 2.;
         doubledMapSize = game.getMapSize() + game.getMapSize();
+        fireballLowerindDamageDistance =
+                (game.getFireballExplosionMinDamageRange() - game.getFireballExplosionMaxDamageRange())
+                        / (game.getFireballExplosionMaxDamage() - game.getFireballExplosionMinDamage());
+
     }
 
     public static double getDoubledMapSize() {
@@ -142,6 +147,10 @@ public abstract class Constants {
 
     public static MiddleLine getMiddleLine() {
         return middleLine;
+    }
+
+    public static double getFireballLowerindDamageDistance() {
+        return fireballLowerindDamageDistance;
     }
 
     public static BaseLine getLine(LaneType laneType) {

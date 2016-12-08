@@ -442,7 +442,9 @@ public class Utils {
 			if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
 				return damage + Constants.getGame().getFireballExplosionMaxDamage();
 			} else {
-				return damage + Constants.getGame().getFireballExplosionMinDamage();
+				distance -= Constants.getGame().getFireballExplosionMaxDamageRange();
+				return damage + Constants.getGame().getFireballExplosionMaxDamage() -
+						(int) ((Constants.getFireballLowerindDamageDistance() + distance) / Constants.getFireballLowerindDamageDistance());
 			}
 		}
 		return damage;
