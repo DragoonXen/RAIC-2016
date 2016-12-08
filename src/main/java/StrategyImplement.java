@@ -543,7 +543,9 @@ public class StrategyImplement implements Strategy {
 				move.setAction(ActionType.HASTE);
 				Wizard allyWizardCastTo = null;
 				for (Wizard wizard : filteredWorld.getWizards()) {
-					if (wizard.getFaction() == Constants.getCurrentFaction() && FastMath.hypot(self, wizard) + .1 < self.getCastRange()) {
+					if (wizard.getFaction() == Constants.getCurrentFaction() &&
+							FastMath.hypot(self, wizard) + .1 < self.getCastRange() &&
+							Math.abs(self.getAngleTo(wizard)) < Constants.MAX_SHOOT_ANGLE) {
 						if (allyWizardCastTo == null) {
 							allyWizardCastTo = wizard;
 						} else {
