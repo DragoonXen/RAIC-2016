@@ -25,6 +25,16 @@ public class AgressiveNeutralsCalcs {
 	}
 
 	public void updateMap(World world) {
+		if (world.getTickIndex() < 700) {
+			for (Minion minion : world.getMinions()) {
+				if (minion.getFaction() == Faction.NEUTRAL) {
+					agressive.add(minion.getId());
+				}
+			}
+		}
+		if (world.getTickIndex() == 700) {
+			agressive.clear();
+		}
 		for (Minion minion : world.getMinions()) {
 			if (minion.getFaction() == Faction.NEUTRAL) {
 				Minion phantom = phantoms.get(minion.getId());
