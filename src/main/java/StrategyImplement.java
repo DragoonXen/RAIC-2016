@@ -597,7 +597,11 @@ public class StrategyImplement implements Strategy {
 		targets = targetFinder.getStaffTargets();
 		TargetFinder.ShootDescription staffHitDesc = null;
 		if (!targets.isEmpty()) {
-			staffHitDesc = targets.get(0);
+			int i = 0;
+			staffHitDesc = targets.get(i++);
+			while (i < targets.size() && staffHitDesc.getWizardsDamage() == 0) {
+				staffHitDesc = targets.get(i++);
+			}
 		}
 
 		if (!targetFinder.getHasteTargets().isEmpty() && Constants.getGame().getHasteManacost() <= self.getMana()) {
