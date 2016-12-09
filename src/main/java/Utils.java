@@ -437,8 +437,13 @@ public class Utils {
 					Constants.getGame().getDartRadius()};
 
 	public static int getProjectileDamage(Projectile projectile, double distance) {
-		int damage = PROJECTIVE_DAMAGE[projectile.getType().ordinal()];
-		if (projectile.getType() == ProjectileType.FIREBALL) {
+		return getProjectileDamage(projectile.getType(), distance);
+	}
+
+	public static int getProjectileDamage(ProjectileType projectileType, double distance) {
+		int damage = PROJECTIVE_DAMAGE[projectileType.ordinal()];
+		if (projectileType == ProjectileType.FIREBALL) {
+			distance -= Constants.getGame().getWizardRadius();
 			if (distance < Constants.getGame().getFireballExplosionMaxDamageRange()) {
 				return damage + Constants.getGame().getFireballExplosionMaxDamage();
 			} else {
@@ -461,11 +466,19 @@ public class Utils {
 		}
 	}
 
+	public static double finalizeFireballsDamage() {
+		double damage = 0;
+		for (double val : Variables.fireballHitDamageCheck.values()) {
+			damage += Utils.getProjectileDamage(ProjectileType.FIREBALL, val);
+		}
+		Variables.fireballHitDamageCheck.clear();
+		return damage;
+	}
+
 	public static double checkProjectiveCollision(Point point, int ticks) {
 		double selfRadius = Variables.self.getRadius();
 		double damage = 0.;
 		Iterator<AbstractMap.SimpleEntry<Projectile, Double>> iterator = Variables.projectilesSim.iterator();
-		Variables.fireballHitDamageCheck.clear();
 		while (iterator.hasNext()) {
 			AbstractMap.SimpleEntry<Projectile, Double> next = iterator.next();
 			Projectile projectile = next.getKey();
@@ -486,12 +499,18 @@ public class Utils {
 			double distanceToProjective = Utils.distancePointToSegment(point, startProjectilePoint, projectileVector);
 			if (distanceToProjective < projectiveRadius + selfRadius + .001) {
 				if (projectile.getType() == ProjectileType.FIREBALL) {
-					if (distanceToProjective + selfRadius < Constants.getGame().getFireballExplosionMaxDamageRange()) {
+					if (distanceToProjective < Constants.getGame().getFireballExplosionMaxDamageRange() + selfRadius) {
 						damage += getProjectileDamage(projectile, distanceToProjective);
 						remove = true;
 						Variables.fireballHitDamageCheck.remove(projectile.getId());
 					} else {
-						Variables.fireballHitDamageCheck.add(projectile.getId());
+						Double aDouble = Variables.fireballHitDamageCheck.get(projectile.getId());
+						if (aDouble != null) {
+							aDouble = Math.min(aDouble, distanceToProjective);
+						} else {
+							aDouble = distanceToProjective;
+						}
+						Variables.fireballHitDamageCheck.put(projectile.getId(), aDouble);
 					}
 				} else {
 					damage += getProjectileDamage(projectile, distanceToProjective);
@@ -502,7 +521,6 @@ public class Utils {
 				iterator.remove();
 			}
 		}
-		damage += Variables.fireballHitDamageCheck.size() * (Constants.getGame().getBurningSummaryDamage() + Constants.getGame().getFireballExplosionMinDamage());
 		return damage;
 	}
 

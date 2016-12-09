@@ -4,7 +4,7 @@ import model.World;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,7 +17,7 @@ public class Variables {
 	public static World world;
 
 	public static List<AbstractMap.SimpleEntry<Projectile, Double>> projectilesSim = new LinkedList<>();
-	public static HashSet<Long> fireballHitDamageCheck = new HashSet<>();
+	public static HashMap<Long, Double> fireballHitDamageCheck = new HashMap<>();
 
 	public static List<Long> projectiles = new ArrayList<>();
 

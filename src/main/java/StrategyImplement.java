@@ -342,7 +342,7 @@ public class StrategyImplement implements Strategy {
 				projectileRadius = Constants.getGame().getFireballExplosionMinDamageRange();
 			}
 			if (distance < maxStep + this.self.getRadius() + projectileRadius) {
-				sumDamage += Utils.getProjectileDamage(projectile, distance);
+				sumDamage += Utils.getProjectileDamage(projectile, distance - maxStep);
 			}
 		}
 		return sumDamage;
@@ -374,6 +374,7 @@ public class StrategyImplement implements Strategy {
 			bestDangerOnWay += testScanItem.getAllDangers();
 			bestDamage += Utils.checkProjectiveCollision(position, ticks++);
 		}
+		bestDamage += Utils.finalizeFireballsDamage();
 
 		double currScore;
 		double currDamage;
@@ -420,6 +421,7 @@ public class StrategyImplement implements Strategy {
 				}
 				currDamage += Utils.checkProjectiveCollision(position, ticks++);
 			}
+			currDamage += Utils.finalizeFireballsDamage();
 			if (bestDamage < currDamage) {
 				continue;
 			}
@@ -439,8 +441,9 @@ public class StrategyImplement implements Strategy {
 			bestScore = currScore;
 			bestPosition = position;
 		}
+		double bestEvadeDamage = bestDamage;
+		Point bestEvadePosition = bestPosition;
 		if (bestDamage > 0.) {
-			double bestEvadeDamage = bestDamage;
 			double curentAngle;
 			double currMoveFactor;
 			AccAndSpeedWithFix accAndSpeed;
@@ -482,6 +485,7 @@ public class StrategyImplement implements Strategy {
 					}
 					currDamage += Utils.checkProjectiveCollision(position, ticks++);
 				}
+				currDamage += Utils.finalizeFireballsDamage();
 				if (bestDamage < currDamage || currDamage >= bestEvadeDamage) {
 					continue;
 				}
@@ -501,6 +505,11 @@ public class StrategyImplement implements Strategy {
 				bestScore = currScore;
 				bestPosition = position;
 			}
+		}
+		if (bestEvadeDamage < bestDamage + 3) {
+			bestDamage = bestEvadeDamage;
+			bestPosition = bestEvadePosition;
+			bestActionType = 0; // evade, not run
 		}
 		if (bestDamage < maxDamageToRecieve) { // escape from projectile
 			moveAngle = self.getAngleTo(bestPosition.getX(), bestPosition.getY());
