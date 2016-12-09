@@ -96,6 +96,7 @@ public class StrategyImplement implements Strategy {
 		angle = 0.;
 		targetAngle = 0.;
 		turnFixed = false;
+		Variables.prevActionType = currentAction.getActionType();
 
 		Variables.self = self;
 		Variables.world = world;

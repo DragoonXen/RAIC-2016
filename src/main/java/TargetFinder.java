@@ -644,7 +644,10 @@ public class TargetFinder {
 				int intAngle = i * EVASION_CHECK_ANGLE_STEP;
 				double angle = intAngle * Math.PI / 180;
 				movementVector.update(Math.cos(angle + wizard.getAngle()), Math.sin(angle + wizard.getAngle()));
-				distance = getDoubleDistance(intAngle, evasionMatrix, 0) * .5 * wizardInfo.getMoveFactor();
+				distance = getDoubleDistance(intAngle, evasionMatrix, 0) * wizardInfo.getMoveFactor();
+				if (Variables.prevActionType != CurrentAction.ActionType.PURSUIT && currStepsToAim == 0) {
+					distance *= .5;
+				}
 				startPosition.update(wizard.getX() + movementVector.getX() * distance,
 									 wizard.getY() + movementVector.getY() * distance);
 				boolean stuck = false;
