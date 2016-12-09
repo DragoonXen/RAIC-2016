@@ -355,12 +355,13 @@ public class TargetFinder {
 				if (wizard.getFaction() != Constants.getCurrentFaction()) {
 					continue;
 				}
-				if (wizard.isMe() && myWizardInfo.getHastened() < 30) {
-					hasteTargets.add(new ShootDescription(wizard, ActionType.HASTE));
-				} else if (Variables.wizardsInfo.getWizardInfo(wizard.getId()).getHastened() < 30 &&
+				if (Variables.wizardsInfo.getWizardInfo(wizard.getId()).getHastened() < 30 &&
 						FastMath.hypot(self, wizard) < self.getCastRange()) {
 					hasteTargets.add(new ShootDescription(wizard, ActionType.HASTE));
 				}
+			}
+			if (myWizardInfo.getHastened() < 30) {
+				hasteTargets.add(new ShootDescription(self, ActionType.HASTE));
 			}
 		}
 
@@ -369,11 +370,12 @@ public class TargetFinder {
 				if (wizard.getFaction() != Constants.getCurrentFaction()) {
 					continue;
 				}
-				if (wizard.isMe() && myWizardInfo.getShielded() < 30) {
-					shieldTargets.add(new ShootDescription(wizard, ActionType.SHIELD));
-				} else if (Variables.wizardsInfo.getWizardInfo(wizard.getId()).getShielded() < 30 &&
+				if (Variables.wizardsInfo.getWizardInfo(wizard.getId()).getShielded() < 30 &&
 						FastMath.hypot(self, wizard) < self.getCastRange()) {
 					shieldTargets.add(new ShootDescription(wizard, ActionType.SHIELD));
+				}
+				if (myWizardInfo.getShielded() < 30) {
+					hasteTargets.add(new ShootDescription(self, ActionType.SHIELD));
 				}
 			}
 		}
