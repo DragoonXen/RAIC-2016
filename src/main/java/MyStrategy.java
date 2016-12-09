@@ -47,7 +47,7 @@ public final class MyStrategy implements Strategy {
             } catch (IOException e1) {
                 System.out.println(e1.getMessage());
             }
-			throw new RuntimeException(e.getMessage());
+//			throw new RuntimeException(e.getMessage());
 		}
     }
 }
