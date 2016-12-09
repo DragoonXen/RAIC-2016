@@ -5,7 +5,6 @@ import model.Wizard;
 import model.World;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -139,28 +138,7 @@ public class SkillsLearning {
 					}
 				}
 				if (allyWizards.size() + 1 < enemiesOnLine) { // preferred haste or range, if have not yet
-					boolean hasRange = false;
-					boolean hasHaste = false;
-					for (Wizard allyWizard : allyWizards) {
-						hasRange |= Arrays.asList(allyWizard.getSkills()).contains(SkillType.RANGE_BONUS_PASSIVE_1);
-						hasHaste |= Arrays.asList(allyWizard.getSkills()).contains(SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1);
-						if (hasRange && hasHaste) {
-							break;
-						}
-					}
-					if (hasRange) {
-						if (hasHaste) {
-							currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
-						} else {
-							currentSkillsToLearn = HASTE_RANGE_FIRE;
-						}
-					} else {
-						if (hasHaste) {
-							currentSkillsToLearn = RANGE_FIRE_HASTE;
-						} else {
-							currentSkillsToLearn = HASTE_RANGE_FIRE;
-						}
-					}
+					currentSkillsToLearn = FROST_MOVEMENT_RANGE;
 				}
 			}
 			move.setSkillToLearn(currentSkillsToLearn[self.getSkills().length]);
