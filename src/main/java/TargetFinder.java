@@ -26,6 +26,8 @@ public class TargetFinder {
 	protected List<ShootDescription> missileTargets;
 	protected List<ShootDescription> staffTargets;
 	protected List<ShootDescription> iceTargets;
+	protected List<ShootDescription> hasteTargets;
+	protected List<ShootDescription> shieldTargets;
 	protected List<ShootDescription> prevMissileTargets;
 	protected List<ShootDescription> prevStaffTargets;
 	protected List<ShootDescription> prevIceTargets;
@@ -40,6 +42,8 @@ public class TargetFinder {
 		missileTargets = new ArrayList<>();
 		staffTargets = new ArrayList<>();
 		iceTargets = new ArrayList<>();
+		hasteTargets = new ArrayList<>();
+		shieldTargets = new ArrayList<>();
 		prevMissileTargets = new ArrayList<>();
 		prevStaffTargets = new ArrayList<>();
 		prevIceTargets = new ArrayList<>();
@@ -49,6 +53,8 @@ public class TargetFinder {
 	public TargetFinder(List<ShootDescription> missileTargets,
 						List<ShootDescription> staffTargets,
 						List<ShootDescription> iceTargets,
+						List<ShootDescription> hasteTargets,
+						List<ShootDescription> shieldTargets,
 						List<ShootDescription> prevMissileTargets,
 						List<ShootDescription> prevStaffTargets,
 						List<ShootDescription> prevIceTargets,
@@ -56,6 +62,8 @@ public class TargetFinder {
 		this.missileTargets = new ArrayList<>(missileTargets);
 		this.staffTargets = new ArrayList<>(staffTargets);
 		this.iceTargets = new ArrayList<>(iceTargets);
+		this.hasteTargets = new ArrayList<>(hasteTargets);
+		this.shieldTargets = new ArrayList<>(shieldTargets);
 		this.prevMissileTargets = new ArrayList<>(prevMissileTargets);
 		this.prevStaffTargets = new ArrayList<>(prevStaffTargets);
 		this.prevIceTargets = new ArrayList<>(prevIceTargets);
@@ -81,6 +89,8 @@ public class TargetFinder {
 			prevStaffTargets = staffTargets;
 			staffTargets = tmp;
 			tmp.clear();
+			hasteTargets.clear();
+			shieldTargets.clear();
 		}
 
 		int missileDamage = myWizardInfo.getMagicalMissileDamage();
@@ -336,9 +346,39 @@ public class TargetFinder {
 			}
 		}
 
+		if (myWizardInfo.isHasHasteSkill()) {
+			for (Wizard wizard : filteredWorld.getWizards()) {
+				if (wizard.getFaction() != Constants.getCurrentFaction()) {
+					continue;
+				}
+				if (wizard.isMe() && myWizardInfo.getHastened() < 30) {
+					hasteTargets.add(new ShootDescription(wizard, ActionType.HASTE));
+				} else if (Variables.wizardsInfo.getWizardInfo(wizard.getId()).getHastened() < 30 &&
+						FastMath.hypot(self, wizard) < self.getCastRange()) {
+					hasteTargets.add(new ShootDescription(wizard, ActionType.HASTE));
+				}
+			}
+		}
+
+		if (myWizardInfo.isHasShieldSkill()) {
+			for (Wizard wizard : filteredWorld.getWizards()) {
+				if (wizard.getFaction() != Constants.getCurrentFaction()) {
+					continue;
+				}
+				if (wizard.isMe() && myWizardInfo.getShielded() < 30) {
+					shieldTargets.add(new ShootDescription(wizard, ActionType.SHIELD));
+				} else if (Variables.wizardsInfo.getWizardInfo(wizard.getId()).getShielded() < 30 &&
+						FastMath.hypot(self, wizard) < self.getCastRange()) {
+					shieldTargets.add(new ShootDescription(wizard, ActionType.SHIELD));
+				}
+			}
+		}
+
 		Collections.sort(staffTargets);
 		Collections.sort(missileTargets);
 		Collections.sort(iceTargets);
+		Collections.sort(hasteTargets);
+		Collections.sort(shieldTargets);
 
 		missileTargets = filterTargets(missileTargets);
 		iceTargets = filterTargets(iceTargets);
@@ -761,10 +801,20 @@ public class TargetFinder {
 		return fireTargets;
 	}
 
+	public List<ShootDescription> getHasteTargets() {
+		return hasteTargets;
+	}
+
+	public List<ShootDescription> getShieldTargets() {
+		return shieldTargets;
+	}
+
 	public TargetFinder makeClone() {
 		return new TargetFinder(missileTargets,
 								staffTargets,
 								iceTargets,
+								hasteTargets,
+								shieldTargets,
 								prevMissileTargets,
 								prevStaffTargets,
 								prevIceTargets,
@@ -792,6 +842,22 @@ public class TargetFinder {
 		private double score;
 
 		private static ShootDescription lastInstance;
+
+		// for buffs
+		public ShootDescription(Wizard target, ActionType actionType) {
+			this.target = target;
+			this.actionType = actionType;
+
+			if (target.isMe()) {
+				turnAngle = 0;
+			} else {
+				turnAngle = Variables.self.getAngleTo(target);
+			}
+			this.ticksToTurn = Math.max((int) ((Math.abs(turnAngle) - Constants.MAX_SHOOT_ANGLE + Variables.maxTurnAngle - .1) / Variables.maxTurnAngle), 0);
+
+			this.score = target.isMe() ? 1. : 2.;
+			this.score -= Constants.PER_TURN_TICK_PENALTY * ticksToTurn;
+		}
 
 		public ShootDescription(Point shootPoint, ActionType actionType, double score, LivingUnit target) {
 			lastInstance = this;

@@ -591,26 +591,14 @@ public class StrategyImplement implements Strategy {
 			staffHitDesc = targets.get(0);
 		}
 
-		if (wizardsInfo.getMe().isHasHasteSkill() && wizardsInfo.getMe().getHastened() == 0 && Constants.getGame().getHasteManacost() <= self.getMana()) {
-			if (self.getRemainingActionCooldownTicks() == 0) {
-				move.setAction(ActionType.HASTE);
-				Wizard allyWizardCastTo = null;
-				for (Wizard wizard : filteredWorld.getWizards()) {
-					if (wizard.getFaction() == Constants.getCurrentFaction() &&
-							FastMath.hypot(self, wizard) + .1 < self.getCastRange() &&
-							Math.abs(self.getAngleTo(wizard)) < Constants.MAX_SHOOT_ANGLE) {
-						if (allyWizardCastTo == null) {
-							allyWizardCastTo = wizard;
-						} else {
-							if (allyWizardCastTo.getLife() > wizard.getLife()) {
-								allyWizardCastTo = wizard;
-							}
-						}
-					}
-				}
-				if (allyWizardCastTo != null) {
-					move.setStatusTargetId(allyWizardCastTo.getId());
-				}
+		if (!targetFinder.getHasteTargets().isEmpty() && Constants.getGame().getHasteManacost() <= self.getMana()) {
+			if (applyBuffAction(targetFinder.getHasteTargets().get(0), move)) {
+				return;
+			}
+		}
+
+		if (!targetFinder.getShieldTargets().isEmpty() && Constants.getGame().getShieldManacost() <= self.getMana()) {
+			if (applyBuffAction(targetFinder.getShieldTargets().get(0), move)) {
 				return;
 			}
 		}
@@ -676,7 +664,7 @@ public class StrategyImplement implements Strategy {
 
 	private boolean applyMeleeAction(CircularUnit target, Move move) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
-		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
+		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor();
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 
 		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
@@ -700,7 +688,7 @@ public class StrategyImplement implements Strategy {
 		ActionType actionType = shootDescription.getActionType();
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 
-		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getMoveFactor();
+		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor();
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 
 		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
@@ -724,6 +712,36 @@ public class StrategyImplement implements Strategy {
 		if (waitTime <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
 			if (checkShot(turnAngle, minCastRange, move, actionType)) {
+				return true;
+			}
+			// если не можем попасть - доворачиваем на цель
+			turnTo(turnAngle, move);
+			return true;
+		}
+		return false;
+	}
+
+	private boolean applyBuffAction(TargetFinder.ShootDescription shootDescription, Move move) {
+		Wizard target = (Wizard) shootDescription.getTarget();
+		double turnAngle = self.getAngleTo(target.getX(), target.getY());
+		if (target.isMe()) {
+			turnAngle = 0;
+		}
+
+		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor();
+		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
+
+		int hastenedTicksRemain = Utils.wizardStatusTicks(self, StatusType.HASTENED);
+		if (hastenedTicksRemain > 0 && turnTicksCount > hastenedTicksRemain) {
+			maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle();
+			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
+		}
+
+		int waitTime = waitTimeForAction(shootDescription.getActionType());
+
+		if (waitTime <= turnTicksCount + 2) {
+			// если уже можем попасть - атакуем и бежим дальше
+			if (checkCast(target, turnAngle, move, shootDescription.getActionType())) {
 				return true;
 			}
 			// если не можем попасть - доворачиваем на цель
@@ -760,6 +778,18 @@ public class StrategyImplement implements Strategy {
 			if (actionType == ActionType.FIREBALL) {
 				move.setMaxCastDistance(minCastRange);
 			}
+			return true;
+		}
+		return false;
+	}
+
+	private boolean checkCast(Wizard target, double angle, Move move, ActionType actionType) {
+		if (Math.abs(angle) > Constants.MAX_SHOOT_ANGLE) {
+			return false;
+		}
+		if (waitTimeForAction(actionType) == 0) {
+			move.setAction(actionType);
+			move.setStatusTargetId(target.getId());
 			return true;
 		}
 		return false;
