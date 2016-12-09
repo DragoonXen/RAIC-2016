@@ -73,6 +73,9 @@ public class StrategyImplement implements Strategy {
 
 	protected WizardsInfo wizardsInfo = new WizardsInfo();
 
+	protected int stuck;
+	protected Point prevPoint = new Point();
+
 	public StrategyImplement(Wizard self) {
 		myLineCalc = Constants.getLine(Utils.getDefaultMyLine((int) self.getId()));
 		lastFightLine = myLineCalc;
@@ -96,6 +99,12 @@ public class StrategyImplement implements Strategy {
 		angle = 0.;
 		targetAngle = 0.;
 		turnFixed = false;
+		if (prevPoint.getX() == self.getX() && prevPoint.getY() == self.getY()) {
+			++stuck;
+		} else {
+			stuck = 0;
+			prevPoint.update(self.getX(), self.getY());
+		}
 		Variables.prevActionType = currentAction.getActionType();
 
 		Variables.self = self;
@@ -138,7 +147,7 @@ public class StrategyImplement implements Strategy {
 		unitScoreCalculation.updateScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs);
 		evade(move, checkHitByProjectilePossible());
 
-		targetFinder.updateTargets(filteredWorld, myLineCalc, prevPointToReach, agressiveNeutralsCalcs);
+		targetFinder.updateTargets(filteredWorld, myLineCalc, prevPointToReach, agressiveNeutralsCalcs, stuck);
 
 		makeShot(move);
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
@@ -554,7 +563,7 @@ public class StrategyImplement implements Strategy {
 			return result.getTicksToGo() == 0 ? result : null;
 		}
 		TargetFinder.ShootDescription tmp;
-		double currentScore = 0;
+		double currentScore = -1000000;
 		double tmpScore;
 		double dangerScore;
 		for (Iterator<TargetFinder.ShootDescription> iterator = targets.iterator(); iterator.hasNext(); ) {
@@ -564,7 +573,7 @@ public class StrategyImplement implements Strategy {
 				dangerScore = getWayTotalScore(tmp.getShootPoint(),
 											   tmp.getTicksToGo(),
 											   ShootEvasionMatrix.EVASION_MATRIX[6][0] * wizardsInfo.getMe().getMoveFactor());
-				if (-dangerScore * .1 < tmpScore) {
+				if (tmp.getTicksToGo() == 0 || -dangerScore * .1 < tmpScore) {
 					currentScore = tmpScore;
 					result = tmp;
 				}
@@ -658,7 +667,9 @@ public class StrategyImplement implements Strategy {
 		}
 
 		if (staffHitDesc != null) {
-			applyMeleeAction(staffHitDesc.getTarget(), move);
+			if (applyMeleeAction(staffHitDesc.getTarget(), move)) {
+				return;
+			}
 		}
 	}
 

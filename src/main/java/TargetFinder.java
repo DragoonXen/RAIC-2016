@@ -70,7 +70,11 @@ public class TargetFinder {
 		this.fireTargets = new LinkedList<>(fireTargets);
 	}
 
-	public void updateTargets(FilteredWorld filteredWorld, BaseLine myLineCalc, Point pointToReach, AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
+	public void updateTargets(FilteredWorld filteredWorld,
+							  BaseLine myLineCalc,
+							  Point pointToReach,
+							  AgressiveNeutralsCalcs agressiveNeutralsCalcs,
+							  int stuck) {
 		this.self = Variables.self;
 		this.filteredWorld = filteredWorld;
 		this.agressiveNeutralsCalcs = agressiveNeutralsCalcs;
@@ -97,7 +101,7 @@ public class TargetFinder {
 		int frostBoltDamage = myWizardInfo.getFrostBoltDamage();
 		int staffDamage = myWizardInfo.getStaffDamage();
 
-		boolean treeCut = (myLineCalc == PositionMoveLine.INSTANCE &&
+		boolean treeCut = stuck > 10 || (myLineCalc == PositionMoveLine.INSTANCE &&
 				(Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), new Point(self.getX(), self.getY())) > 0 ||
 						Utils.unitsCountAtDistance(filteredWorld.getTrees(), self, Constants.TREES_DISTANCE_TO_CUT) >= 3)) ||
 				Utils.unitsCountAtDistance(filteredWorld.getTrees(),
