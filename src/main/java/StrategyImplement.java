@@ -604,16 +604,22 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 
+		int waitTime = 900;
+		int tmpWaitTime = 900;
+
 		if (!targetFinder.getHasteTargets().isEmpty() && Constants.getGame().getHasteManacost() <= self.getMana()) {
-			if (applyBuffAction(targetFinder.getHasteTargets().get(0), move)) {
+			if ((waitTime = applyBuffAction(targetFinder.getHasteTargets().get(0), move, waitTime)) == -1) {
 				return;
 			}
 		}
 
 		if (!targetFinder.getShieldTargets().isEmpty() && Constants.getGame().getShieldManacost() <= self.getMana()) {
-			if (applyBuffAction(targetFinder.getShieldTargets().get(0), move)) {
+			if ((tmpWaitTime = applyBuffAction(targetFinder.getShieldTargets().get(0), move, waitTime)) == -1) {
 				return;
 			}
+		}
+		if (waitTime > tmpWaitTime) {
+			waitTime = tmpWaitTime;
 		}
 
 		if (fireShootDesc != null && fireShootDesc.getScore() < 40) {
@@ -622,22 +628,30 @@ public class StrategyImplement implements Strategy {
 
 		if (fireShootDesc != null) {
 			if (fireShootDesc.getScore() > 90. || self.getMana() > self.getMaxMana() * .9) {
-				if (applyTargetAction(fireShootDesc,
-									  FastMath.hypot(self, fireShootDesc.getShootPoint()),
-									  move)) {
+				if ((tmpWaitTime = applyTargetAction(fireShootDesc,
+													 FastMath.hypot(self, fireShootDesc.getShootPoint()),
+													 move, waitTime)) == -1) {
 					return;
 				}
 			}
 		}
 
+		if (waitTime > tmpWaitTime) {
+			waitTime = tmpWaitTime;
+		}
+
 		if (iceShootDesc != null) {
 			if (iceShootDesc.getWizardsDamage() > 0 || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
-				if (applyTargetAction(iceShootDesc,
-									  FastMath.hypot(self, iceShootDesc.getShootPoint()) - Constants.getGame().getWizardRadius(),
-									  move)) {
+				if ((tmpWaitTime = applyTargetAction(iceShootDesc,
+													 FastMath.hypot(self, iceShootDesc.getShootPoint()) - Constants.getGame().getWizardRadius(),
+													 move, waitTime)) == -1) {
 					return;
 				}
 			}
+		}
+
+		if (waitTime > tmpWaitTime) {
+			waitTime = tmpWaitTime;
 		}
 
 		if (staffHitDesc != null && staffHitDesc.getTicksToGo() < 1 &&
@@ -645,9 +659,13 @@ public class StrategyImplement implements Strategy {
 						staffHitDesc.getMinionsKills() > 0 ||
 						staffHitDesc.getMinionsDamage() >= missileShootDesc.getMinionsDamage() ||
 						self.getMana() < self.getMaxMana() * .9)) {
-			if (applyMeleeAction(staffHitDesc.getTarget(), move)) {
+			if ((tmpWaitTime = applyMeleeAction(staffHitDesc.getTarget(), move, waitTime)) == -1) {
 				return;
 			}
+		}
+
+		if (waitTime > tmpWaitTime) {
+			waitTime = tmpWaitTime;
 		}
 
 		if (missileShootDesc != null &&
@@ -665,19 +683,26 @@ public class StrategyImplement implements Strategy {
 							missileShootDesc.getTarget().getRadius();
 				}
 			}
-			if (applyTargetAction(missileShootDesc, minCastDistance, move)) {
+			if ((tmpWaitTime = applyTargetAction(missileShootDesc, minCastDistance, move, waitTime)) == -1) {
 				return;
 			}
+		}
+
+		if (waitTime > tmpWaitTime) {
+			waitTime = tmpWaitTime;
 		}
 
 		if (staffHitDesc != null) {
-			if (applyMeleeAction(staffHitDesc.getTarget(), move)) {
+			if ((tmpWaitTime = applyMeleeAction(staffHitDesc.getTarget(), move, waitTime)) == -1) {
 				return;
 			}
 		}
+		if (waitTime > tmpWaitTime) {
+			waitTime = tmpWaitTime;
+		}
 	}
 
-	private boolean applyMeleeAction(CircularUnit target, Move move) {
+	private int applyMeleeAction(CircularUnit target, Move move, int bestWaitTime) {
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 		double maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor();
 		int turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
@@ -688,17 +713,21 @@ public class StrategyImplement implements Strategy {
 			turnTicksCount = getTurnCount(turnAngle, maxTurnAngle);
 		}
 
-		if (waitTimeForAction(ActionType.STAFF) <= turnTicksCount + 2) {
+		int waitTime = waitTimeForAction(ActionType.STAFF);
+		if (bestWaitTime < waitTime) {
+			return bestWaitTime;
+		}
+
+		if (waitTime <= turnTicksCount + 2) {
 			if (checkHit(turnAngle, target, move)) {
-				return true;
+				return -1;
 			}
 			turnTo(turnAngle, move);
-			return true;
 		}
-		return false;
+		return waitTime;
 	}
 
-	private boolean applyTargetAction(TargetFinder.ShootDescription shootDescription, double minCastRange, Move move) {
+	private int applyTargetAction(TargetFinder.ShootDescription shootDescription, double minCastRange, Move move, int bestWaitTime) {
 		Point target = shootDescription.getShootPoint();
 		ActionType actionType = shootDescription.getActionType();
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
@@ -713,6 +742,9 @@ public class StrategyImplement implements Strategy {
 		}
 
 		int waitTime = waitTimeForAction(actionType);
+		if (bestWaitTime <= waitTime) {
+			return bestWaitTime;
+		}
 
 		if (waitTime <= shootDescription.getTicksToGo() &&
 				shootDescription.getTicksToGo() > 0) {
@@ -721,22 +753,21 @@ public class StrategyImplement implements Strategy {
 			move.setStrafeSpeed(accAndSpeedByAngle.getStrafe());
 			currentAction.setActionType(CurrentAction.ActionType.PURSUIT);
 			turnTo(turnAngle, move);
-			return true;
+			return -1;
 		}
 
 		if (waitTime <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
 			if (checkShot(turnAngle, minCastRange, move, actionType)) {
-				return true;
+				return -1;
 			}
 			// если не можем попасть - доворачиваем на цель
 			turnTo(turnAngle, move);
-			return true;
 		}
-		return false;
+		return waitTime;
 	}
 
-	private boolean applyBuffAction(TargetFinder.ShootDescription shootDescription, Move move) {
+	private int applyBuffAction(TargetFinder.ShootDescription shootDescription, Move move, int bestWaitTime) {
 		Wizard target = (Wizard) shootDescription.getTarget();
 		double turnAngle = self.getAngleTo(target.getX(), target.getY());
 		if (target.isMe()) {
@@ -753,17 +784,19 @@ public class StrategyImplement implements Strategy {
 		}
 
 		int waitTime = waitTimeForAction(shootDescription.getActionType());
+		if (bestWaitTime <= waitTime) {
+			return bestWaitTime;
+		}
 
 		if (waitTime <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
 			if (checkCast(target, turnAngle, move, shootDescription.getActionType())) {
-				return true;
+				return -1;
 			}
 			// если не можем попасть - доворачиваем на цель
 			turnTo(turnAngle, move);
-			return true;
 		}
-		return false;
+		return waitTime;
 	}
 
 	private int waitTimeForAction(ActionType actionType) {

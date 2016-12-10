@@ -648,7 +648,7 @@ public class TargetFinder {
 		}
 	}
 
-	private final static int EVASION_CHECK_COUNT = 18;
+	private final static int EVASION_CHECK_COUNT = 36;
 	private final static int EVASION_CHECK_ANGLE_STEP = 360 / EVASION_CHECK_COUNT;
 
 	private int checkEnemyWizardEvasion(Wizard wizard,
