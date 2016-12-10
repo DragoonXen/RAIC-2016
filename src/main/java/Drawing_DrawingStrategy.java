@@ -370,6 +370,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 			}
 		}
 
+		drawTargets();
+
 		for (ScanMatrixItem scanMatrixItem : foundScanMatrixItems.values()) {
 			drawCross(scanMatrixItem, 5., Color.MAGENTA);
 		}
@@ -496,6 +498,85 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		for (BaseLine baseLine : Constants.getLines()) {
 			drawCross(baseLine.getPreFightPoint(), 50., Color.BLACK);
 		}
+	}
+
+	private void drawTargets() {
+		List<TargetFinder.ShootDescription> targets = targetFinder.getMissileTargets();
+		TargetFinder.ShootDescription missileShootDesc = selectTarget(targets);
+
+		targets = targetFinder.getIceTargets();
+		TargetFinder.ShootDescription iceShootDesc = selectTarget(targets);
+
+		targets = targetFinder.getFireTargets();
+		TargetFinder.ShootDescription fireShootDesc = null;
+		if (!targets.isEmpty()) {
+			fireShootDesc = targets.get(targets.size() - 1);
+		}
+		targets = targetFinder.getStaffTargets();
+		TargetFinder.ShootDescription staffHitDesc = null;
+		if (!targets.isEmpty()) {
+			int i = 0;
+			staffHitDesc = targets.get(i++);
+			while (i < targets.size() && staffHitDesc.getWizardsDamage() == 0) {
+				staffHitDesc = targets.get(i++);
+			}
+		}
+
+		TargetFinder.ShootDescription hasteTarget = null;
+		if (!targetFinder.getHasteTargets().isEmpty() && Constants.getGame().getHasteManacost() <= self.getMana()) {
+			hasteTarget = targetFinder.getHasteTargets().get(0);
+		}
+
+		TargetFinder.ShootDescription shieldTarget = null;
+		if (!targetFinder.getShieldTargets().isEmpty() && Constants.getGame().getShieldManacost() <= self.getMana()) {
+			shieldTarget = targetFinder.getShieldTargets().get(0);
+		}
+
+		if (missileShootDesc != null) {
+			Point point = missileShootDesc.getShootPoint();
+			if (point == null) {
+				point = new Point(missileShootDesc.getTarget().getX(), missileShootDesc.getTarget().getY());
+			}
+			drawCross(point, 20., Color.MAGENTA);
+		}
+		if (staffHitDesc != null) {
+			Point point = staffHitDesc.getShootPoint();
+			if (point == null) {
+				point = new Point(staffHitDesc.getTarget().getX(), staffHitDesc.getTarget().getY());
+			}
+			drawCross(point, 20., Color.BLACK);
+		}
+		if (iceShootDesc != null) {
+			Point point = iceShootDesc.getShootPoint();
+			if (point == null) {
+				point = new Point(iceShootDesc.getTarget().getX(), iceShootDesc.getTarget().getY());
+			}
+			drawCross(point, 20., Color.BLUE);
+		}
+		if (fireShootDesc != null) {
+			Point point = fireShootDesc.getShootPoint();
+			if (point == null) {
+				point = new Point(fireShootDesc.getTarget().getX(), fireShootDesc.getTarget().getY());
+			}
+			drawCross(point, 20., Color.ORANGE);
+		}
+
+		if (hasteTarget != null) {
+			CircularUnit target = hasteTarget.getTarget();
+			drawPanel.addFigure(new Drawing_Circle(target.getX(),
+												   target.getY(),
+												   target.getRadius() + 2.,
+												   Color.MAGENTA));
+		}
+
+		if (shieldTarget != null) {
+			CircularUnit target = shieldTarget.getTarget();
+			drawPanel.addFigure(new Drawing_Circle(target.getX(),
+												   target.getY(),
+												   target.getRadius() + 2.,
+												   Color.BLUE));
+		}
+
 	}
 
 	private void drawLine(Point pointA, Point pointB, Color color) {

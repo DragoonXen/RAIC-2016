@@ -109,39 +109,11 @@ public class TargetFinder {
 										   Constants.TREES_DISTANCE_TO_CUT) >= Constants.TREES_COUNT_TO_CUT || // too much trees around
 				Utils.unitsCountCloseToDestination(filteredWorld.getAllBlocksList(), pointToReach) >= 2 && // can't go throught obstacles
 						Utils.unitsCountCloseToDestination(filteredWorld.getTrees(), pointToReach) > 0;
-		double distanceToTarget;
 		double score;
 		double direction;
 
 		if (treeCut) {
-			for (Tree tree : filteredWorld.getTrees()) {
-
-				// distance to destination
-				// distance to me
-				score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(tree, pointToReach);
-				distanceToTarget = FastMath.hypot(self, tree);
-				score += Constants.CUT_SELF_DISTANCE_PRIORITY / distanceToTarget;
-
-				score *= (tree.getRadius() + self.getRadius()) * .02;
-				direction = tree.getAngleTo(self);
-				Point backShootPoint = new Point(tree.getX() + Math.cos(direction) * tree.getRadius(),
-												 tree.getY() + Math.sin(direction) * tree.getRadius());
-				missileTargets.add(new ShootDescription(backShootPoint,
-														ActionType.MAGIC_MISSILE,
-														score / Utils.getHitsToKill(tree.getLife(), missileDamage) -
-																Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
-														tree));
-
-				if (distanceToTarget < Constants.getGame().getStaffRange() + tree.getRadius() + 50) {
-					distanceToTarget -= Constants.getGame().getStaffRange() + tree.getRadius();
-					staffTargets.add(new ShootDescription(backShootPoint,
-														  ActionType.STAFF,
-														  score / Utils.getHitsToKill(tree.getLife(), staffDamage) -
-																  Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
-														  tree,
-														  distanceToTarget));
-				}
-			}
+			addTreesAsTargets(filteredWorld, pointToReach, missileDamage, staffDamage);
 		}
 
 		for (Minion minion : filteredWorld.getMinions()) {
@@ -380,15 +352,65 @@ public class TargetFinder {
 			}
 		}
 
-		Collections.sort(staffTargets);
 		Collections.sort(missileTargets);
 		Collections.sort(iceTargets);
 		Collections.sort(hasteTargets);
 		Collections.sort(shieldTargets);
 
+		boolean hasTargets = hasTargets();
+
 		missileTargets = filterTargets(missileTargets);
 		iceTargets = filterTargets(iceTargets);
 		fireTargets = filterTargets(fireTargets);
+
+		// not cut trees, but have targets, no one reached from trees
+		if (!treeCut && hasTargets && !hasTargets()) {
+			addTreesAsTargets(filteredWorld, pointToReach, missileDamage, staffDamage);
+			Collections.sort(missileTargets);
+			missileTargets = filterTargets(missileTargets);
+		}
+		Collections.sort(staffTargets);
+		staffTargets = filterStaffTargets(staffTargets);
+	}
+
+	private boolean hasTargets() {
+		return !missileTargets.isEmpty() ||
+				!iceTargets.isEmpty() ||
+				!fireTargets.isEmpty();
+	}
+
+	private void addTreesAsTargets(FilteredWorld filteredWorld, Point pointToReach, int missileDamage, int staffDamage) {
+		double score;
+		double distanceToTarget;
+		double direction;
+		for (Tree tree : filteredWorld.getTrees()) {
+
+			// distance to destination
+			// distance to me
+			score = Constants.CUT_REACH_POINT_DISTANCE_PTIORITY / FastMath.hypot(tree, pointToReach);
+			distanceToTarget = FastMath.hypot(self, tree);
+			score += Constants.CUT_SELF_DISTANCE_PRIORITY / distanceToTarget;
+
+			score *= (tree.getRadius() + self.getRadius()) * .02;
+			direction = Utils.normalizeAngle(tree.getAngleTo(self) + tree.getAngle());
+			Point backShootPoint = new Point(tree.getX() + Math.cos(direction) * tree.getRadius(),
+											 tree.getY() + Math.sin(direction) * tree.getRadius());
+			missileTargets.add(new ShootDescription(backShootPoint,
+													ActionType.MAGIC_MISSILE,
+													score / Utils.getHitsToKill(tree.getLife(), missileDamage) -
+															Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
+													tree));
+
+			if (distanceToTarget < Constants.getGame().getStaffRange() + tree.getRadius() + 50) {
+				distanceToTarget -= Constants.getGame().getStaffRange() + tree.getRadius();
+				staffTargets.add(new ShootDescription(backShootPoint,
+													  ActionType.STAFF,
+													  score / Utils.getHitsToKill(tree.getLife(), staffDamage) -
+															  Constants.CUT_REACH_POINT_DISTANCE_PTIORITY,
+													  tree,
+													  distanceToTarget));
+			}
+		}
 	}
 
 	private final static int angleCheck = 20;
@@ -583,6 +605,19 @@ public class TargetFinder {
 				}
 				lastAdded = shootDescription;
 			}
+		}
+		return filtered;
+	}
+
+	private List<ShootDescription> filterStaffTargets(List<ShootDescription> shootDescriptions) {
+		List<ShootDescription> filtered = new ArrayList<>();
+		ShootDescription lastAdded = null;
+		for (ShootDescription shootDescription : shootDescriptions) {
+			if (lastAdded != null && lastAdded.getTicksToGo() <= shootDescription.getTicksToGo()) {
+				continue;
+			}
+			lastAdded = shootDescription;
+			filtered.add(shootDescription);
 		}
 		return filtered;
 	}

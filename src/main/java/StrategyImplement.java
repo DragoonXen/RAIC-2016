@@ -553,7 +553,7 @@ public class StrategyImplement implements Strategy {
 		return score;
 	}
 
-	private TargetFinder.ShootDescription selectTarget(List<TargetFinder.ShootDescription> targets) {
+	protected TargetFinder.ShootDescription selectTarget(List<TargetFinder.ShootDescription> targets) {
 		if (targets.isEmpty()) {
 			return null;
 		}
@@ -715,7 +715,7 @@ public class StrategyImplement implements Strategy {
 		}
 
 		int waitTime = waitTimeForAction(ActionType.STAFF);
-		if (bestWaitTime < waitTime) {
+		if (bestWaitTime <= waitTime) {
 			return bestWaitTime;
 		}
 
@@ -724,6 +724,7 @@ public class StrategyImplement implements Strategy {
 				return -1;
 			}
 			turnTo(turnAngle, move);
+			return -1;
 		}
 		return waitTime;
 	}
@@ -764,6 +765,7 @@ public class StrategyImplement implements Strategy {
 			}
 			// если не можем попасть - доворачиваем на цель
 			turnTo(turnAngle, move);
+			return -1;
 		}
 		return waitTime;
 	}
@@ -796,6 +798,7 @@ public class StrategyImplement implements Strategy {
 			}
 			// если не можем попасть - доворачиваем на цель
 			turnTo(turnAngle, move);
+			return -1;
 		}
 		return waitTime;
 	}
