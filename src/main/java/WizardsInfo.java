@@ -154,7 +154,8 @@ public class WizardsInfo {
 						  int[] aurasCount,
 						  int[] otherAurasCount,
 						  double castRange,
-						  int[] actionCooldown) {
+						  int[] actionCooldown,
+						  int lineNo) {
 			this.hastened = hastened;
 			this.shielded = shielded;
 			this.frozen = frozen;
@@ -179,6 +180,7 @@ public class WizardsInfo {
 			this.otherAurasCount = Arrays.copyOf(otherAurasCount, otherAurasCount.length);
 			this.castRange = castRange;
 			this.actionCooldown = Arrays.copyOf(actionCooldown, actionCooldown.length);
+			this.lineNo = lineNo;
 		}
 
 		public void finalCalculation(Wizard wizard) {
@@ -513,7 +515,8 @@ public class WizardsInfo {
 					aurasCount,
 					otherAurasCount,
 					castRange,
-					actionCooldown);
+					actionCooldown,
+					lineNo);
 		}
 	}
 }

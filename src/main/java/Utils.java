@@ -614,7 +614,7 @@ public class Utils {
 		return 2500 - (tickNo - 1) % 2500;
 	}
 
-	private static int score[] = new int[3];
+	private static double score[] = new double[3];
 
 	public static BaseLine fightLineSelect(BaseLine previousLine, World world, EnemyPositionCalc enemyPositionCalc, Wizard self) {
 		for (int i = 0; i != 3; ++i) {
