@@ -63,7 +63,7 @@ public class MiddleLine extends BaseLine {
 		}
 
 		for (WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
-			if (Variables.wizardsInfo.getWizardInfo(wizardPhantom.getId()).getLineNo() != 1) {
+			if (wizardPhantom.getLastSeenTick() == 0 || Variables.wizardsInfo.getWizardInfo(wizardPhantom.getId()).getLineNo() != 1) {
 				continue;
 			}
 			double tmp = FastMath.hypot(wizardPhantom.getPosition().getX(), 4000 - wizardPhantom.getPosition().getY());

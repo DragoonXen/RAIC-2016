@@ -97,7 +97,7 @@ public class BottomLine extends BaseLine {
 			}
 		}
 		for (WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
-			if (Variables.wizardsInfo.getWizardInfo(wizardPhantom.getId()).getLineNo() != 2) {
+			if (wizardPhantom.getLastSeenTick() == 0 || Variables.wizardsInfo.getWizardInfo(wizardPhantom.getId()).getLineNo() != 2) {
 				continue;
 			}
 			double tmp = FastMath.hypot(wizardPhantom.getPosition().getX(), 4000 - wizardPhantom.getPosition().getY());
