@@ -626,8 +626,13 @@ public class Utils {
 			}
 		}
 
+		WizardsInfo wizardsInfo = Variables.wizardsInfo;
+
 		for (WizardPhantom wizard : enemyPositionCalc.getDetectedWizards().values()) {
-			int line = Variables.wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
+			if (wizard.getLastSeenTick() == 0) {
+				continue;
+			}
+			int line = wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
 			score[line] += Constants.enemyWizardLineScore;
 		}
 
@@ -635,7 +640,7 @@ public class Utils {
 			if (wizard.isMe() || wizard.getFaction() == Constants.getEnemyFaction()) {
 				continue;
 			}
-			int line = Variables.wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
+			int line = wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				score[line] *= Constants.wizardLineMult;
 			}
