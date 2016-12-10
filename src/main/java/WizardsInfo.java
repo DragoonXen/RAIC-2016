@@ -98,6 +98,11 @@ public class WizardsInfo {
 		private double turnFactor;
 		private double castRange;
 
+		private double manaRegenerationCounter;
+		private int lastSeenMana;
+		private int lastSeenTick;
+		private double manaRegeneration;
+
 		private int absorbMagicBonus;
 		private int staffDamage;
 		private int staffDamageBonus;
@@ -155,7 +160,10 @@ public class WizardsInfo {
 						  int[] otherAurasCount,
 						  double castRange,
 						  int[] actionCooldown,
-						  int lineNo) {
+						  int lineNo,
+						  double manaRegenerationCounter,
+						  int lastSeenMana,
+						  int lastSeenTick) {
 			this.hastened = hastened;
 			this.shielded = shielded;
 			this.frozen = frozen;
@@ -181,6 +189,9 @@ public class WizardsInfo {
 			this.castRange = castRange;
 			this.actionCooldown = Arrays.copyOf(actionCooldown, actionCooldown.length);
 			this.lineNo = lineNo;
+			this.manaRegenerationCounter = manaRegenerationCounter;
+			this.lastSeenMana = lastSeenMana;
+			this.lastSeenTick = lastSeenTick;
 		}
 
 		public void finalCalculation(Wizard wizard) {
@@ -245,34 +256,70 @@ public class WizardsInfo {
 
 			castRange = wizard.getCastRange();
 
-			double manaRegeneration = Constants.getGame().getWizardBaseManaRegeneration()
-					+ Constants.getGame().getWizardManaGrowthPerLevel() * wizard.getLevel();
+			manaRegeneration = Constants.getGame().getWizardBaseManaRegeneration()
+					+ Constants.getGame().getWizardManaRegenerationGrowthPerLevel() * wizard.getLevel();
+			if (Variables.world.getTickCount() == this.lastSeenTick + 1) {
+				this.manaRegenerationCounter += manaRegeneration;
+				if (this.manaRegenerationCounter >= 1.) {
+					if ((this.lastSeenMana % 2) == (wizard.getMana() % 2)) {
+						this.manaRegenerationCounter = 1. - Constants.getGame().getWizardManaRegenerationGrowthPerLevel();
+					} else {
+						this.manaRegenerationCounter -= 1.;
+					}
+				}
+			} else {
+				this.manaRegenerationCounter = 1. - Constants.getGame().getWizardManaRegenerationGrowthPerLevel();
+			}
+			this.lastSeenTick = Variables.world.getTickCount();
+			this.lastSeenMana = wizard.getMana();
+
 			this.actionCooldown[1] = Math.max(wizard.getRemainingActionCooldownTicks(),
 											  wizard.getRemainingCooldownTicksByAction()[ActionType.STAFF.ordinal()]);
 			this.actionCooldown[2] = Math.max(wizard.getRemainingActionCooldownTicks(),
 											  wizard.getRemainingCooldownTicksByAction()[ActionType.MAGIC_MISSILE.ordinal()]);
-			updateActionCooldownWithManacost(2, Constants.getGame().getMagicMissileManacost(), wizard.getMana(), manaRegeneration);
+			updateActionCooldownWithManacost(2, Constants.getGame().getMagicMissileManacost());
 			this.actionCooldown[3] = Math.max(wizard.getRemainingActionCooldownTicks(),
 											  wizard.getRemainingCooldownTicksByAction()[ActionType.FROST_BOLT.ordinal()]);
-			updateActionCooldownWithManacost(3, Constants.getGame().getFrostBoltManacost(), wizard.getMana(), manaRegeneration);
+			updateActionCooldownWithManacost(3, Constants.getGame().getFrostBoltManacost());
 			this.actionCooldown[4] = Math.max(wizard.getRemainingActionCooldownTicks(),
 											  wizard.getRemainingCooldownTicksByAction()[ActionType.FIREBALL.ordinal()]);
-			updateActionCooldownWithManacost(4, Constants.getGame().getFireballManacost(), wizard.getMana(), manaRegeneration);
+			updateActionCooldownWithManacost(4, Constants.getGame().getFireballManacost());
 			this.actionCooldown[5] = Math.max(wizard.getRemainingActionCooldownTicks(),
 											  wizard.getRemainingCooldownTicksByAction()[ActionType.HASTE.ordinal()]);
-			updateActionCooldownWithManacost(5, Constants.getGame().getHasteManacost(), wizard.getMana(), manaRegeneration);
+			updateActionCooldownWithManacost(5, Constants.getGame().getHasteManacost());
 			this.actionCooldown[6] = Math.max(wizard.getRemainingActionCooldownTicks(),
 											  wizard.getRemainingCooldownTicksByAction()[ActionType.SHIELD.ordinal()]);
-			updateActionCooldownWithManacost(6, Constants.getGame().getShieldManacost(), wizard.getMana(), manaRegeneration);
+			updateActionCooldownWithManacost(6, Constants.getGame().getShieldManacost());
 
 			this.lineNo = Utils.whichLine(wizard);
 		}
 
-		private void updateActionCooldownWithManacost(int nom, int manaCost, int currentMana, double manaRegeneration) {
-			int remainMana = manaCost - currentMana;
-			if (remainMana > 0) {
-				this.actionCooldown[nom] = Math.max(actionCooldown[nom], (int) Math.floor((remainMana - 1) / manaRegeneration + .9999));
+		public int getTicksToManaRestore(ActionType actionType) {
+			switch (actionType) {
+				case MAGIC_MISSILE:
+					return getTicksToManaRestore(Constants.getGame().getMagicMissileManacost());
+				case FROST_BOLT:
+					return getTicksToManaRestore(Constants.getGame().getFrostBoltManacost());
+				case FIREBALL:
+					return getTicksToManaRestore(Constants.getGame().getFireballManacost());
+				case HASTE:
+					return getTicksToManaRestore(Constants.getGame().getHasteManacost());
+				case SHIELD:
+					return getTicksToManaRestore(Constants.getGame().getShieldManacost());
 			}
+			return 0;
+		}
+
+		public int getTicksToManaRestore(int amount) {
+			if (this.lastSeenMana >= amount) {
+				return 0;
+			}
+			int val = amount - this.lastSeenMana;
+			return (int) Math.floor((val - this.manaRegenerationCounter) / this.manaRegeneration + .99);
+		}
+
+		private void updateActionCooldownWithManacost(int nom, int manaCost) {
+			this.actionCooldown[nom] = Math.max(actionCooldown[nom], getTicksToManaRestore(manaCost));
 		}
 
 		public void updateAuras(WizardInfo other) {
@@ -516,7 +563,10 @@ public class WizardsInfo {
 					otherAurasCount,
 					castRange,
 					actionCooldown,
-					lineNo);
+					lineNo,
+					manaRegenerationCounter,
+					lastSeenMana,
+					lastSeenTick);
 		}
 	}
 }

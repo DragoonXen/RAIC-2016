@@ -75,6 +75,7 @@ public class StrategyImplement implements Strategy {
 
 	protected int stuck;
 	protected Point prevPoint = new Point();
+	protected boolean manaFree = false;
 
 	public StrategyImplement(Wizard self) {
 		myLineCalc = Constants.getLine(Utils.getDefaultMyLine((int) self.getId()));
@@ -82,6 +83,7 @@ public class StrategyImplement implements Strategy {
 	}
 
 	public void move(Wizard self, World world, Game game, Move move) {
+		Variables.world = world;
 		agressiveNeutralsCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
 		wizardsInfo.updateData(world, enemyPositionCalc);
@@ -91,6 +93,7 @@ public class StrategyImplement implements Strategy {
 		fightStatus = FightStatus.NO_ENEMY;
 		treeCut = false;
 		moveToPoint = null;
+		manaFree = true;
 		prevPointToReach = pointToReach == null ? prevPointToReach : pointToReach.clonePoint();
 		pointToReach = null;
 		minAngle = 0.;
@@ -108,7 +111,6 @@ public class StrategyImplement implements Strategy {
 		Variables.prevActionType = currentAction.getActionType();
 
 		Variables.self = self;
-		Variables.world = world;
 		this.world = world;
 		this.self = self;
 		SpawnPoint.updateTick(world.getTickIndex());
@@ -608,15 +610,12 @@ public class StrategyImplement implements Strategy {
 		int tmpWaitTime = 900;
 
 		if (!targetFinder.getHasteTargets().isEmpty()) {
-			if (Constants.getGame().getHasteManacost() > self.getMana()) { // wait until mana restored
-				return;
-			}
 			if ((waitTime = applyBuffAction(targetFinder.getHasteTargets().get(0), move, waitTime)) == -1) {
 				return;
 			}
 		}
 
-		if (!targetFinder.getShieldTargets().isEmpty()) {
+		if (manaFree && !targetFinder.getShieldTargets().isEmpty()) {
 			if (Constants.getGame().getShieldManacost() > self.getMana()) { // wait until mana restored
 				return;
 			}
@@ -632,7 +631,7 @@ public class StrategyImplement implements Strategy {
 			fireShootDesc = null;
 		}
 
-		if (fireShootDesc != null) {
+		if (fireShootDesc != null && (manaFree || fireShootDesc.getWizardsDamage() != 0)) {
 			if (fireShootDesc.getScore() > 90. || self.getMana() > self.getMaxMana() * .9) {
 				if ((tmpWaitTime = applyTargetAction(fireShootDesc,
 													 FastMath.hypot(self, fireShootDesc.getShootPoint()),
@@ -646,7 +645,7 @@ public class StrategyImplement implements Strategy {
 			waitTime = tmpWaitTime;
 		}
 
-		if (iceShootDesc != null) {
+		if (iceShootDesc != null && (manaFree || iceShootDesc.getWizardsDamage() != 0)) {
 			if (iceShootDesc.getWizardsDamage() > 0 || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
 				if ((tmpWaitTime = applyTargetAction(iceShootDesc,
 													 FastMath.hypot(self, iceShootDesc.getShootPoint()) - Constants.getGame().getWizardRadius(),
@@ -675,7 +674,7 @@ public class StrategyImplement implements Strategy {
 			waitTime = tmpWaitTime;
 		}
 
-		if (missileShootDesc != null &&
+		if (missileShootDesc != null && (manaFree || missileShootDesc.getWizardsDamage() != 0) &&
 				(missileShootDesc.getMinionsDamage() == 0 ||
 						fireShootDesc == null ||
 						fireShootDesc.getScore() < 70. ||
@@ -726,7 +725,7 @@ public class StrategyImplement implements Strategy {
 		}
 
 		if (waitTime <= turnTicksCount + 2) {
-			if (checkHit(turnAngle, target, move)) {
+			if (waitTime == 0 && checkHit(turnAngle, target, move)) {
 				return -1;
 			}
 			turnTo(turnAngle, move);
@@ -754,6 +753,12 @@ public class StrategyImplement implements Strategy {
 			return bestWaitTime;
 		}
 
+		int manaRestoreTicks = wizardsInfo.getMe().getTicksToManaRestore(shootDescription.getActionType());
+		if (waitTime < manaRestoreTicks) {
+			this.manaFree = false;
+			waitTime = manaRestoreTicks;
+		}
+
 		if (waitTime <= shootDescription.getTicksToGo() &&
 				shootDescription.getTicksToGo() > 0) {
 			AccAndSpeedWithFix accAndSpeedByAngle = AccAndSpeedWithFix.getAccAndSpeedByAngle(self.getAngleTo(target.getX(), target.getY()), 100.);
@@ -766,7 +771,7 @@ public class StrategyImplement implements Strategy {
 
 		if (waitTime <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
-			if (checkShot(turnAngle, minCastRange, move, actionType)) {
+			if (waitTime == 0 && checkShot(turnAngle, minCastRange, move, actionType)) {
 				return -1;
 			}
 			// если не можем попасть - доворачиваем на цель
@@ -793,13 +798,18 @@ public class StrategyImplement implements Strategy {
 		}
 
 		int waitTime = waitTimeForAction(shootDescription.getActionType());
+		int manaRestoreTicks = wizardsInfo.getMe().getTicksToManaRestore(shootDescription.getActionType());
+		if (waitTime < manaRestoreTicks) {
+			this.manaFree = false;
+			waitTime = manaRestoreTicks;
+		}
 		if (bestWaitTime <= waitTime) {
 			return bestWaitTime;
 		}
 
 		if (waitTime <= turnTicksCount + 2) {
 			// если уже можем попасть - атакуем и бежим дальше
-			if (checkCast(target, turnAngle, move, shootDescription.getActionType())) {
+			if (waitTime == 0 && checkCast(target, turnAngle, move, shootDescription.getActionType())) {
 				return -1;
 			}
 			// если не можем попасть - доворачиваем на цель
@@ -817,8 +827,7 @@ public class StrategyImplement implements Strategy {
 		if (Math.abs(angle) > Constants.getStaffHitSector()) {
 			return false;
 		}
-		if (FastMath.hypot(self.getX() - target.getX(), self.getY() - target.getY()) < target.getRadius() + Constants.getGame().getStaffRange()
-				&& waitTimeForAction(ActionType.STAFF) == 0) {
+		if (FastMath.hypot(self.getX() - target.getX(), self.getY() - target.getY()) < target.getRadius() + Constants.getGame().getStaffRange()) {
 			move.setAction(ActionType.STAFF);
 			return true;
 		}
