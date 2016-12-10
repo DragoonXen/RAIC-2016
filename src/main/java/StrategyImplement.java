@@ -657,7 +657,8 @@ public class StrategyImplement implements Strategy {
 		if (staffHitDesc != null && staffHitDesc.getTicksToGo() < 1 &&
 				(missileShootDesc == null ||
 						staffHitDesc.getMinionsKills() > 0 ||
-						staffHitDesc.getMinionsDamage() >= missileShootDesc.getMinionsDamage() ||
+						staffHitDesc.getTotalDamage() >= missileShootDesc.getTotalDamage() ||
+						staffHitDesc.getScore() >= missileShootDesc.getScore() ||
 						self.getMana() < self.getMaxMana() * .9)) {
 			if ((tmpWaitTime = applyMeleeAction(staffHitDesc.getTarget(), move, waitTime)) == -1) {
 				return;

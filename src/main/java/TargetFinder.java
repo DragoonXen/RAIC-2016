@@ -963,6 +963,10 @@ public class TargetFinder {
 			return buildingDamage;
 		}
 
+		public int getTotalDamage() {
+			return minionsDamage + wizardsDamage + buildingDamage;
+		}
+
 		public int getMinionsKills() {
 			return minionsKills;
 		}
