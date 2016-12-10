@@ -400,7 +400,7 @@ public class StrategyImplement implements Strategy {
 			currDangerOnWay = 0.;
 			position = new Point(self.getX(), self.getY());
 			Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
-			moveAngle = Utils.normalizeAngle(self.getAngle() + i * Constants.EVADE_DEGREE_STEP);
+			moveAngle = Utils.normalizeAngle(i * Constants.EVADE_DEGREE_STEP);
 			currHastenedTicks = hastenedTicks;
 			moveVector = new Point(Math.cos(moveAngle) * moveFactor * Constants.getGame().getWizardStrafeSpeed(),
 								   Math.sin(moveAngle) * moveFactor * Constants.getGame().getWizardStrafeSpeed());
@@ -463,7 +463,7 @@ public class StrategyImplement implements Strategy {
 				currDangerOnWay = 0.;
 				position = new Point(self.getX(), self.getY());
 				Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
-				moveAngle = Utils.normalizeAngle(self.getAngle() + i * Constants.EVADE_DEGREE_STEP);
+				moveAngle = Utils.normalizeAngle(i * Constants.EVADE_DEGREE_STEP);
 				curentAngle = Utils.normalizeAngle(self.getAngle());
 				currHastenedTicks = hastenedTicks;
 				currMoveFactor = moveFactor;
