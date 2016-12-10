@@ -607,13 +607,19 @@ public class StrategyImplement implements Strategy {
 		int waitTime = 900;
 		int tmpWaitTime = 900;
 
-		if (!targetFinder.getHasteTargets().isEmpty() && Constants.getGame().getHasteManacost() <= self.getMana()) {
+		if (!targetFinder.getHasteTargets().isEmpty()) {
+			if (Constants.getGame().getHasteManacost() > self.getMana()) { // wait until mana restored
+				return;
+			}
 			if ((waitTime = applyBuffAction(targetFinder.getHasteTargets().get(0), move, waitTime)) == -1) {
 				return;
 			}
 		}
 
-		if (!targetFinder.getShieldTargets().isEmpty() && Constants.getGame().getShieldManacost() <= self.getMana()) {
+		if (!targetFinder.getShieldTargets().isEmpty()) {
+			if (Constants.getGame().getShieldManacost() > self.getMana()) { // wait until mana restored
+				return;
+			}
 			if ((tmpWaitTime = applyBuffAction(targetFinder.getShieldTargets().get(0), move, waitTime)) == -1) {
 				return;
 			}
