@@ -46,18 +46,6 @@ public class Utils {
 		return min;
 	}
 
-	public static int whichLine(Point point) {
-		int min = 0;
-		lineDistance[0] = Constants.getLines()[0].getDistanceTo(point.getX(), point.getY());
-		for (int i = 1; i != Constants.getLines().length; ++i) {
-			lineDistance[i] = Constants.getLines()[i].getDistanceTo(point.getX(), point.getY());
-			if (lineDistance[min] > lineDistance[i]) {
-				min = i;
-			}
-		}
-		return min;
-	}
-
 	public static LaneType getDefaultMyLine(int selfId) {
 		switch (selfId) {
 			case 1:
@@ -639,7 +627,7 @@ public class Utils {
 		}
 
 		for (WizardPhantom wizard : enemyPositionCalc.getDetectedWizards().values()) {
-			int line = Utils.whichLine(wizard);
+			int line = Variables.wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
 			score[line] += Constants.enemyWizardLineScore;
 		}
 
@@ -647,7 +635,7 @@ public class Utils {
 			if (wizard.isMe() || wizard.getFaction() == Constants.getEnemyFaction()) {
 				continue;
 			}
-			int line = Utils.whichLine(wizard);
+			int line = Variables.wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				score[line] *= Constants.wizardLineMult;
 			}

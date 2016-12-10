@@ -62,12 +62,12 @@ public class WizardsInfo {
 		Variables.maxTurnAngle = Constants.getGame().getWizardMaxTurnAngle() * me.getTurnFactor();
 	}
 
-	private void updateWizardsStatuses(List<Wizard> allyWizards) {
-		for (int i = 0; i != allyWizards.size(); ++i) {
-			Wizard first = allyWizards.get(i);
+	private void updateWizardsStatuses(List<Wizard> wizardsTeam) {
+		for (int i = 0; i != wizardsTeam.size(); ++i) {
+			Wizard first = wizardsTeam.get(i);
 			WizardInfo currWizardInfo = wizardInfos[(int) first.getId()];
-			for (int j = i + 1; j < allyWizards.size(); ++j) {
-				Wizard second = allyWizards.get(j);
+			for (int j = i + 1; j < wizardsTeam.size(); ++j) {
+				Wizard second = wizardsTeam.get(j);
 				if (Constants.getGame().getAuraSkillRange() > FastMath.hypot(first, second)) {
 					currWizardInfo.updateAuras(wizardInfos[(int) second.getId()]);
 				}
@@ -89,6 +89,7 @@ public class WizardsInfo {
 	}
 
 	public static class WizardInfo {
+		private int lineNo;
 		private int hastened;
 		private int shielded;
 		private int frozen;
@@ -127,6 +128,7 @@ public class WizardsInfo {
 			otherAurasCount = new int[5];
 			actionCooldown = new int[7];
 			castRange = 500.;
+			lineNo = 1;
 		}
 
 		public WizardInfo(int hastened,
@@ -260,6 +262,8 @@ public class WizardsInfo {
 			this.actionCooldown[6] = Math.max(wizard.getRemainingActionCooldownTicks(),
 											  wizard.getRemainingCooldownTicksByAction()[ActionType.SHIELD.ordinal()]);
 			updateActionCooldownWithManacost(6, Constants.getGame().getShieldManacost(), wizard.getMana(), manaRegeneration);
+
+			this.lineNo = Utils.whichLine(wizard);
 		}
 
 		private void updateActionCooldownWithManacost(int nom, int manaCost, int currentMana, double manaRegeneration) {
@@ -443,6 +447,10 @@ public class WizardsInfo {
 
 		public double getCastRange() {
 			return castRange;
+		}
+
+		public int getLineNo() {
+			return lineNo;
 		}
 
 		public int getStaffDamage(int addTicks) {

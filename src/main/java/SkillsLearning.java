@@ -121,20 +121,21 @@ public class SkillsLearning {
 	public static void updateSkills(Wizard self, EnemyPositionCalc enemyPositionCalc, Wizard[] wizards, Move move) {
 		if (self.getLevel() > self.getSkills().length && self.getLevel() <= currentSkillsToLearn.length) {
 			if (self.getSkills().length == 0 && cntMe == 1) {
+				WizardsInfo wizardsInfo = Variables.wizardsInfo;
 				currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
 				int enemiesOnLine = 0;
-				int myLine = Utils.whichLine(self);
+				int myLine = wizardsInfo.getMe().getLineNo();
 				List<Wizard> allyWizards = new ArrayList<>();
 				for (Wizard wizard : wizards) {
 					if (wizard.getFaction() != Constants.getCurrentFaction()) {
 						continue;
 					}
-					if (!wizard.isMe() && Utils.whichLine(wizard) == myLine) {
+					if (!wizard.isMe() && wizardsInfo.getWizardInfo(wizard.getId()).getLineNo() == myLine) {
 						allyWizards.add(wizard);
 					}
 				}
 				for (WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
-					if (Utils.whichLine(wizardPhantom.getPosition()) == myLine) {
+					if (wizardPhantom.getLastSeenTick() > 0 && wizardsInfo.getWizardInfo(wizardPhantom.getId()).getLineNo() == myLine) {
 						++enemiesOnLine;
 					}
 				}

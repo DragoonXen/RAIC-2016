@@ -76,7 +76,7 @@ public class TopLine extends BaseLine {
 	@Override
 	public void updateFightPoint(World world, EnemyPositionCalc enemyPositionCalc) {
 		double minDistance = 1e6;
-		MinionPhantom closestMinionPhantom = null;
+		Point nearestPoint = null;
 		for (MinionPhantom minionPhantom : enemyPositionCalc.getDetectedMinions().values()) {
 			if (minionPhantom.getLine() != 0) {
 				continue;
@@ -84,11 +84,22 @@ public class TopLine extends BaseLine {
 			double tmp = FastMath.hypot(minionPhantom.getPosition().getX(), 4000 - minionPhantom.getPosition().getY());
 			if (tmp < minDistance) {
 				minDistance = tmp;
-				closestMinionPhantom = minionPhantom;
+				nearestPoint = minionPhantom.getPosition();
 			}
 		}
-		if (closestMinionPhantom != null) {
-			fightPoint.update(getNearestPoint(closestMinionPhantom.getPosition().getX(), closestMinionPhantom.getPosition().getY()));
+
+		for (WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
+			if (Variables.wizardsInfo.getWizardInfo(wizardPhantom.getId()).getLineNo() != 0) {
+				continue;
+			}
+			double tmp = FastMath.hypot(wizardPhantom.getPosition().getX(), 4000 - wizardPhantom.getPosition().getY());
+			if (tmp < minDistance) {
+				minDistance = tmp;
+				nearestPoint = wizardPhantom.getPosition();
+			}
+		}
+		if (nearestPoint != null) {
+			fightPoint.update(getNearestPoint(nearestPoint.getX(), nearestPoint.getY()));
 		}
 	}
 
