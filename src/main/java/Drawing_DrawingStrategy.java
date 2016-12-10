@@ -110,6 +110,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		this.targetFinder = currentDrawingData.getTargetFinder();
 		this.wizardsInfo = currentDrawingData.getWizardsInfo();
 		this.prevPointToReach = currentDrawingData.getPrevPointToReach();
+		this.stuck = currentDrawingData.getStuck();
+		this.prevPoint = currentDrawingData.getPrevPoint();
 
 		return storedData;
 	}
@@ -131,7 +133,9 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   teammateIdsContainer,
 									   wizardsInfo,
 									   targetFinder,
-									   pointToReach);
+									   pointToReach != null ? pointToReach : prevPointToReach,
+									   stuck,
+									   prevPoint);
 	}
 
     @Override

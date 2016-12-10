@@ -30,6 +30,9 @@ public class Drawing_DrawingData {
 	private Point moveToLinePoint;
 	private Point[] linesFightPoints;
 
+	private int stuck;
+	private Point prevPoint;
+
 	public Drawing_DrawingData(Wizard self,
 							   World world,
 							   CurrentAction currentAction,
@@ -46,7 +49,9 @@ public class Drawing_DrawingData {
 							   TeammateIdsContainer teammateIdsContainer,
 							   WizardsInfo wizardsInfo,
 							   TargetFinder targetFinder,
-							   Point prevPointToReach) {
+							   Point prevPointToReach,
+							   int stuck,
+							   Point prevPoint) {
 		this.self = self;
 		this.world = world;
         this.currentAction = currentAction.clone();
@@ -74,6 +79,8 @@ public class Drawing_DrawingData {
 		this.wizardsInfo = wizardsInfo.makeClone();
 		this.targetFinder = targetFinder.makeClone();
 		this.prevPointToReach = prevPointToReach == null ? null : prevPointToReach.clonePoint();
+		this.stuck = stuck;
+		this.prevPoint = prevPoint.clonePoint();
 	}
 
     public Wizard getSelf() {
@@ -140,6 +147,14 @@ public class Drawing_DrawingData {
 		return prevPointToReach;
 	}
 
+	public int getStuck() {
+		return stuck;
+	}
+
+	public Point getPrevPoint() {
+		return prevPoint;
+	}
+
 	public Drawing_DrawingData clone() {
 		return new Drawing_DrawingData(self,
 									   world,
@@ -157,7 +172,9 @@ public class Drawing_DrawingData {
 									   teammateIdsContainer,
 									   wizardsInfo,
 									   targetFinder,
-									   prevPointToReach);
+									   prevPointToReach,
+									   stuck,
+									   prevPoint);
 	}
 
 	public WizardsInfo getWizardsInfo() {

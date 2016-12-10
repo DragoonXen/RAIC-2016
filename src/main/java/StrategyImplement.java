@@ -1316,6 +1316,20 @@ public class StrategyImplement implements Strategy {
 					}
 				}
 			}
+
+			if (danger) {
+				for (Building building : filteredWorld.getBuildings()) {
+					if (building.getFaction() != Constants.getCurrentFaction()) {
+						continue;
+					}
+					double tmpDistance = FastMath.hypot(building, wizard);
+					if (tmpDistance < distanceToMe) {
+						danger = false;
+						break;
+					}
+				}
+			}
+
 			if (danger) {
 				return true;
 			}
