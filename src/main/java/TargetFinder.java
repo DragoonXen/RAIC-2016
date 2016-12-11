@@ -290,8 +290,7 @@ public class TargetFinder {
 				ticks = Math.min(ticks - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
 				if (FastMath.hypot(self, wizard) < self.getCastRange()) {
 					Point wizardPoint = new Point(wizard.getX(), wizard.getY());
-					ShootDescription shootDescription = checkFireballDamage(wizardPoint);
-					fireTargets.add(shootDescription);
+					addFireTarget(checkFireballDamage(wizardPoint));
 				}
 				double checkDistance = wizard.getRadius() +
 						Constants.getGame().getFireballExplosionMaxDamageRange() -
@@ -530,11 +529,33 @@ public class TargetFinder {
 	private Pair<Double, Pair<Integer, Boolean>> checkFirePointsWizard(Wizard wizard, Point where, int ticksToFly) {
 		ticksToFly = Math.min(ticksToFly - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
 		double distance = FastMath.hypot(wizard, where) - wizard.getRadius();
+		WizardsInfo.WizardInfo wizardInfo = Variables.wizardsInfo.getWizardInfo(wizard.getId());
 		if (wizard.getFaction() == Constants.getEnemyFaction()) {
-			// TODO: fix this calculation
-			distance += ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly];
+			int angleToPoint = Math.abs((int) Math.round(wizard.getAngleTo(where.getX(), where.getY()) * 180. / Math.PI));
+			boolean hastened = Variables.wizardsInfo.getWizardInfo(wizard.getId()).getHastened() > 0;
+			double tmpDistance =
+					(hastened ?
+							HastenedEvasionMatrix.HASTENED_EVASION_MATRIX[180 - angleToPoint][ticksToFly] :
+							ShootEvasionMatrix.EVASION_MATRIX[180 - angleToPoint][ticksToFly]) * wizardInfo.getMoveFactor();
+			distance += tmpDistance;
+			// alternate check move forward
+			{
+				tmpDistance = ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * wizardInfo.getMoveFactor();
+				Point newPoint = new Point(wizard.getX() + Math.cos(wizard.getAngle()) * tmpDistance,
+										   wizard.getY() + Math.sin(wizard.getAngle()) * tmpDistance);
+				tmpDistance = FastMath.hypot(newPoint, where) - wizard.getRadius();
+				if (tmpDistance > distance) {
+					distance = tmpDistance;
+				}
+			}
 		} else if (wizard.isMe()) {
-			distance -= ShootEvasionMatrix.EVASION_MATRIX[0][ticksToFly] * Variables.wizardsInfo.getMe().getMoveFactor();
+			int angleToPoint = Math.abs((int) Math.round(wizard.getAngleTo(where.getX(), where.getY()) * 180. / Math.PI));
+			boolean hastened = Variables.wizardsInfo.getWizardInfo(wizard.getId()).getHastened() > 0;
+			double tmpDistance =
+					(hastened ?
+							HastenedEvasionMatrix.HASTENED_EVASION_MATRIX[angleToPoint][ticksToFly] :
+							ShootEvasionMatrix.EVASION_MATRIX[angleToPoint][ticksToFly]) * wizardInfo.getMoveFactor();
+			distance -= tmpDistance;
 		}
 
 		int damage;
@@ -571,7 +592,7 @@ public class TargetFinder {
 	}
 
 	private void addFireTarget(ShootDescription shootDescription) {
-		if (shootDescription != null) {
+		if (shootDescription != null && shootDescription.getScore() > 0) {
 			fireTargets.add(shootDescription);
 		}
 	}
