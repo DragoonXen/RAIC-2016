@@ -80,6 +80,7 @@ public class StrategyImplement implements Strategy {
 	public StrategyImplement(Wizard self) {
 		myLineCalc = Constants.getLine(Utils.getDefaultMyLine((int) self.getId()));
 		lastFightLine = myLineCalc;
+		prevPointToReach = new Point(self.getX(), self.getY());
 	}
 
 	public void move(Wizard self, World world, Game game, Move move) {
