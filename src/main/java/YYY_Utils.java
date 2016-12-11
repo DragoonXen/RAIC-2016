@@ -24,9 +24,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Created by dragoon on 11/9/16.
+ */
 public class YYY_Utils {
+
 	public final static Comparator<YYY_Pair<Double, CircularUnit>> AIM_SORT_COMPARATOR = (o1, o2) -> o2.getFirst().compareTo(o1.getFirst());
 	public final static Comparator<YYY_Pair<Double, YYY_Point>> POINT_AIM_SORT_COMPARATOR = (o1, o2) -> o2.getFirst().compareTo(o1.getFirst());
+
 	private static double[] lineDistance = new double[YYY_Constants.getLines().length];
 
 	public static int whichLine(Unit unit) {
@@ -68,19 +73,21 @@ public class YYY_Utils {
 		}
 		Projectile[] filteredProjectiles = new Projectile[projectiles.size()];
 		projectiles.toArray(filteredProjectiles);
-		return new YYY_FilteredWorld(world.getTickIndex(),
-									 world.getTickCount(),
-									 world.getWidth(),
-									 world.getHeight(),
-									 world.getPlayers(),
-									 removeMe(filterUnit(world.getWizards(), point, YYY_FilteredWorld.FilterType.FIGHT)),
-									 filterUnit(world.getMinions(), point, YYY_FilteredWorld.FilterType.FIGHT),
-									 filterUnit(filteredProjectiles, point, YYY_FilteredWorld.FilterType.FIGHT),
-									 filterUnit(world.getBonuses(), point, YYY_FilteredWorld.FilterType.FIGHT),
-									 filterUnit(buildings, point, YYY_FilteredWorld.FilterType.FIGHT),
-									 filterUnit(world.getTrees(), point, YYY_FilteredWorld.FilterType.MOVE),
-									 filterUnit(world.getTrees(), point, YYY_FilteredWorld.FilterType.AIM_OBSTACLE),
-									 point);
+
+		return new YYY_FilteredWorld(
+				world.getTickIndex(),
+				world.getTickCount(),
+				world.getWidth(),
+				world.getHeight(),
+				world.getPlayers(),
+				removeMe(filterUnit(world.getWizards(), point, YYY_FilteredWorld.FilterType.FIGHT)),
+				filterUnit(world.getMinions(), point, YYY_FilteredWorld.FilterType.FIGHT),
+				filterUnit(filteredProjectiles, point, YYY_FilteredWorld.FilterType.FIGHT),
+				filterUnit(world.getBonuses(), point, YYY_FilteredWorld.FilterType.FIGHT),
+				filterUnit(buildings, point, YYY_FilteredWorld.FilterType.FIGHT),
+				filterUnit(world.getTrees(), point, YYY_FilteredWorld.FilterType.MOVE),
+				filterUnit(world.getTrees(), point, YYY_FilteredWorld.FilterType.AIM_OBSTACLE),
+				point);
 	}
 
 	public static <T extends CircularUnit> List<T> filterUnit(T[] units, YYY_Point point, YYY_FilteredWorld.FilterType filterType) {
@@ -101,6 +108,7 @@ public class YYY_Utils {
 				distance = YYY_Variables.self.getCastRange();
 				break;
 		}
+
 		switch (filterType) {
 			case MOVE:
 				for (T unit : units) {
@@ -152,6 +160,7 @@ public class YYY_Utils {
 	public static YYY_ScanMatrixItem[][] createScanMatrix() {
 		YYY_ScanMatrixItem[][] matrix = new YYY_ScanMatrixItem[(int) Math.round((YYY_Constants.MOVE_FWD_DISTANCE + YYY_Constants.MOVE_BACK_DISTANCE) / YYY_Constants.MOVE_SCAN_STEP + 1.01)]
 				[(int) Math.round((YYY_Constants.MOVE_SIDE_DISTANCE + YYY_Constants.MOVE_SIDE_DISTANCE) / YYY_Constants.MOVE_SCAN_STEP + 1.01)];
+
 		double maxBonus = Math.pow(YYY_FastMath.hypot(-matrix.length - 30, -YYY_Constants.CURRENT_PT_Y), YYY_Constants.FORWARD_MOVE_FROM_DISTANCE_POWER);
 		for (int i = 0; i != matrix.length; ++i) {
 			for (int j = 0; j != matrix[0].length; ++j) {
@@ -161,10 +170,13 @@ public class YYY_Utils {
 																		  YYY_Constants.FORWARD_MOVE_FROM_DISTANCE_POWER));
 			}
 		}
-		int[] di = new int[]{1, 0, 0, -1};
-		int[] dj = new int[]{0, 1, -1, 0};
+
+		int[] di = new int[]{1, 0, 0, -1};//, 1, 1, -1, -1};
+		int[] dj = new int[]{0, 1, -1, 0};//, 1, -1, -1, 1};
+//		double diagonalDistance = Math.sqrt(YYY_Constants.MOVE_SCAN_STEP * YYY_Constants.MOVE_SCAN_STEP);
 		for (int i = 0; i != matrix.length; ++i) {
 			for (int j = 0; j != matrix[0].length; ++j) {
+//				List<Double> neighbourDistances = new ArrayList<>();
 				List<YYY_ScanMatrixItem> neighbour = new ArrayList<>();
 				for (int k = 0; k != 4; ++k) {
 					int nx = i + di[k];
@@ -172,15 +184,24 @@ public class YYY_Utils {
 					if (nx < 0 || nx >= matrix.length || ny < 0 || ny >= matrix[0].length) {
 						continue;
 					}
+//					neighbourDistances.add(YYY_Constants.MOVE_SCAN_STEP);
 					neighbour.add(matrix[nx][ny]);
 				}
+//				double[] distances = new double[neighbourDistances.size()];
+//				for (int k = 0; k != neighbourDistances.size(); ++k) {
+//					distances[k] = neighbourDistances.get(k);
+//				}
+
 				matrix[i][j].setNeighbours(neighbour.toArray(new YYY_ScanMatrixItem[neighbour.size()]));
 			}
 		}
+
 		List<Map.Entry<Double, YYY_ScanMatrixItem>> pointsMap = new ArrayList<>();
 		for (int i = 0; i != matrix.length; ++i) {
 			for (int j = 0; j != matrix[0].length; ++j) {
-				pointsMap.add(new AbstractMap.SimpleEntry<>(YYY_FastMath.hypot(YYY_Constants.CURRENT_PT_X - i, YYY_Constants.CURRENT_PT_Y - j), matrix[i][j]));
+				pointsMap.add(new AbstractMap.SimpleEntry<>(YYY_FastMath.hypot(YYY_Constants.CURRENT_PT_X - i,
+																			   YYY_Constants.CURRENT_PT_Y - j),
+															matrix[i][j]));
 			}
 		}
 		Collections.sort(pointsMap, (o1, o2) -> o1.getKey().compareTo(o2.getKey()));
@@ -188,6 +209,7 @@ public class YYY_Utils {
 			YYY_ScanMatrixItem item = doubleScanMatrixItemEntry.getValue();
 			item.setDistanceFromSelf(doubleScanMatrixItemEntry.getKey());
 		}
+
 		return matrix;
 	}
 
@@ -208,12 +230,15 @@ public class YYY_Utils {
 	public static YYY_Point nearestSegmentPoint(YYY_Point point, YYY_Point segA, YYY_Point segB) {
 		YYY_Point vectorV = segA.negateCopy(segB);
 		YYY_Point vectorW = point.negateCopy(segB);
+
 		double c1 = vectorV.scalarMult(vectorW);
 		if (c1 <= 0)
 			return segB;
+
 		double c2 = vectorV.scalarMult(vectorV);
 		if (c2 <= c1)
 			return segA;
+
 		return segB.addWithCopy(vectorV.mult(c1 / c2));
 	}
 
@@ -221,7 +246,10 @@ public class YYY_Utils {
 
 	public static boolean isAvailableTile(List<CircularUnit> units, double x, double y) {
 		double radius = YYY_Constants.getGame().getWizardRadius();
-		if (x < radius || y < radius || x + radius > YYY_Constants.getGame().getMapSize() || y + radius > YYY_Constants.getGame().getMapSize()) {
+		if (x < radius ||
+				y < radius ||
+				x + radius > YYY_Constants.getGame().getMapSize() ||
+				y + radius > YYY_Constants.getGame().getMapSize()) {
 			return false;
 		}
 		Iterator<CircularUnit> iterator = units.iterator();
@@ -249,7 +277,10 @@ public class YYY_Utils {
 			YYY_ScanMatrixItem item = items[i];
 			x = item.getX();
 			y = item.getY();
-			if (x < radius || y < radius || x + radius > YYY_Constants.getGame().getMapSize() || y + radius > YYY_Constants.getGame().getMapSize()) {
+			if (x < radius ||
+					y < radius ||
+					x + radius > YYY_Constants.getGame().getMapSize() ||
+					y + radius > YYY_Constants.getGame().getMapSize()) {
 				item.setAvailable(false);
 				continue;
 			}
@@ -285,6 +316,7 @@ public class YYY_Utils {
 		if (distanceTo > 0.) {
 			item.addOtherDanger(distanceTo);
 		}
+
 		for (Bonus bonus : filteredWorld.getBonuses()) {
 			if (YYY_FastMath.hypot(self, bonus) > YYY_Constants.getFightDistanceFilter()) {
 				continue;
@@ -292,6 +324,7 @@ public class YYY_Utils {
 			YYY_ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(bonus.getId());
 			structure.applyScores(item, YYY_FastMath.hypot(bonus, item));
 		}
+
 		if (YYY_Utils.getTicksToBonusSpawn(filteredWorld.getTickIndex()) < 250) {
 			for (int i = 0; i != YYY_BonusesPossibilityCalcs.BONUSES_POINTS.length; ++i) {
 				if (YYY_FastMath.hypot(self, YYY_BonusesPossibilityCalcs.BONUSES_POINTS[i]) > YYY_Constants.getFightDistanceFilter()) {
@@ -301,9 +334,11 @@ public class YYY_Utils {
 				structure.applyScores(item, YYY_FastMath.hypot(YYY_BonusesPossibilityCalcs.BONUSES_POINTS[i], item));
 			}
 		}
+
 		if (fightStatus == YYY_FightStatus.NO_ENEMY) {
 			return;
 		}
+
 		for (Minion minion : filteredWorld.getMinions()) {
 			if (minion.getFaction() == YYY_Constants.getCurrentFaction()) {
 				continue;
@@ -311,17 +346,21 @@ public class YYY_Utils {
 			YYY_ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(minion.getId());
 			structure.applyScores(item, YYY_FastMath.hypot(minion, item));
 		}
+
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == YYY_Constants.getCurrentFaction()) {
 				continue;
 			}
+
 			YYY_ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(wizard.getId());
 			structure.applyScores(item, YYY_FastMath.hypot(wizard, item));
 		}
+
 		for (Building building : filteredWorld.getBuildings()) {
 			if (building.getFaction() == YYY_Constants.getCurrentFaction()) {
 				continue;
 			}
+
 			YYY_ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(building.getId());
 			structure.applyScores(item, YYY_FastMath.hypot(building.getX() - item.getX(), building.getY() - item.getY()));
 		}
@@ -329,7 +368,8 @@ public class YYY_Utils {
 
 	public static boolean hasEnemy(Minion[] units, YYY_AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
 		for (LivingUnit unit : units) {
-			if (unit.getFaction() == YYY_Constants.getEnemyFaction() || unit.getFaction() == Faction.NEUTRAL && agressiveNeutralsCalcs.isMinionAgressive(unit.getId())) {
+			if (unit.getFaction() == YYY_Constants.getEnemyFaction() ||
+					unit.getFaction() == Faction.NEUTRAL && agressiveNeutralsCalcs.isMinionAgressive(unit.getId())) {
 				return true;
 			}
 		}
@@ -367,11 +407,22 @@ public class YYY_Utils {
 	}
 
 	public final static double[] PROJECTIVE_SPEED = new double[]
-			{YYY_Constants.getGame().getMagicMissileSpeed(), YYY_Constants.getGame().getFrostBoltSpeed(), YYY_Constants.getGame().getFireballSpeed(), YYY_Constants.getGame().getDartSpeed()};
+			{YYY_Constants.getGame().getMagicMissileSpeed(),
+					YYY_Constants.getGame().getFrostBoltSpeed(),
+					YYY_Constants.getGame().getFireballSpeed(),
+					YYY_Constants.getGame().getDartSpeed()};
+
 	public final static int[] PROJECTIVE_DAMAGE = new int[]
-			{YYY_Constants.getGame().getMagicMissileDirectDamage(), YYY_Constants.getGame().getFrostBoltDirectDamage(), YYY_Constants.getGame().getBurningSummaryDamage(), YYY_Constants.getGame().getDartDirectDamage()};
+			{YYY_Constants.getGame().getMagicMissileDirectDamage(),
+					YYY_Constants.getGame().getFrostBoltDirectDamage(),
+					YYY_Constants.getGame().getBurningSummaryDamage(),
+					YYY_Constants.getGame().getDartDirectDamage()};
+
 	public final static double[] PROJECTIVE_RADIUS = new double[]
-			{YYY_Constants.getGame().getMagicMissileRadius(), YYY_Constants.getGame().getFrostBoltRadius(), YYY_Constants.getGame().getFireballRadius(), YYY_Constants.getGame().getDartRadius()};
+			{YYY_Constants.getGame().getMagicMissileRadius(),
+					YYY_Constants.getGame().getFrostBoltRadius(),
+					YYY_Constants.getGame().getFireballRadius(),
+					YYY_Constants.getGame().getDartRadius()};
 
 	public static int getProjectileDamage(Projectile projectile, double distance) {
 		return getProjectileDamage(projectile.getType(), distance);
@@ -462,6 +513,7 @@ public class YYY_Utils {
 		return damage;
 	}
 
+
 	public static double updateMaxModule(double value, double maxModule) {
 		if (Math.abs(value) <= maxModule) {
 			return value;
@@ -484,10 +536,12 @@ public class YYY_Utils {
 			return 0;
 		}
 		int result = 0;
+		// modify both this and bottom functions
 		for (LivingUnit unit : units) {
-			if (YYY_FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) < YYY_Constants.getGame().getWizardRadius() +
-					unit.getRadius() +
-					YYY_Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
+			if (YYY_FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) <
+					YYY_Constants.getGame().getWizardRadius() +
+							unit.getRadius() +
+							YYY_Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
 				++result;
 			}
 		}
@@ -499,10 +553,12 @@ public class YYY_Utils {
 			return 0;
 		}
 		int result = 0;
+		// modify both this and upper functions
 		for (CircularUnit unit : units) {
-			if (YYY_FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) < YYY_Constants.getGame().getWizardRadius() +
-					unit.getRadius() +
-					YYY_Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
+			if (YYY_FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) <
+					YYY_Constants.getGame().getWizardRadius() +
+							unit.getRadius() +
+							YYY_Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
 				++result;
 			}
 		}
@@ -540,12 +596,16 @@ public class YYY_Utils {
 	}
 
 	public static double cooldownDistanceMinionsCalculation(double baseDistance, int coolDownRemaining) {
-		return baseDistance + Math.min(1,
-									   -coolDownRemaining + 3) * YYY_Constants.getGame().getWizardBackwardSpeed() * YYY_Variables.wizardsInfo.getMe().getMoveFactor() * .66;
+		return baseDistance + Math.min(1, -coolDownRemaining + 3) *
+				YYY_Constants.getGame().getWizardBackwardSpeed() *
+				YYY_Variables.wizardsInfo.getMe().getMoveFactor() *
+				.66;
 	}
 
 	public static double cooldownDistanceWizardCalculation(double moveFactor, int coolDownRemaining) {
-		return Math.min(2, -coolDownRemaining + 4) * YYY_Constants.getGame().getWizardForwardSpeed() * moveFactor * .6;
+		return Math.min(2, -coolDownRemaining + 4) *
+				YYY_Constants.getGame().getWizardForwardSpeed() *
+				moveFactor * .6;
 	}
 
 	public static int getTicksToBonusSpawn(int tickNo) {
@@ -566,7 +626,9 @@ public class YYY_Utils {
 				score[i] = YYY_Constants.minionLineScore * currScore;
 			}
 		}
+
 		YYY_WizardsInfo wizardsInfo = YYY_Variables.wizardsInfo;
+
 		for (YYY_WizardPhantom wizard : enemyPositionCalc.getDetectedWizards().values()) {
 			if (wizard.getLastSeenTick() == 0) {
 				continue;
@@ -574,6 +636,7 @@ public class YYY_Utils {
 			int line = wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
 			score[line] += YYY_Constants.enemyWizardLineScore;
 		}
+
 		for (Wizard wizard : world.getWizards()) {
 			if (wizard.isMe() || wizard.getFaction() == YYY_Constants.getEnemyFaction()) {
 				continue;
@@ -627,9 +690,11 @@ public class YYY_Utils {
 			if (livingUnit.getFaction() != YYY_Constants.getCurrentFaction()) {
 				continue;
 			}
+
 			if (livingUnit.getLife() < damage || livingUnit.getLife() >= life) {
 				continue;
 			}
+
 			if (YYY_FastMath.hypot(unit, livingUnit) < distance) {
 				++cnt;
 			}
@@ -638,9 +703,11 @@ public class YYY_Utils {
 			if (livingUnit.getFaction() != YYY_Constants.getCurrentFaction() || livingUnit.isMe()) {
 				continue;
 			}
+
 			if (livingUnit.getLife() < damage || livingUnit.getLife() >= life) {
 				continue;
 			}
+
 			if (YYY_FastMath.hypot(unit, livingUnit) < distance) {
 				++cnt;
 			}
@@ -669,7 +736,11 @@ public class YYY_Utils {
 	}
 
 	public static boolean isNeutralActive(Minion previuosPosition, Minion newPosition) {
-		return previuosPosition.getX() != newPosition.getX() || previuosPosition.getY() != newPosition.getY() || previuosPosition.getAngle() != newPosition.getAngle() || newPosition.getLife() != newPosition.getMaxLife() || newPosition.getRemainingActionCooldownTicks() != 0;
+		return previuosPosition.getX() != newPosition.getX() ||
+				previuosPosition.getY() != newPosition.getY() ||
+				previuosPosition.getAngle() != newPosition.getAngle() ||
+				newPosition.getLife() != newPosition.getMaxLife() ||
+				newPosition.getRemainingActionCooldownTicks() != 0;
 	}
 
 	public static int getHitsToKill(int life, int damage) {
@@ -688,6 +759,7 @@ public class YYY_Utils {
 		} else {
 			score *= YYY_Constants.ORC_AIM_PROIRITY;
 		}
+
 		if (minion.getFaction() == Faction.NEUTRAL) {
 			if (damage >= minion.getLife()) {
 				score *= YYY_Constants.NEUTRAL_LAST_HIT_AIM_PROIRITY;
@@ -710,24 +782,30 @@ public class YYY_Utils {
 		if (distanceToTarget < YYY_Constants.getGame().getStaffRange() + unit.getRadius() + 50) {
 			distanceToTarget -= YYY_Constants.getGame().getStaffRange() + unit.getRadius();
 			if (distanceToTarget > 0) {
-				score *= 1 - distanceToTarget * .01;
+				score *= 1 - distanceToTarget * .01; // divizion by 100
 			}
 			staffTargets.add(new YYY_Pair<>(score, unit));
 		}
 	}
 
-	public static void filterTargets(List<YYY_Pair<Double, CircularUnit>> targets, ProjectileType shotType, Wizard self, YYY_FilteredWorld filteredWorld) {
+	public static void filterTargets(List<YYY_Pair<Double, CircularUnit>> targets,
+									 ProjectileType shotType,
+									 Wizard self,
+									 YYY_FilteredWorld filteredWorld) {
 		YYY_Point pointA = new YYY_Point(self.getX(), self.getY());
 		double projectileRadius = PROJECTIVE_RADIUS[shotType.ordinal()];
+//		double projectileSpeed = PROJECTIVE_SPEED[shotType.ordinal()];
 		int cntFound = 0;
 		for (Iterator<YYY_Pair<Double, CircularUnit>> iterator = targets.iterator(); iterator.hasNext(); ) {
 			YYY_Pair<Double, CircularUnit> item = iterator.next();
 			CircularUnit target = item.getSecond();
 			YYY_Point pointB = getShootPoint(target, self, projectileRadius);
-			if (YYY_FastMath.hypot(self, pointB) > self.getCastRange()) {
+
+			if (YYY_FastMath.hypot(self, pointB) > self.getCastRange()) { // не дострельнем
 				iterator.remove();
 				continue;
 			}
+
 			boolean canShot = true;
 			for (Tree tree : filteredWorld.getShootingTreeList()) {
 				if (tree == target) {
@@ -739,6 +817,7 @@ public class YYY_Utils {
 					break;
 				}
 			}
+			// TODO: добавить проверку на уклонение визарда
 			if (!canShot) {
 				iterator.remove();
 			} else {
@@ -754,7 +833,10 @@ public class YYY_Utils {
 		}
 	}
 
-	public static boolean noTreesOnWay(YYY_Point target, Wizard self, ProjectileType shotType, YYY_FilteredWorld filteredWorld) {
+	public static boolean noTreesOnWay(YYY_Point target,
+									   Wizard self,
+									   ProjectileType shotType,
+									   YYY_FilteredWorld filteredWorld) {
 		YYY_Point pointA = new YYY_Point(self.getX(), self.getY());
 		double projectileRadius = PROJECTIVE_RADIUS[shotType.ordinal()];
 		for (Tree tree : filteredWorld.getShootingTreeList()) {
