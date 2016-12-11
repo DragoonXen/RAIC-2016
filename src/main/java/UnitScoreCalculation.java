@@ -1,6 +1,5 @@
 import model.ActionType;
 import model.Bonus;
-import model.BuildingType;
 import model.Faction;
 import model.Minion;
 import model.ProjectileType;
@@ -114,6 +113,11 @@ public class UnitScoreCalculation {
 			unitsScoreCalc.put(minion.getId(), structure);
 		}
 
+		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
+			staffDamage *= 10.;
+			myDamage *= 10.;
+		}
+
 		for (BuildingPhantom building : filteredWorld.getBuildings()) {
 			if (building.getFaction() == Constants.getCurrentFaction()) {
 				continue;
@@ -123,7 +127,7 @@ public class UnitScoreCalculation {
 			unitsScoreCalc.put(building.getId(), structure);
 
 			int priorityAims = 0;
-			if (self.getLife() > building.getDamage() && building.getType() == BuildingType.GUARDIAN_TOWER) {
+			if (self.getLife() > building.getDamage()) {
 				priorityAims = Utils.getPrefferedUnitsCountInRange(building, filteredWorld, building.getAttackRange(), building.getDamage(), self.getLife());
 			}
 
@@ -153,11 +157,6 @@ public class UnitScoreCalculation {
 			}
 			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + building.getRadius() - .1,
 																			   staffDamage * Constants.BUILDING_ATTACK_FACTOR));
-		}
-
-		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
-			staffDamage *= 3.;
-			myDamage *= 3.;
 		}
 
 		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();

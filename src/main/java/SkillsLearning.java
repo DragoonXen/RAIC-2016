@@ -134,7 +134,43 @@ public class SkillsLearning {
 
 	public static void updateSkills(Wizard self, EnemyPositionCalc enemyPositionCalc, Wizard[] wizards, Move move) {
 		if (self.getLevel() > self.getSkills().length && self.getLevel() <= currentSkillsToLearn.length) {
-			move.setSkillToLearn(currentSkillsToLearn[self.getSkills().length]);
+			if (self.getSkills().length == 0) {
+				move.setSkillToLearn(currentSkillsToLearn[self.getSkills().length]);
+//				WizardsInfo wizardsInfo = Variables.wizardsInfo;
+//				currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+//				int myLine = wizardsInfo.getMe().getLineNo();
+//				List<Wizard> allyWizards = new ArrayList<>();
+//				for (Wizard wizard : wizards) {
+//					if (wizard.getFaction() != Constants.getCurrentFaction()) {
+//						continue;
+//					}
+//					if (!wizard.isMe() && wizardsInfo.getWizardInfo(wizard.getId()).getLineNo() == myLine) {
+//						allyWizards.add(wizard);
+//					}
+//				}
+//				if (allyWizards.isEmpty()) {
+//					currentSkillsToLearn = MOVEMENT_FROST_RANGE;
+//				} else if (allyWizards.size() == 1) {
+//					if (self.getId() > allyWizards.get(0).getId()) {
+//						currentSkillsToLearn = RANGE_FIRE_MOVEMENT;
+//					} else {
+//						currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+//					}
+//				} else {
+//					boolean max = true;
+//					for (Wizard allyWizard : allyWizards) {
+//						if (allyWizard.getId() > self.getId()) {
+//							max = false;
+//							break;
+//						}
+//					}
+//					if (max) {
+//						currentSkillsToLearn = RANGE_FIRE_MOVEMENT;
+//					} else {
+//						currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+//					}
+//				}
+			}
 		}
 	}
 }
