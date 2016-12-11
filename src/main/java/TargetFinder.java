@@ -750,6 +750,9 @@ public class TargetFinder {
 			maxStepsToAim = Constants.MAX_SHOOT_DETECT_STEP_DISTANCE;
 		}
 		int minStepsToAim = 0;
+		int freezedStart = wizardInfo.getFrozen();
+		int frozenTicks;
+		int movementTicks;
 
 		boolean totalConfirmed = false;
 		do {
@@ -759,12 +762,18 @@ public class TargetFinder {
 			double criticalDistance = Utils.PROJECTIVE_RADIUS[projectileType.ordinal()] + wizard.getRadius();
 			boolean hitConfirmed = false;
 			for (int i = 0; i != EVASION_CHECK_COUNT; ++i) {
+				frozenTicks = freezedStart;
 				int intAngle = i * EVASION_CHECK_ANGLE_STEP;
 				double angle = intAngle * Math.PI / 180;
 				movementVector.update(Math.cos(angle + wizard.getAngle()), Math.sin(angle + wizard.getAngle()));
-				distance = getDoubleDistance(intAngle, evasionMatrix, 0) * wizardInfo.getMoveFactor();
-				if (Variables.prevActionType != CurrentAction.ActionType.PURSUIT && currStepsToAim == 0) {
-					distance *= .5;
+
+				if (frozenTicks > 0) {
+					distance = 0.;
+				} else {
+					distance = getDoubleDistance(intAngle, evasionMatrix, 0) * wizardInfo.getMoveFactor();
+					if (Variables.prevActionType != CurrentAction.ActionType.PURSUIT && currStepsToAim == 0) {
+						distance *= .5;
+					}
 				}
 				startPosition.update(wizard.getX() + movementVector.getX() * distance,
 									 wizard.getY() + movementVector.getY() * distance);
@@ -773,18 +782,21 @@ public class TargetFinder {
 				wizardPosition.update(startPosition);
 				projectilePoint.update(shootingPosition);
 				distance = 0;
+				movementTicks = 0;
 				for (int j = 0; j != checkCount; ++j) {
-					if (j > 0 && !stuck) {
+					if (j > 0 && !stuck && frozenTicks < 1) {
 						prevDistance = distance;
-						distance = getDoubleDistance(intAngle, evasionMatrix, j - 1) * wizardInfo.getMoveFactor();
+						distance = getDoubleDistance(intAngle, evasionMatrix, movementTicks) * wizardInfo.getMoveFactor();
 						wizardPosition.update(startPosition.getX() + movementVector.getX() * distance,
 											  startPosition.getY() + movementVector.getY() * distance);
-						stuck = checkStuck(evasionFilter, wizardPosition, j + 1);
+						stuck = checkStuck(evasionFilter, wizardPosition, j);
+						++movementTicks;
 						if (stuck) {
 							wizardPosition.update(startPosition.getX() + movementVector.getX() * prevDistance,
 												  startPosition.getY() + movementVector.getY() * prevDistance);
 						}
 					}
+					--frozenTicks;
 					prevProjectilePoint.update(projectilePoint);
 					if (j + 1 == checkCount) {
 						distance = self.getCastRange() - j * projectileSpeed;
