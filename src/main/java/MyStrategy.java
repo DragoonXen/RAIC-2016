@@ -37,7 +37,7 @@ public final class MyStrategy implements Strategy {
 					}
 				} else {
 					XXX_Constants.init(game, self);
-					strategy = draw ? new XXX_Drawing_DrawingStrategy(self) : new XXX_StrategyImplement(self);
+					strategy = new XXX_StrategyImplement(self);
 				}
 			}
             strategy.move(self, world, game, move);
