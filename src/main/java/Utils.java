@@ -224,7 +224,7 @@ public class Utils {
 	}
 
 	public static double distancePointToSegment(Point point, Point segA, Point segB) {
-		return point.segmentNorm(nearestSegmentPoint(point, segA, segB));
+		return FastMath.hypot(point, nearestSegmentPoint(point, segA, segB));
 	}
 
 	public static Point nearestSegmentPoint(Point point, Point segA, Point segB) {

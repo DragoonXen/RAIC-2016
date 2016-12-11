@@ -650,9 +650,13 @@ public class StrategyImplement implements Strategy {
 
 		if (iceShootDesc != null && (manaFree || iceShootDesc.getWizardsDamage() != 0)) {
 			if (iceShootDesc.getWizardsDamage() > 0 || self.getMana() > self.getMaxMana() * .9 || self.getLife() < self.getMaxLife() * .5) {
-				if ((tmpWaitTime = applyTargetAction(iceShootDesc,
-													 FastMath.hypot(self, iceShootDesc.getShootPoint()) - Constants.getGame().getWizardRadius(),
-													 move, waitTime)) == -1) {
+				double minCastDistance = FastMath.hypot(self, missileShootDesc.getShootPoint()) - .1; // exact distance for building
+				if (missileShootDesc.getMinionsDamage() > 0) {
+					minCastDistance -= 5.;
+				} else if (missileShootDesc.getWizardsDamage() > 0) {
+					minCastDistance -= Constants.getGame().getWizardRadius() + 5. - FastMath.hypot(iceShootDesc.getTarget(), iceShootDesc.getShootPoint());
+				}
+				if ((tmpWaitTime = applyTargetAction(iceShootDesc, minCastDistance, move, waitTime)) == -1) {
 					return;
 				}
 			}
