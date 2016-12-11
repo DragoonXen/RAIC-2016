@@ -538,8 +538,7 @@ public class StrategyImplement implements Strategy {
 		}
 	}
 
-	private double
-	getWayTotalScore(Point moveDirection, int steps, double step) {
+	private double getWayTotalScore(Point moveDirection, int steps, double step) {
 		double angle = Utils.normalizeAngle(self.getAngleTo(moveDirection.getX(), moveDirection.getY()) + self.getAngle());
 		double score = 0.;
 		for (int i = 1; i <= steps; ++i) {
@@ -575,7 +574,12 @@ public class StrategyImplement implements Strategy {
 				dangerScore = getWayTotalScore(tmp.getShootPoint(),
 											   tmp.getTicksToGo(),
 											   ShootEvasionMatrix.EVASION_MATRIX[6][0] * wizardsInfo.getMe().getMoveFactor());
-				if (tmp.getTicksToGo() == 0 || -dangerScore * .1 < tmpScore) {
+				if (tmp.getActionType() == ActionType.FIREBALL) {
+					dangerScore = -dangerScore * .5;
+				} else {
+					dangerScore = -dangerScore * .1;
+				}
+				if (tmp.getTicksToGo() == 0 || dangerScore < tmpScore) {
 					currentScore = tmpScore;
 					result = tmp;
 				}
@@ -592,10 +596,8 @@ public class StrategyImplement implements Strategy {
 		TargetFinder.ShootDescription iceShootDesc = selectTarget(targets);
 
 		targets = targetFinder.getFireTargets();
-		TargetFinder.ShootDescription fireShootDesc = null;
-		if (!targets.isEmpty()) {
-			fireShootDesc = targets.get(targets.size() - 1);
-		}
+		TargetFinder.ShootDescription fireShootDesc = selectTarget(targets);
+
 		targets = targetFinder.getStaffTargets();
 		TargetFinder.ShootDescription staffHitDesc = null;
 		if (!targets.isEmpty()) {

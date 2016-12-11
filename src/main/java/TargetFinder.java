@@ -38,6 +38,8 @@ public class TargetFinder {
 	private AgressiveNeutralsCalcs agressiveNeutralsCalcs;
 	private WizardsInfo.WizardInfo myWizardInfo;
 
+	private double oneStepMoving;
+
 	public TargetFinder() {
 		missileTargets = new ArrayList<>();
 		staffTargets = new ArrayList<>();
@@ -75,10 +77,11 @@ public class TargetFinder {
 							  Point pointToReach,
 							  AgressiveNeutralsCalcs agressiveNeutralsCalcs,
 							  int stuck) {
+		this.myWizardInfo = Variables.wizardsInfo.getMe();
+		oneStepMoving = ShootEvasionMatrix.EVASION_MATRIX[6][0] * myWizardInfo.getMoveFactor(); // doesn't matter, hastened or not
 		this.self = Variables.self;
 		this.filteredWorld = filteredWorld;
 		this.agressiveNeutralsCalcs = agressiveNeutralsCalcs;
-		this.myWizardInfo = Variables.wizardsInfo.getMe();
 
 		{
 			List<ShootDescription> tmp = prevMissileTargets;
@@ -187,8 +190,6 @@ public class TargetFinder {
 			appendStaffTarget(building, score, backShootPoint, staffDamage);
 		}
 
-		double oneStepMoving = ShootEvasionMatrix.EVASION_MATRIX[6][0] * myWizardInfo.getMoveFactor(); // doesn't matter, hastened or not
-
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
 				continue;
@@ -215,13 +216,13 @@ public class TargetFinder {
 			// MM
 			Point pointFwdToShoot = new Point(wizard.getX() + Math.cos(wizard.getAngle()) * ShootEvasionMatrix.mmDistanceFromCenter,
 											  wizard.getY() + Math.sin(wizard.getAngle()) * ShootEvasionMatrix.mmDistanceFromCenter);
-			int checked = checkEnemyWizardEvasion(wizard, pointFwdToShoot, oneStepMoving, evastionFiltering, ProjectileType.MAGIC_MISSILE);
+			int checked = checkEnemyWizardEvasion(wizard, pointFwdToShoot, evastionFiltering, ProjectileType.MAGIC_MISSILE);
 			int checkedSecond;
 			if (checked == 0) {
 				appendShootTarget(wizard, score, pointFwdToShoot, missileDamage, ActionType.MAGIC_MISSILE);
 			} else {
 				Point pointToShoot = new Point(wizard.getX(), wizard.getY());
-				checkedSecond = checkEnemyWizardEvasion(wizard, pointToShoot, oneStepMoving, evastionFiltering, ProjectileType.MAGIC_MISSILE);
+				checkedSecond = checkEnemyWizardEvasion(wizard, pointToShoot, evastionFiltering, ProjectileType.MAGIC_MISSILE);
 				if (checkedSecond < checked) {
 					appendShootTarget(wizard, score, pointToShoot, missileDamage, ActionType.MAGIC_MISSILE);
 					ShootDescription.lastInstance.setTicksToGo(checkedSecond);
@@ -235,12 +236,12 @@ public class TargetFinder {
 			if (frostBoltDamage > 0) {
 				pointFwdToShoot = new Point(wizard.getX() + Math.cos(wizard.getAngle()) * ShootEvasionMatrix.frostBoltDistanceFromCenter,
 											wizard.getY() + Math.sin(wizard.getAngle()) * ShootEvasionMatrix.frostBoltDistanceFromCenter);
-				checked = checkEnemyWizardEvasion(wizard, pointFwdToShoot, oneStepMoving, evastionFiltering, ProjectileType.FROST_BOLT);
+				checked = checkEnemyWizardEvasion(wizard, pointFwdToShoot, evastionFiltering, ProjectileType.FROST_BOLT);
 				if (checked == 0) {
 					appendShootTarget(wizard, score, pointFwdToShoot, missileDamage, ActionType.FROST_BOLT);
 				} else {
 					Point pointToShoot = new Point(wizard.getX(), wizard.getY());
-					checkedSecond = checkEnemyWizardEvasion(wizard, pointToShoot, oneStepMoving, evastionFiltering, ProjectileType.FROST_BOLT);
+					checkedSecond = checkEnemyWizardEvasion(wizard, pointToShoot, evastionFiltering, ProjectileType.FROST_BOLT);
 					if (checkedSecond < checked) {
 						appendShootTarget(wizard, score, pointToShoot, missileDamage, ActionType.FROST_BOLT);
 						ShootDescription.lastInstance.setTicksToGo(checkedSecond);
@@ -265,10 +266,10 @@ public class TargetFinder {
 					continue;
 				}
 				Point checkPoint = new Point(minion.getX(), minion.getY());
-				addFireTarget(checkDistances(checkPoint,
-											 minion.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
-				addFireTarget(checkDistances(checkPoint,
-											 minion.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
+				checkDistances(checkPoint,
+							   minion.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5);
+				checkDistances(checkPoint,
+							   minion.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5);
 			}
 
 			for (Building building : filteredWorld.getBuildings()) {
@@ -276,8 +277,8 @@ public class TargetFinder {
 					continue;
 				}
 				Point checkPoint = new Point(building.getX(), building.getY());
-				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5));
-				addFireTarget(checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5));
+				checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMaxDamageRange() - .5);
+				checkDistances(checkPoint, building.getRadius() + Constants.getGame().getFireballExplosionMinDamageRange() - .5);
 			}
 
 			for (Wizard wizard : filteredWorld.getWizards()) {
@@ -289,32 +290,35 @@ public class TargetFinder {
 				int ticks = Utils.getTicksToFly(FastMath.hypot(self, wizard), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
 				ticks = Math.min(ticks - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
 				if (FastMath.hypot(self, wizard) < self.getCastRange()) {
-					Point wizardPoint = new Point(wizard.getX(), wizard.getY());
-					addFireTarget(checkFireballDamage(wizardPoint));
+					addFireTarget(checkFireballDamage(checkPoint));
 				}
 				double checkDistance = wizard.getRadius() +
 						Constants.getGame().getFireballExplosionMaxDamageRange() -
 						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
 				if (checkDistance > 0.) {
-					addFireTarget(checkDistances(checkPoint, checkDistance));
+					checkDistances(checkPoint, checkDistance);
 				}
 				checkDistance = wizard.getRadius() +
 						Constants.getGame().getFireballExplosionMinDamageRange() -
 						ShootEvasionMatrix.EVASION_MATRIX[0][ticks] - .1;
-				addFireTarget(checkDistances(checkPoint, checkDistance));
+				checkDistances(checkPoint, checkDistance);
+
+				checkPoint.update(wizard.getX() + Math.cos(wizard.getAngle()) * ShootEvasionMatrix.fireballDistanceFromCenter,
+								  wizard.getY() + Math.sin(wizard.getAngle()) * ShootEvasionMatrix.fireballDistanceFromCenter);
+				if (FastMath.hypot(self, checkPoint) < self.getCastRange()) {
+					addFireTarget(checkFireballDamage(checkPoint));
+				}
 			}
 			Collections.sort(fireTargets);
+			int ticksToGo = 21;
 			for (Iterator<ShootDescription> iterator = fireTargets.iterator(); iterator.hasNext(); ) {
 				ShootDescription fireTarget = iterator.next();
+				if (fireTarget.getTicksToGo() >= ticksToGo) {
+					iterator.remove();
+					continue;
+				}
 				if (Utils.noTreesOnWay(fireTarget.getShootPoint(), self, ProjectileType.FIREBALL, filteredWorld)) {
-					if (iterator.hasNext()) {
-						iterator.next();
-					}
-					while (iterator.hasNext()) {
-						iterator.next();
-						iterator.remove();
-					}
-					break;
+					ticksToGo = fireTarget.ticksToGo;
 				} else {
 					iterator.remove();
 				}
@@ -416,30 +420,37 @@ public class TargetFinder {
 	private final static int checkCount = 360 / angleCheck;
 	private final static double angleCheckRadians = Math.PI / 180. * angleCheck;
 
-	private ShootDescription checkDistances(Point point, double distance) {
-		ShootDescription bestPoint = null;
+	private void checkDistances(Point point, double distance) {
 		for (int i = 0; i != checkCount; ++i) {
 			Point checkPoint = new Point(point.getX() + distance * Math.cos(angleCheckRadians * i), point.getY() + distance * Math.sin(angleCheckRadians * i));
-			if (FastMath.hypot(self, checkPoint) > self.getCastRange()) {
-				continue;
-			}
 			ShootDescription temp = checkFireballDamage(checkPoint);
-			if (bestPoint == null || temp.getScore() > bestPoint.getScore()) {
-				bestPoint = temp;
+			if (temp != null && temp.getScore() > 0 && (temp.getTicksToGo() == 0 || temp.getWizardsDamage() > 0)) {
+				addFireTarget(temp);
 			}
 		}
-		return bestPoint;
 	}
 
 	public ShootDescription checkFireballDamage(Point where) {
-		int ticksToFly = Utils.getTicksToFly(FastMath.hypot(self, where), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+		int ticksToGo = 0;
+		double score = FastMath.hypot(self, where);
+		int ticksToFly;
+		if (score > self.getCastRange()) {
+			ticksToGo = (int) ((score - self.getCastRange()) / oneStepMoving + .95);
+			if (ticksToGo > 20) {
+				return null;
+			}
+			ticksToFly = Utils.getTicksToFly(self.getCastRange(), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+		} else {
+			ticksToFly = Utils.getTicksToFly(FastMath.hypot(self, where), Utils.PROJECTIVE_SPEED[ProjectileType.FIREBALL.ordinal()]);
+		}
+
 		int minionsDamage = 0;
 		int minionKills = 0;
 		int buildingsDamage = 0;
 		int buildingsDestroys = 0;
 		int wizardsDamage = 0;
 		int wizardsKills = 0;
-		double score = 0.;
+		score = 0.;
 		for (Minion minion : filteredWorld.getMinions()) {
 			if (minion.getFaction() == Constants.getCurrentFaction()) {
 				continue;
@@ -516,6 +527,9 @@ public class TargetFinder {
 			}
 			score += wizardsDamageCalc.getFirst();
 		}
+		if (score <= 1.) {
+			return null;
+		}
 		return new ShootDescription(minionsDamage,
 									wizardsDamage,
 									buildingsDamage,
@@ -523,10 +537,14 @@ public class TargetFinder {
 									wizardsKills,
 									buildingsDestroys,
 									where,
-									score);
+									score,
+									ticksToGo);
 	}
 
 	private Pair<Double, Pair<Integer, Boolean>> checkFirePointsWizard(Wizard wizard, Point where, int ticksToFly) {
+		if (FastMath.hypot(wizard, where) > 300.) {
+			return null;
+		}
 		ticksToFly = Math.min(ticksToFly - 1, ShootEvasionMatrix.EVASION_MATRIX[0].length - 1);
 		double distance = FastMath.hypot(wizard, where) - wizard.getRadius();
 		WizardsInfo.WizardInfo wizardInfo = Variables.wizardsInfo.getWizardInfo(wizard.getId());
@@ -559,7 +577,6 @@ public class TargetFinder {
 		}
 
 		int damage;
-
 		if (distance <= Constants.getGame().getFireballExplosionMinDamageRange()) {
 			double score;
 			if (distance <= Constants.getGame().getFireballExplosionMaxDamageRange()) {
@@ -709,7 +726,6 @@ public class TargetFinder {
 
 	private int checkEnemyWizardEvasion(Wizard wizard,
 										Point shootPoint,
-										double stepDistance,
 										EnemyEvasionFilteredWorld evasionFilter,
 										ProjectileType projectileType) {
 		double projectileSpeed = Utils.PROJECTIVE_SPEED[projectileType.ordinal()];
@@ -729,7 +745,7 @@ public class TargetFinder {
 		double prevDistance;
 
 		int currStepsToAim = 0;
-		int maxStepsToAim = (int) ((FastMath.hypot(self, shootPoint) - 350.) / stepDistance);
+		int maxStepsToAim = (int) ((FastMath.hypot(self, shootPoint) - 350.) / oneStepMoving);
 		if (maxStepsToAim > Constants.MAX_SHOOT_DETECT_STEP_DISTANCE) {
 			maxStepsToAim = Constants.MAX_SHOOT_DETECT_STEP_DISTANCE;
 		}
@@ -737,8 +753,8 @@ public class TargetFinder {
 
 		boolean totalConfirmed = false;
 		do {
-			Point shootingPosition = new Point(self.getX() + currStepsToAim * stepDistance * Math.cos(shootDirection),
-											   self.getY() + currStepsToAim * stepDistance * Math.sin(shootDirection));
+			Point shootingPosition = new Point(self.getX() + currStepsToAim * oneStepMoving * Math.cos(shootDirection),
+											   self.getY() + currStepsToAim * oneStepMoving * Math.sin(shootDirection));
 
 			double criticalDistance = Utils.PROJECTIVE_RADIUS[projectileType.ordinal()] + wizard.getRadius();
 			boolean hitConfirmed = false;
@@ -953,7 +969,8 @@ public class TargetFinder {
 								int wizardsKills,
 								int buildingsDestroy,
 								Point shootPoint,
-								double score) {
+								double score,
+								int ticksToGo) {
 			this.actionType = ActionType.FIREBALL;
 			this.minionsDamage = minionsDamage;
 			this.wizardsDamage = wizardsDamage;
@@ -969,6 +986,7 @@ public class TargetFinder {
 			this.ticksToTurn = Math.max((int) ((Math.abs(turnAngle) - Constants.MAX_SHOOT_ANGLE + Variables.maxTurnAngle - .1) / Variables.maxTurnAngle), 0);
 
 			this.score -= Constants.PER_TURN_TICK_PENALTY * ticksToTurn;
+			this.ticksToGo = ticksToGo;
 		}
 
 		public void multScore(double mult) {
