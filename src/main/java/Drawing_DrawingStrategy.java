@@ -512,10 +512,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		TargetFinder.ShootDescription iceShootDesc = selectTarget(targets);
 
 		targets = targetFinder.getFireTargets();
-		TargetFinder.ShootDescription fireShootDesc = null;
-		if (!targets.isEmpty()) {
-			fireShootDesc = targets.get(targets.size() - 1);
-		}
+		TargetFinder.ShootDescription fireShootDesc = selectTarget(targets);
+
 		targets = targetFinder.getStaffTargets();
 		TargetFinder.ShootDescription staffHitDesc = null;
 		if (!targets.isEmpty()) {
