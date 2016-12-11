@@ -26,9 +26,15 @@ public final class MyStrategy implements Strategy {
         try {
 			if (world.getTickIndex() == 0) {
 				if (game.isSkillsEnabled()) {
-					SkillsLearning.init(world);
-					Constants.init(game, self);
-					strategy = draw ? new Drawing_DrawingStrategy(self) : new StrategyImplement(self);
+					if (game.isRawMessagesEnabled()) {
+						SkillsLearning.init(world);
+						Constants.init(game, self);
+						strategy = draw ? new Drawing_DrawingStrategy(self) : new StrategyImplement(self);
+					} else {
+						YYY_SkillsLearning.init(world);
+						YYY_Constants.init(game, self);
+						strategy = draw ? new YYY_Drawing_DrawingStrategy(self) : new YYY_StrategyImplement(self);
+					}
 				} else {
 					XXX_Constants.init(game, self);
 					strategy = draw ? new XXX_Drawing_DrawingStrategy(self) : new XXX_StrategyImplement(self);
@@ -47,7 +53,7 @@ public final class MyStrategy implements Strategy {
             } catch (IOException e1) {
                 System.out.println(e1.getMessage());
             }
-			//throw new RuntimeException(e.getMessage());
+			throw new RuntimeException(e.getMessage());
 		}
     }
 }
