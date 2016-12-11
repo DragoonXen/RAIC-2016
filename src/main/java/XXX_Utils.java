@@ -25,13 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by dragoon on 11/9/16.
- */
 public class XXX_Utils {
-
 	public final static Comparator<Map.Entry<Double, CircularUnit>> AIM_SORT_COMPARATOR = (o1, o2) -> o2.getKey().compareTo(o1.getKey());
-
 	private static double[] lineDistance = new double[XXX_Constants.getLines().length];
 
 	public static int whichLine(Unit unit) {
@@ -73,20 +68,18 @@ public class XXX_Utils {
 		}
 		Projectile[] filteredProjectiles = new Projectile[projectiles.size()];
 		projectiles.toArray(filteredProjectiles);
-
-		return new XXX_FilteredWorld(
-				world.getTickIndex(),
-				world.getTickCount(),
-				world.getWidth(),
-				world.getHeight(),
-				world.getPlayers(),
-				removeMe(filterUnit(world.getWizards(), point, XXX_FilteredWorld.FilterType.FIGHT)),
-				filterUnit(world.getMinions(), point, XXX_FilteredWorld.FilterType.FIGHT),
-				filterUnit(filteredProjectiles, point, XXX_FilteredWorld.FilterType.FIGHT),
-				filterUnit(world.getBonuses(), point, XXX_FilteredWorld.FilterType.FIGHT),
-				filterUnit(buildings, point, XXX_FilteredWorld.FilterType.FIGHT),
-				filterUnit(world.getTrees(), point, XXX_FilteredWorld.FilterType.MOVE),
-				point);
+		return new XXX_FilteredWorld(world.getTickIndex(),
+									 world.getTickCount(),
+									 world.getWidth(),
+									 world.getHeight(),
+									 world.getPlayers(),
+									 removeMe(filterUnit(world.getWizards(), point, XXX_FilteredWorld.FilterType.FIGHT)),
+									 filterUnit(world.getMinions(), point, XXX_FilteredWorld.FilterType.FIGHT),
+									 filterUnit(filteredProjectiles, point, XXX_FilteredWorld.FilterType.FIGHT),
+									 filterUnit(world.getBonuses(), point, XXX_FilteredWorld.FilterType.FIGHT),
+									 filterUnit(buildings, point, XXX_FilteredWorld.FilterType.FIGHT),
+									 filterUnit(world.getTrees(), point, XXX_FilteredWorld.FilterType.MOVE),
+									 point);
 	}
 
 	public static <T extends CircularUnit> List<T> filterUnit(T[] units, XXX_Point point, XXX_FilteredWorld.FilterType filterType) {
@@ -110,7 +103,6 @@ public class XXX_Utils {
 				}
 				break;
 		}
-
 		switch (filterType) {
 			case MOVE:
 				for (T unit : units) {
@@ -163,7 +155,6 @@ public class XXX_Utils {
 	public static XXX_ScanMatrixItem[][] createScanMatrix() {
 		XXX_ScanMatrixItem[][] matrix = new XXX_ScanMatrixItem[(int) Math.round((XXX_Constants.MOVE_FWD_DISTANCE + XXX_Constants.MOVE_BACK_DISTANCE) / XXX_Constants.MOVE_SCAN_STEP + 1.01)]
 				[(int) Math.round((XXX_Constants.MOVE_SIDE_DISTANCE + XXX_Constants.MOVE_SIDE_DISTANCE) / XXX_Constants.MOVE_SCAN_STEP + 1.01)];
-
 		double maxBonus = Math.pow(XXX_FastMath.hypot(-matrix.length - 30, -XXX_Constants.CURRENT_PT_Y), XXX_Constants.FORWARD_MOVE_FROM_DISTANCE_POWER);
 		for (int i = 0; i != matrix.length; ++i) {
 			for (int j = 0; j != matrix[0].length; ++j) {
@@ -173,13 +164,10 @@ public class XXX_Utils {
 																		  XXX_Constants.FORWARD_MOVE_FROM_DISTANCE_POWER));
 			}
 		}
-
-		int[] di = new int[]{1, 0, 0, -1};//, 1, 1, -1, -1};
-		int[] dj = new int[]{0, 1, -1, 0};//, 1, -1, -1, 1};
-//		double diagonalDistance = Math.sqrt(XXX_Constants.MOVE_SCAN_STEP * XXX_Constants.MOVE_SCAN_STEP);
+		int[] di = new int[]{1, 0, 0, -1};
+		int[] dj = new int[]{0, 1, -1, 0};
 		for (int i = 0; i != matrix.length; ++i) {
 			for (int j = 0; j != matrix[0].length; ++j) {
-//				List<Double> neighbourDistances = new ArrayList<>();
 				List<XXX_ScanMatrixItem> neighbour = new ArrayList<>();
 				for (int k = 0; k != 4; ++k) {
 					int nx = i + di[k];
@@ -187,24 +175,15 @@ public class XXX_Utils {
 					if (nx < 0 || nx >= matrix.length || ny < 0 || ny >= matrix[0].length) {
 						continue;
 					}
-//					neighbourDistances.add(XXX_Constants.MOVE_SCAN_STEP);
 					neighbour.add(matrix[nx][ny]);
 				}
-//				double[] distances = new double[neighbourDistances.size()];
-//				for (int k = 0; k != neighbourDistances.size(); ++k) {
-//					distances[k] = neighbourDistances.get(k);
-//				}
-
 				matrix[i][j].setNeighbours(neighbour.toArray(new XXX_ScanMatrixItem[neighbour.size()]));
 			}
 		}
-
 		List<Map.Entry<Double, XXX_ScanMatrixItem>> pointsMap = new ArrayList<>();
 		for (int i = 0; i != matrix.length; ++i) {
 			for (int j = 0; j != matrix[0].length; ++j) {
-				pointsMap.add(new AbstractMap.SimpleEntry<>(XXX_FastMath.hypot(XXX_Constants.CURRENT_PT_X - i,
-																			   XXX_Constants.CURRENT_PT_Y - j),
-															matrix[i][j]));
+				pointsMap.add(new AbstractMap.SimpleEntry<>(XXX_FastMath.hypot(XXX_Constants.CURRENT_PT_X - i, XXX_Constants.CURRENT_PT_Y - j), matrix[i][j]));
 			}
 		}
 		Collections.sort(pointsMap, (o1, o2) -> o1.getKey().compareTo(o2.getKey()));
@@ -213,7 +192,6 @@ public class XXX_Utils {
 			XXX_ScanMatrixItem item = doubleScanMatrixItemEntry.getValue();
 			item.setDistanceFromSelf(doubleScanMatrixItemEntry.getKey());
 		}
-
 		return matrix;
 	}
 
@@ -234,15 +212,12 @@ public class XXX_Utils {
 	public static XXX_Point nearestSegmentPoint(XXX_Point point, XXX_Point segA, XXX_Point segB) {
 		XXX_Point vectorV = segA.negateCopy(segB);
 		XXX_Point vectorW = point.negateCopy(segB);
-
 		double c1 = vectorV.scalarMult(vectorW);
 		if (c1 <= 0)
 			return segB;
-
 		double c2 = vectorV.scalarMult(vectorV);
 		if (c2 <= c1)
 			return segA;
-
 		return segB.addWithCopy(vectorV.mult(c1 / c2));
 	}
 
@@ -250,10 +225,7 @@ public class XXX_Utils {
 
 	public static boolean isAvailableTile(List<CircularUnit> units, double x, double y) {
 		double radius = XXX_Constants.getGame().getWizardRadius();
-		if (x < radius ||
-				y < radius ||
-				x + radius > XXX_Constants.getGame().getMapSize() ||
-				y + radius > XXX_Constants.getGame().getMapSize()) {
+		if (x < radius || y < radius || x + radius > XXX_Constants.getGame().getMapSize() || y + radius > XXX_Constants.getGame().getMapSize()) {
 			return false;
 		}
 		Iterator<CircularUnit> iterator = units.iterator();
@@ -281,10 +253,7 @@ public class XXX_Utils {
 			XXX_ScanMatrixItem item = items[i];
 			x = item.getX();
 			y = item.getY();
-			if (x < radius ||
-					y < radius ||
-					x + radius > XXX_Constants.getGame().getMapSize() ||
-					y + radius > XXX_Constants.getGame().getMapSize()) {
+			if (x < radius || y < radius || x + radius > XXX_Constants.getGame().getMapSize() || y + radius > XXX_Constants.getGame().getMapSize()) {
 				item.setAvailable(false);
 				continue;
 			}
@@ -320,7 +289,6 @@ public class XXX_Utils {
 		if (distanceTo > 0.) {
 			item.addOtherDanger(distanceTo);
 		}
-
 		for (Bonus bonus : filteredWorld.getBonuses()) {
 			if (XXX_FastMath.hypot(self, bonus) > XXX_Constants.getFightDistanceFilter()) {
 				continue;
@@ -328,7 +296,6 @@ public class XXX_Utils {
 			XXX_ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(bonus.getId());
 			structure.applyScores(item, XXX_FastMath.hypot(bonus, item));
 		}
-
 		if (XXX_Utils.getTicksToBonusSpawn(filteredWorld.getTickIndex()) < 250) {
 			for (int i = 0; i != XXX_BonusesPossibilityCalcs.BONUSES_POINTS.length; ++i) {
 				if (XXX_FastMath.hypot(self, XXX_BonusesPossibilityCalcs.BONUSES_POINTS[i]) > XXX_Constants.getFightDistanceFilter()) {
@@ -338,11 +305,9 @@ public class XXX_Utils {
 				structure.applyScores(item, XXX_FastMath.hypot(XXX_BonusesPossibilityCalcs.BONUSES_POINTS[i], item));
 			}
 		}
-
 		if (!enemyFound) {
 			return;
 		}
-
 		for (Minion minion : filteredWorld.getMinions()) {
 			if (minion.getFaction() == XXX_Constants.getCurrentFaction()) {
 				continue;
@@ -350,21 +315,17 @@ public class XXX_Utils {
 			XXX_ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(minion.getId());
 			structure.applyScores(item, XXX_FastMath.hypot(minion, item));
 		}
-
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			if (wizard.getFaction() == XXX_Constants.getCurrentFaction()) {
 				continue;
 			}
-
 			XXX_ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(wizard.getId());
 			structure.applyScores(item, XXX_FastMath.hypot(wizard, item));
 		}
-
 		for (Building building : filteredWorld.getBuildings()) {
 			if (building.getFaction() == XXX_Constants.getCurrentFaction()) {
 				continue;
 			}
-
 			XXX_ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(building.getId());
 			structure.applyScores(item, XXX_FastMath.hypot(building.getX() - item.getX(), building.getY() - item.getY()));
 		}
@@ -372,8 +333,7 @@ public class XXX_Utils {
 
 	public static boolean hasEnemy(Minion[] units, XXX_AgressiveNeutralsCalcs agressiveNeutralsCalcs) {
 		for (LivingUnit unit : units) {
-			if (unit.getFaction() == XXX_Constants.getEnemyFaction() ||
-					unit.getFaction() == Faction.NEUTRAL && agressiveNeutralsCalcs.isMinionAgressive(unit.getId())) {
+			if (unit.getFaction() == XXX_Constants.getEnemyFaction() || unit.getFaction() == Faction.NEUTRAL && agressiveNeutralsCalcs.isMinionAgressive(unit.getId())) {
 				return true;
 			}
 		}
@@ -388,7 +348,6 @@ public class XXX_Utils {
 		}
 		return false;
 	}
-
 
 	public static boolean wizardHasStatus(Wizard wizard, StatusType statusType) {
 		for (Status status : wizard.getStatuses()) {
@@ -429,7 +388,6 @@ public class XXX_Utils {
 				case RANGE_BONUS_AURA_2:
 					aurasCount[XXX_SkillFork.RANGE.ordinal()] = 2;
 					break;
-
 				case MAGICAL_DAMAGE_BONUS_PASSIVE_1:
 					skillsCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()] = Math.max(skillsCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()], 1);
 					break;
@@ -442,7 +400,6 @@ public class XXX_Utils {
 				case MAGICAL_DAMAGE_BONUS_AURA_2:
 					aurasCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()] = 2;
 					break;
-
 				case STAFF_DAMAGE_BONUS_PASSIVE_1:
 					skillsCount[XXX_SkillFork.STAFF_DAMAGE.ordinal()] = Math.max(skillsCount[XXX_SkillFork.STAFF_DAMAGE.ordinal()], 1);
 					break;
@@ -455,7 +412,6 @@ public class XXX_Utils {
 				case STAFF_DAMAGE_BONUS_AURA_2:
 					aurasCount[XXX_SkillFork.STAFF_DAMAGE.ordinal()] = 2;
 					break;
-
 				case MOVEMENT_BONUS_FACTOR_PASSIVE_1:
 					skillsCount[XXX_SkillFork.MOVEMENT.ordinal()] = Math.max(skillsCount[XXX_SkillFork.MOVEMENT.ordinal()], 1);
 					break;
@@ -468,7 +424,6 @@ public class XXX_Utils {
 				case MOVEMENT_BONUS_FACTOR_AURA_2:
 					aurasCount[XXX_SkillFork.MOVEMENT.ordinal()] = 2;
 					break;
-
 				case MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1:
 					skillsCount[XXX_SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = Math.max(skillsCount[XXX_SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()],
 																							  1);
@@ -497,28 +452,24 @@ public class XXX_Utils {
 						case RANGE_BONUS_AURA_2:
 							aurasCount[XXX_SkillFork.RANGE.ordinal()] = 2;
 							break;
-
 						case MAGICAL_DAMAGE_BONUS_AURA_1:
 							aurasCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()] = Math.max(aurasCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()], 1);
 							break;
 						case MAGICAL_DAMAGE_BONUS_AURA_2:
 							aurasCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()] = 2;
 							break;
-
 						case STAFF_DAMAGE_BONUS_AURA_1:
 							aurasCount[XXX_SkillFork.STAFF_DAMAGE.ordinal()] = Math.max(aurasCount[XXX_SkillFork.STAFF_DAMAGE.ordinal()], 1);
 							break;
 						case STAFF_DAMAGE_BONUS_AURA_2:
 							aurasCount[XXX_SkillFork.STAFF_DAMAGE.ordinal()] = 2;
 							break;
-
 						case MOVEMENT_BONUS_FACTOR_AURA_1:
 							aurasCount[XXX_SkillFork.MOVEMENT.ordinal()] = Math.max(aurasCount[XXX_SkillFork.MOVEMENT.ordinal()], 1);
 							break;
 						case MOVEMENT_BONUS_FACTOR_AURA_2:
 							aurasCount[XXX_SkillFork.MOVEMENT.ordinal()] = 2;
 							break;
-
 						case MAGICAL_DAMAGE_ABSORPTION_AURA_1:
 							aurasCount[XXX_SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()] = Math.max(aurasCount[XXX_SkillFork.MAGICAL_DAMAGE_ABSORPTION.ordinal()],
 																									 1);
@@ -530,27 +481,21 @@ public class XXX_Utils {
 				}
 			}
 		}
-
 		XXX_Variables.turnFactor = 1.;
-		XXX_Variables.moveFactor = 1. + XXX_Constants.getGame().getMovementBonusFactorPerSkillLevel() *
-				(aurasCount[XXX_SkillFork.MOVEMENT.ordinal()] + skillsCount[XXX_SkillFork.MOVEMENT.ordinal()]);
-
+		XXX_Variables.moveFactor = 1. + XXX_Constants.getGame().getMovementBonusFactorPerSkillLevel() * (aurasCount[XXX_SkillFork.MOVEMENT.ordinal()] + skillsCount[XXX_SkillFork.MOVEMENT.ordinal()]);
 		if (XXX_Utils.wizardHasStatus(self, StatusType.HASTENED)) {
 			XXX_Variables.turnFactor += XXX_Constants.getGame().getHastenedRotationBonusFactor();
 			XXX_Variables.moveFactor += XXX_Constants.getGame().getHastenedMovementBonusFactor();
 		}
 		XXX_Variables.staffDamage = XXX_Constants.getGame().getStaffDamage() +
 				XXX_Constants.getGame().getStaffDamageBonusPerSkillLevel() * (aurasCount[XXX_SkillFork.STAFF_DAMAGE.ordinal()] + skillsCount[XXX_SkillFork.STAFF_DAMAGE.ordinal()]);
-		XXX_Variables.magicDamageBonus = XXX_Constants.getGame().getMagicalDamageBonusPerSkillLevel() *
-				(aurasCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()] + skillsCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()]);
-
+		XXX_Variables.magicDamageBonus = XXX_Constants.getGame().getMagicalDamageBonusPerSkillLevel() * (aurasCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()] + skillsCount[XXX_SkillFork.MAGICAL_DAMAGE.ordinal()]);
 	}
 
 	public static XXX_BuildingPhantom[] updateBuildingPhantoms(World world, XXX_BuildingPhantom[] phantoms) {
 		for (XXX_BuildingPhantom phantom : phantoms) {
 			phantom.resetUpdate();
 		}
-
 		for (Building building : world.getBuildings()) {
 			for (XXX_BuildingPhantom phantom : phantoms) {
 				if (phantom.getId() == building.getId()) {
@@ -559,7 +504,6 @@ public class XXX_Utils {
 				}
 			}
 		}
-
 		int hasBroken = 0;
 		for (XXX_BuildingPhantom phantom : phantoms) {
 			if (phantom.isUpdated()) {
@@ -594,16 +538,9 @@ public class XXX_Utils {
 	}
 
 	public final static double[] PROJECTIVE_SPEED = new double[]
-			{XXX_Constants.getGame().getMagicMissileSpeed(),
-					XXX_Constants.getGame().getFrostBoltSpeed(),
-					XXX_Constants.getGame().getFireballSpeed(),
-					XXX_Constants.getGame().getDartSpeed()};
-
+			{XXX_Constants.getGame().getMagicMissileSpeed(), XXX_Constants.getGame().getFrostBoltSpeed(), XXX_Constants.getGame().getFireballSpeed(), XXX_Constants.getGame().getDartSpeed()};
 	public final static int[] PROJECTIVE_DAMAGE = new int[]
-			{XXX_Constants.getGame().getMagicMissileDirectDamage(),
-					XXX_Constants.getGame().getFrostBoltDirectDamage(),
-					XXX_Constants.getGame().getFireballExplosionMaxDamage(),
-					XXX_Constants.getGame().getDartDirectDamage()};
+			{XXX_Constants.getGame().getMagicMissileDirectDamage(), XXX_Constants.getGame().getFrostBoltDirectDamage(), XXX_Constants.getGame().getFireballExplosionMaxDamage(), XXX_Constants.getGame().getDartDirectDamage()};
 
 	public static int getProjectileDamage(Projectile projectile) {
 		return getProjectileDamage(projectile.getType());
@@ -614,8 +551,8 @@ public class XXX_Utils {
 	}
 
 	public static double getSelfProjectileDamage(ProjectileType projectileType) {
-		return (getProjectileDamage(projectileType) + XXX_Variables.magicDamageBonus) * (wizardHasStatus(XXX_Variables.self, StatusType.EMPOWERED) ?
-				XXX_Constants.getGame().getEmpoweredDamageFactor() : 1);
+		return (getProjectileDamage(projectileType) + XXX_Variables.magicDamageBonus) * (wizardHasStatus(XXX_Variables.self,
+																										 StatusType.EMPOWERED) ? XXX_Constants.getGame().getEmpoweredDamageFactor() : 1);
 	}
 
 	public static void fillProjectilesSim(XXX_FilteredWorld filteredWorld, HashMap<Long, Double> projectilesDTL) {
@@ -654,7 +591,6 @@ public class XXX_Utils {
 		return damage;
 	}
 
-
 	public static double updateMaxModule(double value, double maxModule) {
 		if (Math.abs(value) <= maxModule) {
 			return value;
@@ -677,12 +613,10 @@ public class XXX_Utils {
 			return 0;
 		}
 		int result = 0;
-		// modify both this and bottom functions
 		for (LivingUnit unit : units) {
-			if (XXX_FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) <
-					XXX_Constants.getGame().getWizardRadius() +
-							unit.getRadius() +
-							XXX_Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
+			if (XXX_FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) < XXX_Constants.getGame().getWizardRadius() +
+					unit.getRadius() +
+					XXX_Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
 				++result;
 			}
 		}
@@ -694,12 +628,10 @@ public class XXX_Utils {
 			return 0;
 		}
 		int result = 0;
-		// modify both this and upper functions
 		for (CircularUnit unit : units) {
-			if (XXX_FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) <
-					XXX_Constants.getGame().getWizardRadius() +
-							unit.getRadius() +
-							XXX_Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
+			if (XXX_FastMath.hypot(unit.getX() - destination.getX(), unit.getY() - destination.getY()) < XXX_Constants.getGame().getWizardRadius() +
+					unit.getRadius() +
+					XXX_Constants.MOVE_SCAN_DIAGONAL_DISTANCE + .1) {
 				++result;
 			}
 		}
@@ -758,10 +690,8 @@ public class XXX_Utils {
 				score[i] = XXX_Constants.minionLineScore * currScore;
 			}
 		}
-
 		for (Building building : world.getBuildings()) {
-			if (building.getType() == BuildingType.FACTION_BASE ||
-					building.getFaction() != XXX_Constants.getCurrentFaction()) {
+			if (building.getType() == BuildingType.FACTION_BASE || building.getFaction() != XXX_Constants.getCurrentFaction()) {
 				continue;
 			}
 			int line = XXX_Utils.whichLine(building);
@@ -770,12 +700,10 @@ public class XXX_Utils {
 		for (XXX_BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
 			score[XXX_Utils.whichLine(buildingPhantom)] += XXX_Constants.towerLineScore;
 		}
-
 		for (XXX_WizardPhantom wizard : enemyPositionCalc.getDetectedWizards().values()) {
 			int line = XXX_Utils.whichLine(wizard);
 			score[line] += XXX_Constants.enemyWizardLineScore;
 		}
-
 		for (Wizard wizard : world.getWizards()) {
 			if (wizard.isMe() || wizard.getFaction() == XXX_Constants.getEnemyFaction()) {
 				continue;
@@ -829,11 +757,9 @@ public class XXX_Utils {
 			if (livingUnit.getFaction() != XXX_Constants.getCurrentFaction()) {
 				continue;
 			}
-
 			if (livingUnit.getLife() < damage || livingUnit.getLife() >= life) {
 				continue;
 			}
-
 			if (XXX_FastMath.hypot(unit, livingUnit) < distance) {
 				++cnt;
 			}
@@ -842,11 +768,9 @@ public class XXX_Utils {
 			if (livingUnit.getFaction() != XXX_Constants.getCurrentFaction() || livingUnit.isMe()) {
 				continue;
 			}
-
 			if (livingUnit.getLife() < damage || livingUnit.getLife() >= life) {
 				continue;
 			}
-
 			if (XXX_FastMath.hypot(unit, livingUnit) < distance) {
 				++cnt;
 			}
@@ -875,10 +799,6 @@ public class XXX_Utils {
 	}
 
 	public static boolean isUnitActive(Minion previuosPosition, Minion newPosition) {
-		return previuosPosition.getX() != newPosition.getX() ||
-				previuosPosition.getY() != newPosition.getY() ||
-				previuosPosition.getAngle() != newPosition.getAngle() ||
-				newPosition.getLife() != newPosition.getMaxLife() ||
-				newPosition.getRemainingActionCooldownTicks() != 0;
+		return previuosPosition.getX() != newPosition.getX() || previuosPosition.getY() != newPosition.getY() || previuosPosition.getAngle() != newPosition.getAngle() || newPosition.getLife() != newPosition.getMaxLife() || newPosition.getRemainingActionCooldownTicks() != 0;
 	}
 }

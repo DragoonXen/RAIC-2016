@@ -12,13 +12,8 @@ import model.World;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by dragoon on 11/12/16.
- */
 public class XXX_FilteredWorld extends World {
-
 	private List<CircularUnit> allBlocksList;
-
 	private List<LivingUnit> aimsList;
 
 	public XXX_FilteredWorld(int tickIndex,
@@ -65,9 +60,5 @@ public class XXX_FilteredWorld extends World {
 		return aimsList;
 	}
 
-	public static enum FilterType {
-		FIGHT,
-		MOVE,
-		AIM
-	}
+	public static enum FilterType {FIGHT, MOVE, AIM}
 }

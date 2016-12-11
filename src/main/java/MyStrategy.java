@@ -33,7 +33,7 @@ public final class MyStrategy implements Strategy {
 					} else {
 						YYY_SkillsLearning.init(world);
 						YYY_Constants.init(game, self);
-						strategy = draw ? new YYY_Drawing_DrawingStrategy(self) : new YYY_StrategyImplement(self);
+						strategy = new YYY_StrategyImplement(self);
 					}
 				} else {
 					XXX_Constants.init(game, self);
