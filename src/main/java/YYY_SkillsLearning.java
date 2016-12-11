@@ -4,6 +4,10 @@ import model.SkillType;
 import model.Wizard;
 import model.World;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Created by dragoon on 11/27/16.
  */
@@ -117,49 +121,48 @@ public class YYY_SkillsLearning {
 	public static void updateSkills(Wizard self, YYY_EnemyPositionCalc enemyPositionCalc, Wizard[] wizards, Move move) {
 		if (self.getLevel() > self.getSkills().length && self.getLevel() <= currentSkillsToLearn.length) {
 			if (self.getSkills().length == 0 && cntMe == 1) {
-				currentSkillsToLearn = FROST_MOVEMENT_RANGE;
-//				YYY_WizardsInfo wizardsInfo = YYY_Variables.wizardsInfo;
-//				currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
-//				int enemiesOnLine = 0;
-//				int myLine = wizardsInfo.getMe().getLineNo();
-//				List<Wizard> allyWizards = new ArrayList<>();
-//				for (Wizard wizard : wizards) {
-//					if (wizard.getFaction() != YYY_Constants.getCurrentFaction()) {
-//						continue;
-//					}
-//					if (!wizard.isMe() && wizardsInfo.getWizardInfo(wizard.getId()).getLineNo() == myLine) {
-//						allyWizards.add(wizard);
-//					}
-//				}
-//				for (YYY_WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
-//					if (wizardPhantom.getLastSeenTick() > 0 && wizardsInfo.getWizardInfo(wizardPhantom.getId()).getLineNo() == myLine) {
-//						++enemiesOnLine;
-//					}
-//				}
-//				if (allyWizards.size() + 1 < enemiesOnLine) { // preferred haste or range, if have not yet
-//					boolean hasRange = false;
-//					boolean hasHaste = false;
-//					for (Wizard allyWizard : allyWizards) {
-//						hasRange |= Arrays.asList(allyWizard.getSkills()).contains(SkillType.RANGE_BONUS_PASSIVE_1);
-//						hasHaste |= Arrays.asList(allyWizard.getSkills()).contains(SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1);
-//						if (hasRange && hasHaste) {
-//							break;
-//						}
-//					}
-//					if (hasRange) {
-//						if (hasHaste) {
-//							currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
-//						} else {
-//							currentSkillsToLearn = HASTE_RANGE_FIRE;
-//						}
-//					} else {
-//						if (hasHaste) {
-//							currentSkillsToLearn = RANGE_FIRE_HASTE;
-//						} else {
-//							currentSkillsToLearn = HASTE_RANGE_FIRE;
-//						}
-//					}
-//				}
+				YYY_WizardsInfo wizardsInfo = YYY_Variables.wizardsInfo;
+				currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+				int enemiesOnLine = 0;
+				int myLine = wizardsInfo.getMe().getLineNo();
+				List<Wizard> allyWizards = new ArrayList<>();
+				for (Wizard wizard : wizards) {
+					if (wizard.getFaction() != YYY_Constants.getCurrentFaction()) {
+						continue;
+					}
+					if (!wizard.isMe() && wizardsInfo.getWizardInfo(wizard.getId()).getLineNo() == myLine) {
+						allyWizards.add(wizard);
+					}
+				}
+				for (YYY_WizardPhantom wizardPhantom : enemyPositionCalc.getDetectedWizards().values()) {
+					if (wizardPhantom.getLastSeenTick() > 0 && wizardsInfo.getWizardInfo(wizardPhantom.getId()).getLineNo() == myLine) {
+						++enemiesOnLine;
+					}
+				}
+				if (allyWizards.size() + 1 < enemiesOnLine) { // preferred haste or range, if have not yet
+					boolean hasRange = false;
+					boolean hasHaste = false;
+					for (Wizard allyWizard : allyWizards) {
+						hasRange |= Arrays.asList(allyWizard.getSkills()).contains(SkillType.RANGE_BONUS_PASSIVE_1);
+						hasHaste |= Arrays.asList(allyWizard.getSkills()).contains(SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1);
+						if (hasRange && hasHaste) {
+							break;
+						}
+					}
+					if (hasRange) {
+						if (hasHaste) {
+							currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
+						} else {
+							currentSkillsToLearn = HASTE_RANGE_FIRE;
+						}
+					} else {
+						if (hasHaste) {
+							currentSkillsToLearn = RANGE_FIRE_HASTE;
+						} else {
+							currentSkillsToLearn = HASTE_RANGE_FIRE;
+						}
+					}
+				}
 			}
 			move.setSkillToLearn(currentSkillsToLearn[self.getSkills().length]);
 		}

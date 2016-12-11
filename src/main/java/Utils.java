@@ -617,48 +617,49 @@ public class Utils {
 	private static double score[] = new double[3];
 
 	public static BaseLine fightLineSelect(BaseLine previousLine, World world, EnemyPositionCalc enemyPositionCalc, Wizard self) {
-		for (int i = 0; i != 3; ++i) {
-			int currScore = enemyPositionCalc.getMinionsOnLine()[i];
-			if (currScore < 4) {
-				score[i] = Constants.minionLineScore * 4;
-			} else {
-				score[i] = Constants.minionLineScore * currScore;
-			}
-		}
-
-		WizardsInfo wizardsInfo = Variables.wizardsInfo;
-
-		for (WizardPhantom wizard : enemyPositionCalc.getDetectedWizards().values()) {
-			if (wizard.getLastSeenTick() == 0) {
-				continue;
-			}
-			int line = wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
-			score[line] += Constants.enemyWizardLineScore;
-		}
-
-		for (Wizard wizard : world.getWizards()) {
-			if (wizard.isMe() || wizard.getFaction() == Constants.getEnemyFaction()) {
-				continue;
-			}
-			int line = wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
-			if (wizard.getFaction() == Constants.getCurrentFaction()) {
-				score[line] *= Constants.wizardLineMult;
-			}
-		}
-		int maxValue = 0;
-		for (int i = 0; i != 3; ++i) {
-			double distancePenalty = FastMath.hypot(self.getX() - Constants.getLines()[i].getPreFightPoint().getX(),
-													self.getY() - Constants.getLines()[i].getPreFightPoint().getY());
-			distancePenalty = 1 / Math.max(1, distancePenalty / 450);
-			score[i] *= distancePenalty;
-			if (Constants.getLines()[i] == previousLine) {
-				score[i] *= Constants.CURRENT_LINE_PRIORITY;
-			}
-			if (score[maxValue] < score[i]) {
-				maxValue = i;
-			}
-		}
-		return Constants.getLines()[maxValue];
+		return Constants.getLines()[1];
+//		for (int i = 0; i != 3; ++i) {
+//			int currScore = enemyPositionCalc.getMinionsOnLine()[i];
+//			if (currScore < 4) {
+//				score[i] = Constants.minionLineScore * 4;
+//			} else {
+//				score[i] = Constants.minionLineScore * currScore;
+//			}
+//		}
+//
+//		WizardsInfo wizardsInfo = Variables.wizardsInfo;
+//
+//		for (WizardPhantom wizard : enemyPositionCalc.getDetectedWizards().values()) {
+//			if (wizard.getLastSeenTick() == 0) {
+//				continue;
+//			}
+//			int line = wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
+//			score[line] += Constants.enemyWizardLineScore;
+//		}
+//
+//		for (Wizard wizard : world.getWizards()) {
+//			if (wizard.isMe() || wizard.getFaction() == Constants.getEnemyFaction()) {
+//				continue;
+//			}
+//			int line = wizardsInfo.getWizardInfo(wizard.getId()).getLineNo();
+//			if (wizard.getFaction() == Constants.getCurrentFaction()) {
+//				score[line] *= Constants.wizardLineMult;
+//			}
+//		}
+//		int maxValue = 0;
+//		for (int i = 0; i != 3; ++i) {
+//			double distancePenalty = FastMath.hypot(self.getX() - Constants.getLines()[i].getPreFightPoint().getX(),
+//													self.getY() - Constants.getLines()[i].getPreFightPoint().getY());
+//			distancePenalty = 1 / Math.max(1, distancePenalty / 450);
+//			score[i] *= distancePenalty;
+//			if (Constants.getLines()[i] == previousLine) {
+//				score[i] *= Constants.CURRENT_LINE_PRIORITY;
+//			}
+//			if (score[maxValue] < score[i]) {
+//				maxValue = i;
+//			}
+//		}
+//		return Constants.getLines()[maxValue];
 	}
 
 	public static double getDistanceToNearestAlly(Unit unit, FilteredWorld filteredWorld, double startDistance) {
