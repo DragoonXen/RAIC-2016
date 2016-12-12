@@ -118,6 +118,8 @@ public class UnitScoreCalculation {
 			myDamage *= 10.;
 		}
 
+		double backwardMoveBuildingSpeed = myWizardInfo.getMoveFactor() * Constants.getGame().getWizardBackwardSpeed() * .66;
+
 		for (BuildingPhantom building : filteredWorld.getBuildings()) {
 			if (building.getFaction() == Constants.getCurrentFaction()) {
 				continue;
@@ -132,12 +134,13 @@ public class UnitScoreCalculation {
 			}
 
 			if (priorityAims < 2) {
-				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(building.getAttackRange() + Math.min(2,
-																													  -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5,
+				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(building.getAttackRange() +
+																						 Math.min(2,
+																								  -building.getRemainingActionCooldownTicks() - addTicks + 8) * backwardMoveBuildingSpeed,
 																				 building.getDamage() * shieldBonus));
 			} else if (priorityAims == 2) {
-				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer((building.getAttackRange() + Math.min(2,
-																													   -building.getRemainingActionCooldownTicks() - addTicks + 4) * 1.5) * .5,
+				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer((building.getAttackRange() +
+																						 Math.min(2, -building.getRemainingActionCooldownTicks() - addTicks + 8) * backwardMoveBuildingSpeed) * .5,
 																				 building.getDamage() * shieldBonus * .5));
 			}
 			if (building.isInvulnerable()) {

@@ -370,6 +370,22 @@ public class StrategyImplement implements Strategy {
 		double bestDangerOnWay = 0.;
 		Point position = new Point(self.getX(), self.getY());
 		Point bestPosition = position;
+		double buildingAdditDamage = 0;
+
+		int enemyBuildingCoolDown = 200;
+		int enemyBuildingPriorities = 10;
+		for (BuildingPhantom buildingPhantom : filteredWorld.getBuildings()) {
+			if (buildingPhantom.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
+			enemyBuildingCoolDown = Math.min(enemyBuildingCoolDown, buildingPhantom.getCooldownTicks());
+			enemyBuildingPriorities = Math.min(enemyBuildingPriorities,
+											   Utils.getPrefferedUnitsCountInRange(buildingPhantom,
+																				   filteredWorld,
+																				   buildingPhantom.getAttackRange(),
+																				   buildingPhantom.getDamage(),
+																				   self.getLife()));
+		}
 
 		UnitScoreCalculationTickSupport unitScoreCalculationTickSupport = new UnitScoreCalculationTickSupport(unitScoreCalculation);
 		Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
@@ -385,8 +401,17 @@ public class StrategyImplement implements Strategy {
 			bestScore = testScanItem.getTotalScore(self);
 			bestDangerOnWay += testScanItem.getAllDangers();
 			bestDamage += Utils.checkProjectiveCollision(position, ticks++);
+			if (enemyBuildingCoolDown <= ticks && enemyBuildingPriorities < 2) {
+				buildingAdditDamage = Math.max(buildingAdditDamage, testScanItem.getBuildingsDanger());
+			}
+		}
+		if (enemyBuildingPriorities == 1) {
+			buildingAdditDamage *= .5;
 		}
 		bestDamage += Utils.finalizeFireballsDamage();
+		bestDamage += buildingAdditDamage;
+
+		maxDamageToRecieve += buildingAdditDamage; // baseline for projectile escape
 
 		double currScore;
 		double currDamage;
@@ -401,6 +426,7 @@ public class StrategyImplement implements Strategy {
 			currScore = 0.;
 			currDamage = 0.;
 			currDangerOnWay = 0.;
+			buildingAdditDamage = 0.;
 			position = new Point(self.getX(), self.getY());
 			Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
 			moveAngle = Utils.normalizeAngle(i * Constants.EVADE_DEGREE_STEP);
@@ -425,15 +451,35 @@ public class StrategyImplement implements Strategy {
 					if (!testScanItem.isAvailable()) {
 						stuck = true;
 						position.negate(moveVector);
+						testScanItem.setPoint(position.getX(), position.getY());
+						Utils.calcTileScore(testScanItem,
+											filteredWorld,
+											myLineCalc,
+											self,
+											unitScoreCalculationTickSupport.getScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs, ticks),
+											fightStatus);
 					}
-					if (!stuck) {
-						currScore = testScanItem.getTotalScore(self);
-						currDangerOnWay += testScanItem.getAllDangers();
-					}
+				} else {
+					testScanItem.setPoint(position.getX(), position.getY());
+					Utils.calcTileScore(testScanItem,
+										filteredWorld,
+										myLineCalc,
+										self,
+										unitScoreCalculationTickSupport.getScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs, ticks),
+										fightStatus);
 				}
+				currScore = testScanItem.getTotalScore(self);
+				currDangerOnWay += testScanItem.getAllDangers();
 				currDamage += Utils.checkProjectiveCollision(position, ticks++);
+				if (enemyBuildingCoolDown <= ticks && enemyBuildingPriorities < 2) {
+					buildingAdditDamage = Math.max(buildingAdditDamage, testScanItem.getBuildingsDanger());
+				}
 			}
 			currDamage += Utils.finalizeFireballsDamage();
+			if (enemyBuildingPriorities == 1) {
+				buildingAdditDamage *= .5;
+			}
+			currDamage += buildingAdditDamage;
 			if (bestDamage < currDamage) {
 				continue;
 			}
@@ -464,6 +510,7 @@ public class StrategyImplement implements Strategy {
 				currScore = 0.;
 				currDamage = 0.;
 				currDangerOnWay = 0.;
+				buildingAdditDamage = 0.;
 				position = new Point(self.getX(), self.getY());
 				Utils.fillProjectilesSim(filteredWorld, projectilesDTL);
 				moveAngle = Utils.normalizeAngle(i * Constants.EVADE_DEGREE_STEP);
@@ -489,15 +536,28 @@ public class StrategyImplement implements Strategy {
 										self,
 										unitScoreCalculationTickSupport.getScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs, ticks),
 										fightStatus);
-					if (testScanItem.isAvailable()) {
-						currScore = testScanItem.getTotalScore(self);
-						currDangerOnWay += testScanItem.getAllDangers();
-					} else {
+					if (!testScanItem.isAvailable()) {
 						position.negate(positionChange);
+						testScanItem.setPoint(position.getX(), position.getY());
+						Utils.calcTileScore(testScanItem,
+											filteredWorld,
+											myLineCalc,
+											self,
+											unitScoreCalculationTickSupport.getScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs, ticks),
+											fightStatus);
 					}
+					currScore = testScanItem.getTotalScore(self);
+					currDangerOnWay += testScanItem.getAllDangers();
 					currDamage += Utils.checkProjectiveCollision(position, ticks++);
+					if (enemyBuildingCoolDown <= ticks && enemyBuildingPriorities < 2) {
+						buildingAdditDamage = Math.max(buildingAdditDamage, testScanItem.getBuildingsDanger());
+					}
 				}
 				currDamage += Utils.finalizeFireballsDamage();
+				if (enemyBuildingPriorities == 1) {
+					buildingAdditDamage *= .5;
+				}
+				currDamage += buildingAdditDamage;
 				if (bestDamage < currDamage || currDamage >= bestEvadeDamage) {
 					continue;
 				}
