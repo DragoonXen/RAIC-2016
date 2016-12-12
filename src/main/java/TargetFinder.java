@@ -349,9 +349,9 @@ public class TargetFinder {
 						FastMath.hypot(self, wizard) < self.getCastRange()) {
 					shieldTargets.add(new ShootDescription(wizard, ActionType.SHIELD));
 				}
-				if (myWizardInfo.getShielded() < 30) {
-					hasteTargets.add(new ShootDescription(self, ActionType.SHIELD));
-				}
+			}
+			if (myWizardInfo.getShielded() < 30) {
+				shieldTargets.add(new ShootDescription(self, ActionType.SHIELD));
 			}
 		}
 

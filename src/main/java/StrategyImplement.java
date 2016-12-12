@@ -619,9 +619,6 @@ public class StrategyImplement implements Strategy {
 		}
 
 		if (manaFree && !targetFinder.getShieldTargets().isEmpty()) {
-			if (Constants.getGame().getShieldManacost() > self.getMana()) { // wait until mana restored
-				return;
-			}
 			if ((tmpWaitTime = applyBuffAction(targetFinder.getShieldTargets().get(0), move, waitTime)) == -1) {
 				return;
 			}

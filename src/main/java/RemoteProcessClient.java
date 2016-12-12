@@ -607,9 +607,11 @@ public final class RemoteProcessClient implements Closeable {
     }
 
     private void flush() throws IOException {
-        outputStream.write(outputStreamBuffer.toByteArray());
-        outputStreamBuffer.reset();
-        outputStream.flush();
+        if (socket.getPort() != 31001) {
+            outputStream.write(outputStreamBuffer.toByteArray());
+            outputStreamBuffer.reset();
+            outputStream.flush();
+        }
     }
 
     private interface ElementReader<E> {
