@@ -134,8 +134,8 @@ public class SkillsLearning {
 
 	public static void updateSkills(Wizard self, EnemyPositionCalc enemyPositionCalc, Wizard[] wizards, Move move) {
 		if (self.getLevel() > self.getSkills().length && self.getLevel() <= currentSkillsToLearn.length) {
+			move.setSkillToLearn(currentSkillsToLearn[self.getSkills().length]);
 			if (self.getSkills().length == 0) {
-				move.setSkillToLearn(currentSkillsToLearn[self.getSkills().length]);
 //				WizardsInfo wizardsInfo = Variables.wizardsInfo;
 //				currentSkillsToLearn = FIRE_RANGE_MOVEMENT;
 //				int myLine = wizardsInfo.getMe().getLineNo();
