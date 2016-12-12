@@ -104,18 +104,15 @@ public class UnitScoreCalculation {
 																											  minion.getVisionRange()) +
 																					   Constants.getGame().getMinionSpeed() + .1 + movePenalty,
 																			   damage));
-				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty,
-																			  myDamage * Constants.MINION_ATTACK_FACTOR));
-				structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + minion.getRadius() - movePenalty,
-																				   staffDamage * Constants.MINION_ATTACK_FACTOR));
+				if (minion.getFaction() != Faction.NEUTRAL || filteredWorld.getTickIndex() > 700) {
+					structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty,
+																				  myDamage * Constants.MINION_ATTACK_FACTOR));
+					structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + minion.getRadius() - movePenalty,
+																					   staffDamage * Constants.MINION_ATTACK_FACTOR));
+				}
 			}
 
 			unitsScoreCalc.put(minion.getId(), structure);
-		}
-
-		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
-			staffDamage *= 10.;
-			myDamage *= 10.;
 		}
 
 		double backwardMoveBuildingSpeed = myWizardInfo.getMoveFactor() * Constants.getGame().getWizardBackwardSpeed() * .66;
@@ -162,6 +159,10 @@ public class UnitScoreCalculation {
 																			   staffDamage * Constants.BUILDING_ATTACK_FACTOR));
 		}
 
+		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
+			staffDamage *= 3.;
+			myDamage *= 3.;
+		}
 		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
 		int absorbMagicDamageBonus = myWizardInfo.getAbsorbMagicBonus();
 		for (Wizard wizard : filteredWorld.getWizards()) {
