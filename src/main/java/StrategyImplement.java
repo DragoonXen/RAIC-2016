@@ -371,7 +371,8 @@ public class StrategyImplement implements Strategy {
 		List<Pair<WizardPhantom, Double>> wizardsToPush = new ArrayList<>();
 
 		for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
-			if (!phantom.isUpdated()) {
+			if (phantom.getLastSeenTick() + 50 < world.getTickIndex() ||
+					FastMath.hypot(middlePoint, phantom.getPosition()) > 900.) {
 				continue;
 			}
 			double minDist, nextMinDist, tmpDist;
