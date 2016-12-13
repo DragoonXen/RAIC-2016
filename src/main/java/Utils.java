@@ -348,10 +348,6 @@ public class Utils {
 		}
 
 		for (Wizard wizard : filteredWorld.getWizards()) {
-			if (wizard.getFaction() == Constants.getCurrentFaction()) {
-				continue;
-			}
-
 			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(wizard.getId());
 			structure.applyScores(item, FastMath.hypot(wizard, item));
 		}

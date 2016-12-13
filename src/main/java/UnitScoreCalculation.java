@@ -117,6 +117,9 @@ public class UnitScoreCalculation {
 
 		double backwardMoveBuildingSpeed = myWizardInfo.getMoveFactor() * Constants.getGame().getWizardBackwardSpeed() * .66;
 
+		boolean enemyCanAttack = false;
+		double dangerZone;
+
 		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
 			staffDamage *= 4.;
 			myDamage *= 4.;
@@ -134,16 +137,19 @@ public class UnitScoreCalculation {
 				priorityAims = Utils.getPrefferedUnitsCountInRange(building, filteredWorld, building.getAttackRange(), building.getDamage(), self.getLife());
 			}
 
+			dangerZone = 0.;
 			if (priorityAims < 2) {
-				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(building.getAttackRange() +
-																						 Math.min(2,
-																								  -building.getRemainingActionCooldownTicks() - addTicks + 8) * backwardMoveBuildingSpeed,
-																				 building.getDamage() * shieldBonus));
+				dangerZone = building.getAttackRange() + Math.min(2, -building.getRemainingActionCooldownTicks() - addTicks + 8) * backwardMoveBuildingSpeed;
+				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(dangerZone, building.getDamage() * shieldBonus));
 			} else if (priorityAims == 2) {
-				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer((building.getAttackRange() +
-																						 Math.min(2, -building.getRemainingActionCooldownTicks() - addTicks + 8) * backwardMoveBuildingSpeed) * .5,
-																				 building.getDamage() * shieldBonus * .5));
+				dangerZone = (building.getAttackRange() + Math.min(2,
+																   -building.getRemainingActionCooldownTicks() - addTicks + 8) * backwardMoveBuildingSpeed) * .5;
+				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(dangerZone, building.getDamage() * shieldBonus * .5));
 			}
+			if (dangerZone > FastMath.hypot(self, building)) {
+				enemyCanAttack = true;
+			}
+
 			if (building.isInvulnerable()) {
 				continue;
 			}
@@ -281,16 +287,25 @@ public class UnitScoreCalculation {
 			if (!frost && meHasFrostSkill && self.getMana() >= Constants.getGame().getFrostBoltManacost()) {
 				structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(500, 12));
 			}
+			dangerZone = 0.;
 			if (frostDangerInfo != null) {
 				if (fireDangerInfo != null) {
+					dangerZone = fireDangerInfo.dangerRadius;
 					structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(fireDangerInfo.dangerRadius, fireDangerInfo.dangerDamage));
 				}
+				dangerZone = Math.max(frostDangerInfo.dangerRadius, dangerZone);
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(frostDangerInfo.dangerRadius, frostDangerInfo.dangerDamage));
 			} else {
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(missileDangerInfo.dangerRadius, missileDangerInfo.dangerDamage));
+				dangerZone = missileDangerInfo.dangerRadius;
 				if (fireDangerInfo != null) {
 					structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(fireDangerInfo.dangerRadius, fireDangerInfo.dangerDamage));
+					dangerZone = Math.max(fireDangerInfo.dangerRadius, dangerZone);
 				}
+			}
+
+			if (dangerZone > FastMath.hypot(self, wizard)) {
+				enemyCanAttack = true;
 			}
 
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
@@ -299,6 +314,18 @@ public class UnitScoreCalculation {
 			if (!wizardInfo.isHasFastMissileCooldown()) {
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(Constants.getGame().getStaffRange() + wizard.getRadius() - .1,
 																				wizardInfo.getStaffDamage(addTicks)));
+			}
+			unitsScoreCalc.put(wizard.getId(), structure);
+		}
+
+		for (Wizard wizard : filteredWorld.getWizards()) {
+			if (wizard.getFaction() == Constants.getEnemyFaction()) {
+				continue;
+			}
+			ScoreCalcStructure structure = new ScoreCalcStructure();
+			structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(600., 10.));
+			if (!enemyCanAttack) {
+				structure.putItem(ScoreCalcStructure.createOtherDangerApplyer(50., 20.));
 			}
 			unitsScoreCalc.put(wizard.getId(), structure);
 		}
