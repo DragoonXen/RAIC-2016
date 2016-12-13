@@ -300,6 +300,9 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		moveToPoint = null;
 		long time = System.nanoTime();
 		foundScanMatrixItems.clear();
+		if (!draw) {
+			System.out.printf("in " + world.getTickIndex() + " tick");
+		}
 		super.move(self, world, game, move);
 		time = System.nanoTime() - time;
 		System.out.println("Call took " + nanosToMsec(time) + "ms");
@@ -315,27 +318,27 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 												self.getY() + Math.sin(angle) * move.getMaxCastDistance()),
 									  move.getMaxCastDistance()));
 		}
-		if (move.getAction() == ActionType.MAGIC_MISSILE ||
-				move.getAction() == ActionType.FROST_BOLT) {
-			Color color = Color.black;
-			switch (move.getAction()) {
-				case MAGIC_MISSILE:
-					color = Color.magenta;
-					break;
-				case FROST_BOLT:
-					color = Color.blue;
-					break;
-			}
-			double startAngle = Utils.normalizeAngle(self.getAngle() + move.getCastAngle());
-			drawPanel.addFigure(new Drawing_Line(
-					self.getX() + Math.cos(startAngle) * move.getMinCastDistance(),
-					self.getY() + Math.sin(startAngle) * move.getMinCastDistance(),
-					self.getX() + Math.cos(startAngle) * self.getCastRange(),
-					self.getY() + Math.sin(startAngle) * self.getCastRange(),
-					color));
-		}
 
 		if (draw) {
+			if (move.getAction() == ActionType.MAGIC_MISSILE ||
+					move.getAction() == ActionType.FROST_BOLT) {
+				Color color = Color.black;
+				switch (move.getAction()) {
+					case MAGIC_MISSILE:
+						color = Color.magenta;
+						break;
+					case FROST_BOLT:
+						color = Color.blue;
+						break;
+				}
+				double startAngle = Utils.normalizeAngle(self.getAngle() + move.getCastAngle());
+				drawPanel.addFigure(new Drawing_Line(
+						self.getX() + Math.cos(startAngle) * move.getMinCastDistance(),
+						self.getY() + Math.sin(startAngle) * move.getMinCastDistance(),
+						self.getX() + Math.cos(startAngle) * self.getCastRange(),
+						self.getY() + Math.sin(startAngle) * self.getCastRange(),
+						color));
+			}
 			drawUpdatedData(self);
 			mainFrame.repaint();
 		}

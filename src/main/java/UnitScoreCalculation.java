@@ -323,9 +323,9 @@ public class UnitScoreCalculation {
 				continue;
 			}
 			ScoreCalcStructure structure = new ScoreCalcStructure();
-			structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(600., 10.));
+			structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(600., 100.));
 			if (!enemyCanAttack) {
-				structure.putItem(ScoreCalcStructure.createOtherDangerApplyer(50., 20.));
+				structure.putItem(ScoreCalcStructure.createOtherDangerApplyer(95., 200.));
 			}
 			unitsScoreCalc.put(wizard.getId(), structure);
 		}

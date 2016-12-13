@@ -1288,6 +1288,9 @@ public class StrategyImplement implements Strategy {
 		}
 
 		for (Wizard wizard : filteredWorld.getWizards()) {
+			if (wizard.getFaction() == Constants.getCurrentFaction() && currentAction.getActionType() == CurrentAction.ActionType.MOVE_TO_POSITION) {
+				continue;
+			}
 			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(wizard.getId());
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				applyScoreForLine(scan_matrix[i], structure, new Point(wizard.getX(), wizard.getY()));
