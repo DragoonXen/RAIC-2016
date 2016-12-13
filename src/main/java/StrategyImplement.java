@@ -611,6 +611,7 @@ public class StrategyImplement implements Strategy {
 				return Double.NEGATIVE_INFINITY;
 			}
 			score += testScanItem.getTotalScore(self);
+			score += testScanItem.getOtherDanger() - testScanItem.getOtherBonus();
 		}
 		return score;
 	}

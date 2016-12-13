@@ -115,6 +115,10 @@ public class ScanMatrixItem extends Point {
 		return otherDanger;
 	}
 
+	public double getOtherBonus() {
+		return otherBonus;
+	}
+
 	public double getAttackBonus() {
 		return attackBonus;
 	}
