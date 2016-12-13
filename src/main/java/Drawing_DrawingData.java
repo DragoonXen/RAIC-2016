@@ -16,6 +16,7 @@ public class Drawing_DrawingData {
 	private EnemyPositionCalc enemyPositionCalc;
     private BonusesPossibilityCalcs bonusesPossibilityCalcs;
     private AgressiveNeutralsCalcs agressiveNeutralsCalcs;
+	private Long prevWizardToPush;
 	private WizardsInfo wizardsInfo;
 
     private boolean goToBonusActivated;
@@ -51,7 +52,8 @@ public class Drawing_DrawingData {
 							   TargetFinder targetFinder,
 							   Point prevPointToReach,
 							   int stuck,
-							   Point prevPoint) {
+							   Point prevPoint,
+							   Long prevWizardToPush) {
 		this.self = self;
 		this.world = world;
         this.currentAction = currentAction.clone();
@@ -81,6 +83,7 @@ public class Drawing_DrawingData {
 		this.prevPointToReach = prevPointToReach == null ? null : prevPointToReach.clonePoint();
 		this.stuck = stuck;
 		this.prevPoint = prevPoint.clonePoint();
+		this.prevWizardToPush = prevWizardToPush;
 	}
 
     public Wizard getSelf() {
@@ -155,6 +158,10 @@ public class Drawing_DrawingData {
 		return prevPoint;
 	}
 
+	public Long getPrevWizardToPush() {
+		return prevWizardToPush;
+	}
+
 	public Drawing_DrawingData clone() {
 		return new Drawing_DrawingData(self,
 									   world,
@@ -174,7 +181,8 @@ public class Drawing_DrawingData {
 									   targetFinder,
 									   prevPointToReach,
 									   stuck,
-									   prevPoint);
+									   prevPoint,
+									   prevWizardToPush);
 	}
 
 	public WizardsInfo getWizardsInfo() {

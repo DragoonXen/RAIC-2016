@@ -112,6 +112,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		this.prevPointToReach = currentDrawingData.getPrevPointToReach();
 		this.stuck = currentDrawingData.getStuck();
 		this.prevPoint = currentDrawingData.getPrevPoint();
+		this.prevWizardToPush = currentDrawingData.getPrevWizardToPush();
 
 		return storedData;
 	}
@@ -135,7 +136,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   targetFinder,
 									   pointToReach != null ? pointToReach : prevPointToReach,
 									   stuck,
-									   prevPoint);
+									   prevPoint,
+									   prevWizardToPush);
 	}
 
     @Override

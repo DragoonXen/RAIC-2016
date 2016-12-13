@@ -43,6 +43,11 @@ public class Point {
 		return new Point(x * value, y * value);
 	}
 
+	public void div(double value) {
+		this.x /= value;
+		this.y /= value;
+	}
+
 	public Point addWithCopy(Point other) {
 		return new Point(x + other.x, y + other.y);
 	}

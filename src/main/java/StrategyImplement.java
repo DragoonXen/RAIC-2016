@@ -331,7 +331,7 @@ public class StrategyImplement implements Strategy {
 		}
 		Point savedPoint = middlePoint.clonePoint();
 		while (cnt > 2) {
-			middlePoint.mult(1. / cnt);
+			middlePoint.div(cnt);
 			double max = 0.;
 			double tmp;
 			Wizard wizardToRemove = null;
@@ -351,7 +351,7 @@ public class StrategyImplement implements Strategy {
 				break;
 			}
 			middlePoint.update(savedPoint);
-			middlePoint.mult(1. / cnt);
+			middlePoint.div(cnt);
 		}
 		if (cnt < 2) {
 			prevWizardToPush = null;
@@ -393,12 +393,12 @@ public class StrategyImplement implements Strategy {
 			}
 			if (minDist > 400.) {
 				if (hitPoints > phantom.getLife()) {
-					putWizardToList(myWizards, wizardsToPush, phantom);
+					putWizardToList(myWizards, wizardsToPush, phantom, 1.);
 				}
 			} else if (nextMinDist > 600.) {
 				int totalHp = phantom.getLife() + minWizard.getLife();
 				if (hitPoints > totalHp * 1.5) {
-					putWizardToList(myWizards, wizardsToPush, phantom);
+					putWizardToList(myWizards, wizardsToPush, phantom, .6);
 				}
 			}
 		}
@@ -406,19 +406,22 @@ public class StrategyImplement implements Strategy {
 			prevWizardToPush = null;
 			return;
 		}
-		wizardsToPush.sort((o1, o2) -> Double.compare(o1.getSecond(), o2.getSecond()));
+		wizardsToPush.sort((o1, o2) -> Double.compare(o2.getSecond(), o1.getSecond()));
 		prevWizardToPush = wizardsToPush.get(0).getFirst().getId();
 	}
 
-	private void putWizardToList(List<Wizard> myWizards, List<Pair<WizardPhantom, Double>> wizardsToPush, WizardPhantom phantom) {
+	private void putWizardToList(List<Wizard> myWizards,
+								 List<Pair<WizardPhantom, Double>> wizardsToPush,
+								 WizardPhantom phantom, double mult) {
 		double distance = 0.;
 		for (Wizard wizard : myWizards) {
 			distance += FastMath.hypot(wizard, phantom.getPosition());
 		}
-		distance = 5000. / distance;
+		distance = 1000. / distance;
 		if (prevWizardToPush != null && prevWizardToPush == phantom.getId()) {
 			distance *= 1.5;
 		}
+		distance *= mult;
 		wizardsToPush.add(new Pair<WizardPhantom, Double>(phantom, distance));
 	}
 
