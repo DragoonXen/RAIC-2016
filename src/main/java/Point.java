@@ -52,6 +52,11 @@ public class Point {
 		this.y += other.y;
 	}
 
+	public void add(double x, double y) {
+		this.x += x;
+		this.y += y;
+	}
+
 	public double vectorNorm() {
 		return FastMath.hypot(x, y);
 	}
@@ -66,6 +71,11 @@ public class Point {
 
 	public Point negateCopy(Point other) {
 		return new Point(x - other.x, y - other.y);
+	}
+
+	public void negate(double x, double y) {
+		this.x -= x;
+		this.y -= y;
 	}
 
 	public void negate(Point other) {
