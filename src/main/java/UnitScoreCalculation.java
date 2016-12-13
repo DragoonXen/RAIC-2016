@@ -117,6 +117,10 @@ public class UnitScoreCalculation {
 
 		double backwardMoveBuildingSpeed = myWizardInfo.getMoveFactor() * Constants.getGame().getWizardBackwardSpeed() * .66;
 
+		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
+			staffDamage *= 4.;
+			myDamage *= 4.;
+		}
 		for (BuildingPhantom building : filteredWorld.getBuildings()) {
 			if (building.getFaction() == Constants.getCurrentFaction()) {
 				continue;
@@ -159,10 +163,7 @@ public class UnitScoreCalculation {
 																			   staffDamage * Constants.BUILDING_ATTACK_FACTOR));
 		}
 
-		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
-			staffDamage *= 3.;
-			myDamage *= 3.;
-		}
+
 		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
 		int absorbMagicDamageBonus = myWizardInfo.getAbsorbMagicBonus();
 		for (Wizard wizard : filteredWorld.getWizards()) {
