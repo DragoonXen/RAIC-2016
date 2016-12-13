@@ -7,6 +7,7 @@ import model.Minion;
 import model.Move;
 import model.Projectile;
 import model.ProjectileType;
+import model.SkillType;
 import model.StatusType;
 import model.Wizard;
 import model.World;
@@ -70,6 +71,8 @@ public class StrategyImplement implements Strategy {
 	protected boolean moveToLineActivated = false;
 	protected FightStatus fightStatus;
 	protected Long prevWizardToPush = null;
+	private List<Wizard> assaultWizards = new LinkedList<>();
+	private Point middlePoint = new Point(0, 0);
 
 	protected TargetFinder targetFinder = new TargetFinder();
 
@@ -318,13 +321,13 @@ public class StrategyImplement implements Strategy {
 	}
 
 	private void checkAssaultEnemyWizard() {
-		List<Wizard> myWizards = new LinkedList<>();
-		Point middlePoint = new Point(0, 0);
+		middlePoint.update(0., 0.);
 		int cnt = 0;
+		assaultWizards.clear();
 
 		for (Wizard wizard : world.getWizards()) {
 			if (wizard.getFaction() == Constants.getCurrentFaction()) {
-				myWizards.add(wizard);
+				assaultWizards.add(wizard);
 				middlePoint.add(wizard.getX(), wizard.getY());
 				++cnt;
 			}
@@ -335,16 +338,15 @@ public class StrategyImplement implements Strategy {
 			double max = 0.;
 			double tmp;
 			Wizard wizardToRemove = null;
-			for (Iterator<Wizard> iterator = myWizards.iterator(); iterator.hasNext(); ) {
-				Wizard wizard = iterator.next();
+			for (Wizard wizard : assaultWizards) {
 				tmp = FastMath.hypot(wizard, middlePoint);
 				if (max < tmp) {
 					max = tmp;
 					wizardToRemove = wizard;
 				}
 			}
-			if (max > 300.) {
-				myWizards.remove(wizardToRemove);
+			if (max > 350.) {
+				assaultWizards.remove(wizardToRemove);
 				savedPoint.negate(wizardToRemove.getX(), wizardToRemove.getY());
 				--cnt;
 			} else {
@@ -354,13 +356,14 @@ public class StrategyImplement implements Strategy {
 			middlePoint.div(cnt);
 		}
 		if (cnt < 2) {
+			assaultWizards.clear();
 			prevWizardToPush = null;
 			return;
 		}
 
 		int hitPoints = 0;
 		int rezerveHitPoints = 0;
-		for (Wizard wizard : myWizards) {
+		for (Wizard wizard : assaultWizards) {
 			if (wizard.getLife() > wizard.getLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
 				hitPoints += wizard.getLife();
 			} else {
@@ -375,11 +378,25 @@ public class StrategyImplement implements Strategy {
 					FastMath.hypot(middlePoint, phantom.getPosition()) > 900.) {
 				continue;
 			}
+			WizardsInfo.WizardInfo wi = wizardsInfo.getWizardInfo(phantom.getId());
+			if (wi.getHastened() > 0 || wi.hasSkill(SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1)) {
+				continue;
+			}
+			boolean skip = false;
+			for (BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
+				if (FastMath.hypot(buildingPhantom, phantom.getPosition()) < 600) {
+					skip = true;
+					break;
+				}
+			}
+			if (skip) {
+				continue;
+			}
 			double minDist, nextMinDist, tmpDist;
 			minDist = nextMinDist = 10000.;
 			WizardPhantom minWizard = null;
 			for (WizardPhantom phantomToCompare : enemyPositionCalc.getDetectedWizards().values()) {
-				if (phantom == phantomToCompare) {
+				if (phantom == phantomToCompare || phantom.getLastSeenTick() + 150 < world.getTickIndex()) {
 					continue;
 				}
 				tmpDist = FastMath.hypot(phantom.getPosition(), phantomToCompare.getPosition());
@@ -393,12 +410,12 @@ public class StrategyImplement implements Strategy {
 			}
 			if (minDist > 400.) {
 				if (hitPoints > phantom.getLife()) {
-					putWizardToList(myWizards, wizardsToPush, phantom, 1.);
+					putWizardToList(assaultWizards, wizardsToPush, phantom, 1.);
 				}
 			} else if (nextMinDist > 600.) {
 				int totalHp = phantom.getLife() + minWizard.getLife();
 				if (hitPoints > totalHp * 1.5) {
-					putWizardToList(myWizards, wizardsToPush, phantom, .6);
+					putWizardToList(assaultWizards, wizardsToPush, phantom, .6);
 				}
 			}
 		}
@@ -430,8 +447,16 @@ public class StrategyImplement implements Strategy {
 				prevWizardToPush == null) {
 			return;
 		}
-		currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
-		PositionMoveLine.INSTANCE.updatePointToMove(enemyPositionCalc.getDetectedWizards().get(prevWizardToPush).getPosition());
+		if (!assaultWizards.contains(self)) {
+			if (goToBonusActivated || assaultWizards.isEmpty()) {
+				return;
+			}
+			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+			PositionMoveLine.INSTANCE.updatePointToMove(middlePoint);
+		} else {
+			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+			PositionMoveLine.INSTANCE.updatePointToMove(enemyPositionCalc.getDetectedWizards().get(prevWizardToPush).getPosition());
+		}
 		myLineCalc = PositionMoveLine.INSTANCE;
 		direction = myLineCalc.getMoveDirection(self);
 

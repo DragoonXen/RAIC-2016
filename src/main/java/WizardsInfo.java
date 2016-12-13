@@ -502,6 +502,10 @@ public class WizardsInfo {
 			return lineNo;
 		}
 
+		public boolean hasSkill(SkillType skillType) {
+			return knownSkills.contains(skillType);
+		}
+
 		public int getStaffDamage(int addTicks) {
 			if (empowered != 0 && addTicks >= empowered) {
 				return staffDamageBonus + Constants.getGame().getStaffDamage();
