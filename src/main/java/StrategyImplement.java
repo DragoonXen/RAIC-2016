@@ -228,7 +228,11 @@ public class StrategyImplement implements Strategy {
 				if (FastMath.hypot(myLineCalc.getFightPoint().getX() - self.getX(), myLineCalc.getFightPoint().getY() - self.getY()) > 500. &&
 						myLineCalc.getDistanceTo(self) > Constants.getTopLine().getLineDistance()) {
 					currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
-					PositionMoveLine.INSTANCE.updatePointToMove(myLineCalc.getPreFightPoint());
+					if (assaultWizards.isEmpty() || isInAssaultList()) {
+						PositionMoveLine.INSTANCE.updatePointToMove(myLineCalc.getPreFightPoint());
+					} else {
+						PositionMoveLine.INSTANCE.updatePointToMove(middlePoint);
+					}
 				} else {
 					moveToLineActivated = false;
 				}
