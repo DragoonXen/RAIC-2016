@@ -359,7 +359,7 @@ public class StrategyImplement implements Strategy {
 			middlePoint.update(savedPoint);
 			middlePoint.div(cnt);
 		}
-		if (cnt < 2) {
+		if (cnt <= 2) {
 			assaultWizards.clear();
 			prevWizardToPush = null;
 			return;
