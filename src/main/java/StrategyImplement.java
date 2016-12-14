@@ -447,7 +447,7 @@ public class StrategyImplement implements Strategy {
 				prevWizardToPush == null) {
 			return;
 		}
-		if (!assaultWizards.contains(self)) {
+		if (!isInAssaultList()) {
 			if (goToBonusActivated || assaultWizards.isEmpty()) {
 				return;
 			}
@@ -466,6 +466,15 @@ public class StrategyImplement implements Strategy {
 										  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
 		updateFightStatus();
 		unitScoreCalculation.updateScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs);
+	}
+
+	private boolean isInAssaultList() {
+		for (Wizard assaultWizard : assaultWizards) {
+			if (assaultWizard.isMe()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void updateProjectilesDTL(Projectile[] projectiles) {
