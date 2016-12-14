@@ -25,6 +25,8 @@ public class Variables {
 
 	public static double maxTurnAngle;
 
+	public static Point attackPoint;
+
 	public static double maxDangerMatrixScore;
 
 	public static CurrentAction.ActionType prevActionType = CurrentAction.ActionType.FIGHT;

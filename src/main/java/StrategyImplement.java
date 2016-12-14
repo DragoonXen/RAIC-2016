@@ -1,6 +1,7 @@
 import model.ActionType;
 import model.Bonus;
 import model.Building;
+import model.BuildingType;
 import model.CircularUnit;
 import model.Game;
 import model.Minion;
@@ -74,6 +75,8 @@ public class StrategyImplement implements Strategy {
 	private List<Wizard> assaultWizards = new LinkedList<>();
 	private Point middlePoint = new Point(0, 0);
 
+	private Point attackPoint = null;
+
 	protected TargetFinder targetFinder = new TargetFinder();
 
 	protected WizardsInfo wizardsInfo = new WizardsInfo();
@@ -89,6 +92,7 @@ public class StrategyImplement implements Strategy {
 	}
 
 	public void move(Wizard self, World world, Game game, Move move) {
+		Variables.attackPoint = attackPoint;
 		Variables.world = world;
 		agressiveNeutralsCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
@@ -364,6 +368,7 @@ public class StrategyImplement implements Strategy {
 			prevWizardToPush = null;
 			return;
 		}
+		chargeCalc();
 
 		int hitPoints = 0;
 		int rezerveHitPoints = 0;
@@ -431,6 +436,90 @@ public class StrategyImplement implements Strategy {
 		prevWizardToPush = wizardsToPush.get(0).getFirst().getId();
 	}
 
+	public void chargeCalc() {
+		attackPoint = null;
+		if (assaultWizards.size() < 4) {
+			return;
+		}
+		int[] my_towers = new int[]{0, 0, 0};
+		int[] enemy_towers = new int[]{0, 0, 0};
+		BuildingPhantom enemyBase = null;
+		BuildingPhantom myBase = null;
+		for (BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
+			if (buildingPhantom.getType() == BuildingType.GUARDIAN_TOWER) {
+				if (buildingPhantom.getFaction() == Constants.getCurrentFaction()) {
+					++my_towers[Utils.whichLine(buildingPhantom)];
+				} else {
+					++enemy_towers[Utils.whichLine(buildingPhantom)];
+				}
+			} else {
+				if (buildingPhantom.getFaction() == Constants.getEnemyFaction()) {
+					enemyBase = buildingPhantom;
+				} else {
+					myBase = buildingPhantom;
+				}
+			}
+		}
+
+		int betweenMeAndTower = 0;
+		double baseChargeDistance = FastMath.hypot(enemyBase, middlePoint);
+		for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
+			double walkDistance = Constants.MAX_WIZARDS_FORWARD_SPEED * (world.getTickIndex() - phantom.getLastSeenTick());
+			if (FastMath.hypot(enemyBase, phantom.getPosition()) - walkDistance < baseChargeDistance) {
+				++betweenMeAndTower;
+			}
+		}
+
+		if (betweenMeAndTower < assaultWizards.size() - 2) {
+			assaultApply(enemy_towers[1] == 0);
+			return;
+		}
+		if (betweenMeAndTower >= assaultWizards.size()) {
+			return;
+		}
+		if (myBase.isInvulnerable()) {
+			return;
+		}
+		if (my_towers[0] > 0 && my_towers[2] > 0) {
+			return;
+		}
+
+		int wizardsCount = 0;
+		for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
+			if (world.getTickIndex() - phantom.getLastSeenTick() < 100 &&
+					FastMath.hypot(phantom.getPosition(), myBase.getPosition()) < 1000.) {
+				assaultApply(enemy_towers[1] == 0);
+				return;
+			}
+		}
+
+		int minionsCount = 0;
+		for (MinionPhantom minionPhantom : enemyPositionCalc.getDetectedMinions().values()) {
+			if (FastMath.hypot(myBase.getPosition(), minionPhantom.getPosition()) < 800) {
+				++minionsCount;
+			}
+		}
+		if (minionsCount > 4) {
+			assaultApply(enemy_towers[1] == 0);
+		}
+	}
+
+	private void assaultApply(boolean enemyBase) {
+		if (enemyBase) {
+			attackPoint = Constants.ATTACK_POINT;
+		} else {
+			for (BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
+				if (buildingPhantom.getType() == BuildingType.GUARDIAN_TOWER &&
+						buildingPhantom.getFaction() == Constants.getEnemyFaction() &&
+						Utils.whichLine(buildingPhantom) == 1 &&
+						!buildingPhantom.isInvulnerable()) {
+					attackPoint = buildingPhantom.getPosition();
+					return;
+				}
+			}
+		}
+	}
+
 	private void putWizardToList(List<Wizard> myWizards,
 								 List<Pair<WizardPhantom, Double>> wizardsToPush,
 								 WizardPhantom phantom, double mult) {
@@ -447,10 +536,19 @@ public class StrategyImplement implements Strategy {
 	}
 
 	private void assaultEnemyWizard() {
-		if (currentAction.getActionType() != CurrentAction.ActionType.FIGHT ||
-				prevWizardToPush == null) {
+		if (currentAction.getActionType() != CurrentAction.ActionType.FIGHT) {
 			return;
 		}
+		if (attackPoint != null) {
+			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+			PositionMoveLine.INSTANCE.updatePointToMove(attackPoint);
+			return;
+		}
+
+		if (prevWizardToPush == null) {
+			return;
+		}
+
 		if (!isInAssaultList()) {
 			if (goToBonusActivated || assaultWizards.isEmpty()) {
 				return;

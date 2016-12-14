@@ -95,6 +95,8 @@ public abstract class Constants {
 
 	public final static double[] PURSUIT_COEFF = new double[50];
 
+    public static Point ATTACK_POINT = new Point(3850., 450.);
+
     private static Game game;
     private static Faction currentFaction;
     private static Faction enemyFaction;
