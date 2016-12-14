@@ -460,6 +460,9 @@ public class StrategyImplement implements Strategy {
 				}
 			}
 		}
+		if (FastMath.hypot(self, 4000., 0.) < FastMath.hypot(enemyBase, 4000., 0) + 100.) {
+			return;
+		}
 
 		int betweenMeAndTower = 0;
 		double baseChargeDistance = FastMath.hypot(enemyBase, middlePoint);
@@ -542,22 +545,21 @@ public class StrategyImplement implements Strategy {
 		if (attackPoint != null) {
 			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
 			PositionMoveLine.INSTANCE.updatePointToMove(attackPoint);
-			return;
-		}
-
-		if (prevWizardToPush == null) {
-			return;
-		}
-
-		if (!isInAssaultList()) {
-			if (goToBonusActivated || assaultWizards.isEmpty()) {
+		} else {
+			if (prevWizardToPush == null) {
 				return;
 			}
-			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
-			PositionMoveLine.INSTANCE.updatePointToMove(middlePoint);
-		} else {
-			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
-			PositionMoveLine.INSTANCE.updatePointToMove(enemyPositionCalc.getDetectedWizards().get(prevWizardToPush).getPosition());
+
+			if (!isInAssaultList()) {
+				if (goToBonusActivated || assaultWizards.isEmpty()) {
+					return;
+				}
+				currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+				PositionMoveLine.INSTANCE.updatePointToMove(middlePoint);
+			} else {
+				currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+				PositionMoveLine.INSTANCE.updatePointToMove(enemyPositionCalc.getDetectedWizards().get(prevWizardToPush).getPosition());
+			}
 		}
 		myLineCalc = PositionMoveLine.INSTANCE;
 		direction = myLineCalc.getMoveDirection(self);
