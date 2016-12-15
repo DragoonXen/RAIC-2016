@@ -437,7 +437,7 @@ public class StrategyImplement implements Strategy {
 	}
 
 	public void chargeCalc() {
-		attackPoint = null;
+		setAttackPoint(null);
 		if (assaultWizards.size() < 4) {
 			return;
 		}
@@ -513,14 +513,14 @@ public class StrategyImplement implements Strategy {
 
 	private void assaultApply(boolean enemyBase) {
 		if (enemyBase) {
-			attackPoint = Constants.ATTACK_POINT;
+			setAttackPoint(Constants.ATTACK_POINT);
 		} else {
 			for (BuildingPhantom buildingPhantom : enemyPositionCalc.getBuildingPhantoms()) {
 				if (buildingPhantom.getType() == BuildingType.GUARDIAN_TOWER &&
 						buildingPhantom.getFaction() == Constants.getEnemyFaction() &&
 						Utils.whichLine(buildingPhantom) == 1 &&
 						!buildingPhantom.isInvulnerable()) {
-					attackPoint = buildingPhantom.getPosition();
+					setAttackPoint(buildingPhantom.getPosition());
 					return;
 				}
 			}
@@ -1705,5 +1705,10 @@ public class StrategyImplement implements Strategy {
 				Utils.hasEnemy(filteredWorld.getBuildings())) {
 			fightStatus = FightStatus.ENEMY_FOUND;
 		}
+	}
+
+	private void setAttackPoint(Point point) {
+		this.attackPoint = point;
+		Variables.attackPoint = point;
 	}
 }

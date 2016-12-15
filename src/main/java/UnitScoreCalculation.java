@@ -1,5 +1,6 @@
 import model.ActionType;
 import model.Bonus;
+import model.BuildingType;
 import model.Faction;
 import model.Minion;
 import model.ProjectileType;
@@ -138,20 +139,31 @@ public class UnitScoreCalculation {
 			}
 
 			dangerZone = 0.;
+			ScoreCalcStructure.ScoreItem scoreItem = null;
 			if (priorityAims < 2) {
 				dangerZone = building.getAttackRange() + Math.min(2, -building.getRemainingActionCooldownTicks() - addTicks + 8) * backwardMoveBuildingSpeed;
-				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(dangerZone, building.getDamage() * shieldBonus));
+				scoreItem = ScoreCalcStructure.createBuildingDangerApplyer(dangerZone, building.getDamage() * shieldBonus);
 			} else if (priorityAims == 2) {
 				dangerZone = (building.getAttackRange() + Math.min(2,
 																   -building.getRemainingActionCooldownTicks() - addTicks + 8) * backwardMoveBuildingSpeed) * .5;
-				structure.putItem(ScoreCalcStructure.createBuildingDangerApplyer(dangerZone, building.getDamage() * shieldBonus * .5));
+				scoreItem = ScoreCalcStructure.createBuildingDangerApplyer(dangerZone, building.getDamage() * shieldBonus * .5);
 			}
 			if (dangerZone > FastMath.hypot(self, building)) {
 				enemyCanAttack = true;
 			}
 
 			if (building.isInvulnerable()) {
+				if (scoreItem != null) {
+					scoreItem.setScore(scoreItem.getScore() * 1.5);
+					structure.putItem(scoreItem);
+				}
 				continue;
+			}
+			// charge base
+			if (building.getType() != BuildingType.FACTION_BASE || Variables.attackPoint == null) {
+				structure.putItem(scoreItem);
+			} else {
+				structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(300., 300.));
 			}
 			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);
 			if (expBonus > 0.) {
