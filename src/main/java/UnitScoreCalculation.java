@@ -201,7 +201,7 @@ public class UnitScoreCalculation {
 			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
 
 			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + wizard.getRadius() - .1, staffDamage));
-			if (Variables.attackWizardId == wizard.getId()) {
+			if (Variables.attackWizardId != null && Variables.attackWizardId == wizard.getId()) {
 				int cnt = 0;
 				for (Wizard wizardCheck : Variables.world.getWizards()) {
 					if (wizardCheck.getFaction() == Constants.getCurrentFaction() &&
