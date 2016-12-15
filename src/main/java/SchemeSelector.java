@@ -11,6 +11,8 @@ public class SchemeSelector {
 
 	private static BaseLine fightLine;
 
+	public static boolean goodEvasion = false;
+
 	// default scheme
 	public static void init(World world) {
 		int myNom = (int) world.getMyPlayer().getId();
@@ -28,6 +30,10 @@ public class SchemeSelector {
 				break;
 			}
 		}
+		goodEvasion = "NighTurs".equals(playerName) ||
+				"Recar".equals(playerName) ||
+				"Antmsu".equals(playerName) ||
+				"ud1".equals(playerName);
 //		if ("NighTurs".equals(playerName)) {
 //			schemeNo = 0;
 //		}
