@@ -129,7 +129,7 @@ public class StrategyImplement implements Strategy {
 			baseLine.updateFightPoint(world, enemyPositionCalc);
 		}
 
-		myLineCalc = Utils.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
+		myLineCalc = SchemeSelector.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
 		lastFightLine = myLineCalc;
 
 		lastTick = world.getTickIndex();
@@ -227,7 +227,7 @@ public class StrategyImplement implements Strategy {
 			}
 
 			if (moveToLineActivated) {
-				myLineCalc = Utils.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
+				myLineCalc = SchemeSelector.fightLineSelect(lastFightLine, world, enemyPositionCalc, self);
 				lastFightLine = myLineCalc;
 				if (FastMath.hypot(myLineCalc.getFightPoint().getX() - self.getX(), myLineCalc.getFightPoint().getY() - self.getY()) > 500. &&
 						myLineCalc.getDistanceTo(self) > Constants.getTopLine().getLineDistance()) {

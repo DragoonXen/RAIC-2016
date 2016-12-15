@@ -29,6 +29,7 @@ public final class MyStrategy implements Strategy {
 					if (game.isRawMessagesEnabled()) {
 						SkillsLearning.init(world);
 						Constants.init(game, self);
+						SchemeSelector.init(world);
 						strategy = draw ? new Drawing_DrawingStrategy(self) : new StrategyImplement(self);
 					} else {
 						YYY_SkillsLearning.init(world);
