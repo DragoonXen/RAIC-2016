@@ -1240,7 +1240,7 @@ public class StrategyImplement implements Strategy {
 			if (wizard.getFaction() != Constants.getEnemyFaction()) {
 				continue;
 			}
-			if (Math.abs(wizard.getAngleTo(self)) > Math.PI * .4) { // 0.4 = 72 degrees
+			if (Math.abs(wizard.getAngleTo(self)) > Math.PI * .5) { // 0.4 = 72 degrees
 				continue;
 			}
 			double distance = FastMath.hypot(wizard, self);
