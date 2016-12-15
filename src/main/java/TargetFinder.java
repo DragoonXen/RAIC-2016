@@ -767,16 +767,15 @@ public class TargetFinder {
 				double angle = intAngle * Math.PI / 180;
 				movementVector.update(Math.cos(angle + wizard.getAngle()), Math.sin(angle + wizard.getAngle()));
 
-				if (frozenTicks > 0) {
-					distance = 0.;
-				} else {
-					distance = getDoubleDistance(intAngle, evasionMatrix, 0) * wizardInfo.getMoveFactor();
-					if (Variables.prevActionType != CurrentAction.ActionType.PURSUIT && currStepsToAim == 0) {
-						distance *= .5;
-					}
-				}
-				startPosition.update(wizard.getX() + movementVector.getX() * distance,
-									 wizard.getY() + movementVector.getY() * distance);
+//				if (frozenTicks > 0) {
+//					distance = 0.;
+//				} else {
+//					distance = getDoubleDistance(intAngle, evasionMatrix, 0) * wizardInfo.getMoveFactor();
+//					if (Variables.prevActionType != CurrentAction.ActionType.PURSUIT && currStepsToAim == 0) {
+//						distance *= .5;
+//					}
+//				}
+				startPosition.update(wizard.getX(), wizard.getY());
 				boolean stuck = false;
 				hitConfirmed = false;
 				wizardPosition.update(startPosition);
@@ -784,7 +783,7 @@ public class TargetFinder {
 				distance = 0;
 				movementTicks = 0;
 				for (int j = 0; j != checkCount; ++j) {
-					if (j > 0 && !stuck && frozenTicks < 1) {
+					if (!stuck && frozenTicks < 1) {
 						prevDistance = distance;
 						distance = getDoubleDistance(intAngle, evasionMatrix, movementTicks) * wizardInfo.getMoveFactor();
 						wizardPosition.update(startPosition.getX() + movementVector.getX() * distance,

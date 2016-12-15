@@ -1240,7 +1240,7 @@ public class StrategyImplement implements Strategy {
 			if (wizard.getFaction() != Constants.getEnemyFaction()) {
 				continue;
 			}
-			if (Math.abs(wizard.getAngleTo(self)) > Math.PI * .5) { // 0.4 = 72 degrees
+			if (Math.abs(wizard.getAngleTo(self)) > Math.PI * .4) { // 0.4 = 72 degrees
 				continue;
 			}
 			double distance = FastMath.hypot(wizard, self);
@@ -1265,6 +1265,13 @@ public class StrategyImplement implements Strategy {
 			}
 			nearestWizardAngle = Math.abs(nearestWizardAngle);
 			double turnAngle = Math.PI * .5 - nearestWizardAngle; // 90 degrees
+			if (Math.abs(turnAngle) < Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor()) {
+				if (turnAngle < 0) {
+					turnAngle = -Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor();
+				} else {
+					turnAngle = Constants.getGame().getWizardMaxTurnAngle() * wizardsInfo.getMe().getTurnFactor();
+				}
+			}
 			turnTo(leftSide ? turnAngle : turnAngle * -1, move);
 		} else {
 			if (point == null) {
