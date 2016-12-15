@@ -466,14 +466,18 @@ public class StrategyImplement implements Strategy {
 
 		int betweenMeAndTower = 0;
 		double baseChargeDistance = FastMath.hypot(enemyBase, middlePoint);
+		boolean onlyMiddle = true;
 		for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
+			if (wizardsInfo.getWizardInfo(phantom.getId()).getLineNo() != 1) {
+				onlyMiddle = false;
+			}
 			double walkDistance = Constants.MAX_WIZARDS_FORWARD_SPEED * (world.getTickIndex() - phantom.getLastSeenTick());
 			if (FastMath.hypot(enemyBase, phantom.getPosition()) - walkDistance < baseChargeDistance) {
 				++betweenMeAndTower;
 			}
 		}
 
-		if (betweenMeAndTower < assaultWizards.size() - 2) {
+		if (!onlyMiddle && betweenMeAndTower < assaultWizards.size() - 2) {
 			assaultApply(enemy_towers[1] == 0);
 			return;
 		}
