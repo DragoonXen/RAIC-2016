@@ -31,7 +31,6 @@ public class SchemeSelector {
 			}
 		}
 		goodEvasion = "NighTurs".equals(playerName) ||
-				"Recar".equals(playerName) ||
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 //		if ("NighTurs".equals(playerName)) {
