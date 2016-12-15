@@ -161,7 +161,9 @@ public class UnitScoreCalculation {
 			}
 			// charge base
 			if (building.getType() != BuildingType.FACTION_BASE || Variables.attackPoint == null) {
-				structure.putItem(scoreItem);
+				if (scoreItem != null) {
+					structure.putItem(scoreItem);
+				}
 			} else {
 				structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(300., 300.));
 			}
