@@ -478,7 +478,15 @@ public class StrategyImplement implements Strategy {
 		}
 
 		if (!onlyMiddle && betweenMeAndTower < assaultWizards.size() - 2) {
-			assaultApply(enemy_towers[1] == 0);
+			int readyToAssaultWizards = 0;
+			for (Wizard assaultWizard : assaultWizards) {
+				if (assaultWizard.getLife() > assaultWizard.getMaxLife() * Constants.AGRESSIVE_PUSH_WIZARD_LIFE) {
+					++readyToAssaultWizards;
+				}
+			}
+			if (betweenMeAndTower < readyToAssaultWizards - 2) {
+				assaultApply(enemy_towers[1] == 0);
+			}
 			return;
 		}
 		if (betweenMeAndTower >= assaultWizards.size()) {
