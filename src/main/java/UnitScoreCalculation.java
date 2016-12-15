@@ -191,11 +191,31 @@ public class UnitScoreCalculation {
 				continue;
 			}
 			ScoreCalcStructure structure = new ScoreCalcStructure();
+			unitsScoreCalc.put(wizard.getId(), structure);
 			double expBonus = ScanMatrixItem.calcExpBonus(wizard.getLife(), wizard.getMaxLife(), 4.);
 			double movePenalty = Constants.getGame().getWizardForwardSpeed() * addTicks;
 			if (expBonus > 0.) {
 				structure.putItem(ScoreCalcStructure.createExpBonusApplyer(Constants.EXPERIENCE_DISTANCE - movePenalty, expBonus));
 			}
+
+			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
+
+			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + wizard.getRadius() - .1, staffDamage));
+			if (Variables.attackWizardId == wizard.getId()) {
+				int cnt = 0;
+				for (Wizard wizardCheck : Variables.world.getWizards()) {
+					if (wizardCheck.getFaction() == Constants.getCurrentFaction() &&
+							FastMath.hypot(wizardCheck, wizard) < 600) {
+						++cnt;
+					}
+				}
+				if (cnt > 2) {
+					structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(350, 24));
+					continue;
+				}
+			}
+
+			//attackWizardId
 			WizardsInfo.WizardInfo wizardInfo = Variables.wizardsInfo.getWizardInfo(wizard.getId());
 
 			// create missile danger description
@@ -322,14 +342,10 @@ public class UnitScoreCalculation {
 				enemyCanAttack = true;
 			}
 
-			structure.putItem(ScoreCalcStructure.createAttackBonusApplyer(self.getCastRange() - movePenalty, myDamage));
-
-			structure.putItem(ScoreCalcStructure.createMeleeAttackBonusApplyer(Constants.getGame().getStaffRange() + wizard.getRadius() - .1, staffDamage));
 			if (!wizardInfo.isHasFastMissileCooldown()) {
 				structure.putItem(ScoreCalcStructure.createWizardsDangerApplyer(Constants.getGame().getStaffRange() + wizard.getRadius() - .1,
 																				wizardInfo.getStaffDamage(addTicks)));
 			}
-			unitsScoreCalc.put(wizard.getId(), structure);
 		}
 
 		for (Wizard wizard : filteredWorld.getWizards()) {

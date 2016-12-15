@@ -94,6 +94,7 @@ public class StrategyImplement implements Strategy {
 	public void move(Wizard self, World world, Game game, Move move) {
 		Variables.attackPoint = attackPoint;
 		Variables.world = world;
+		Variables.attackWizardId = null;
 		agressiveNeutralsCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
 		wizardsInfo.updateData(world, enemyPositionCalc);
@@ -569,6 +570,7 @@ public class StrategyImplement implements Strategy {
 				currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
 				PositionMoveLine.INSTANCE.updatePointToMove(middlePoint);
 			} else {
+				Variables.attackWizardId = prevWizardToPush;
 				currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
 				PositionMoveLine.INSTANCE.updatePointToMove(enemyPositionCalc.getDetectedWizards().get(prevWizardToPush).getPosition());
 			}
