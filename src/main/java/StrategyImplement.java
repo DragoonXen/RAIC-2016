@@ -166,6 +166,12 @@ public class StrategyImplement implements Strategy {
 		makeShot(move);
 		assaultEnemyWizard();
 
+		if (SchemeSelector.antmsu && world.getTickIndex() < 650 && FastMath.hypot(self, 0., 4000.) > 2100.) {
+			if (world.getWizards().length <= 7) {
+				return;
+			}
+		}
+
 		if (currentAction.getActionType() == CurrentAction.ActionType.FIGHT) {
 			int ticksToBonusSpawn = Utils.getTicksToBonusSpawn(world.getTickIndex());
 			if (goToBonusActivated) {
