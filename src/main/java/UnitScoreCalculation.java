@@ -183,6 +183,27 @@ public class UnitScoreCalculation {
 																			   staffDamage * Constants.BUILDING_ATTACK_FACTOR));
 		}
 
+		double negateDistance = 0.;
+		if (SchemeSelector.antmsu) {
+			int myCooldown = 1000;
+			myCooldown = Math.min(myCooldown, myWizardInfo.getActionCooldown(ActionType.MAGIC_MISSILE));
+			if (myWizardInfo.isHasFrostBolt()) {
+				myCooldown = Math.min(myCooldown, myWizardInfo.getActionCooldown(ActionType.FROST_BOLT));
+			}
+			if (myWizardInfo.isHasFireball()) {
+				myCooldown = Math.min(myCooldown, myWizardInfo.getActionCooldown(ActionType.FIREBALL));
+			}
+
+			negateDistance = 15.;
+			int ticksToWalk = ShootEvasionMatrix.getTicksForDistance(negateDistance, 6, myWizardInfo.getMoveFactor());
+			if (ticksToWalk >= myCooldown) {
+				myCooldown = Math.max(0, myCooldown - 1);
+				negateDistance = (1. - ((double) myCooldown) / ticksToWalk) * negateDistance;
+			} else {
+				myCooldown -= ticksToWalk;
+				negateDistance = -((double) myCooldown) / ticksToWalk * negateDistance;
+			}
+		}
 
 		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
 		int absorbMagicDamageBonus = myWizardInfo.getAbsorbMagicBonus();
@@ -244,12 +265,21 @@ public class UnitScoreCalculation {
 				double evasionRange = ShootEvasionMatrix.getCorrectDistance(myWizardInfo.getMoveFactor());
 
 				double range = wizardInfo.getCastRange();
-				int ticksToFly = Utils.getTicksToFly(range - self.getRadius(), Constants.getGame().getMagicMissileSpeed());
-				range += self.getRadius() +
-						Constants.getGame().getMagicMissileRadius() -
-						ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFly - 1, myWizardInfo.getMoveFactor()) +
-						Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
-				range = Math.min(evasionRange, range) +
+				int ticksToFly;
+				if (SchemeSelector.antmsu) {
+					ticksToFly = Utils.getTicksToFly(range - self.getRadius(), Constants.getGame().getMagicMissileSpeed());
+					range += self.getRadius() +
+							Constants.getGame().getMagicMissileRadius() -
+							ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFly - 1, myWizardInfo.getMoveFactor()) +
+							Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
+				} else {
+					ticksToFly = Utils.getTicksToFly(range - self.getRadius(), Constants.getGame().getMagicMissileSpeed());
+					range += self.getRadius() +
+							Constants.getGame().getMagicMissileRadius() -
+							ShootEvasionMatrix.getBackwardDistanceCanWalkInTicks(ticksToFly - 1, myWizardInfo.getMoveFactor()) +
+							Constants.getGame().getWizardForwardSpeed() * wizardInfo.getMoveFactor();
+				}
+				range = Math.min(evasionRange, range - negateDistance) +
 						Utils.cooldownDistanceWizardCalculation(wizardInfo.getMoveFactor(),
 																Math.max(wizardInfo.getActionCooldown(ActionType.MAGIC_MISSILE),
 																		 addCooldownTurnOrFreeze) - addTicks);
@@ -356,7 +386,7 @@ public class UnitScoreCalculation {
 			ScoreCalcStructure structure = new ScoreCalcStructure();
 			structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(600., 100.));
 			if (!enemyCanAttack) {
-				structure.putItem(ScoreCalcStructure.createOtherDangerApplyer(95., 200.));
+				structure.putItem(ScoreCalcStructure.createOtherDangerApplyer(SchemeSelector.antmsu ? 80. : 95., 200.));
 			}
 			unitsScoreCalc.put(wizard.getId(), structure);
 		}

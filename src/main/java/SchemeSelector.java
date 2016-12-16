@@ -12,6 +12,7 @@ public class SchemeSelector {
 	private static BaseLine fightLine;
 
 	public static boolean goodEvasion = false;
+	public static boolean antmsu = false;
 
 	// default scheme
 	public static void init(World world) {
@@ -33,6 +34,13 @@ public class SchemeSelector {
 		goodEvasion = "NighTurs".equals(playerName) ||
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
+
+		if ("Antmsu".equals(playerName)) {
+			antmsu = true;
+			if (myNom == 0) {
+				SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
+			}
+		}
 //		if ("NighTurs".equals(playerName)) {
 //			schemeNo = 0;
 //		}
