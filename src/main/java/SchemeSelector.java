@@ -35,7 +35,7 @@ public class SchemeSelector {
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 
-		if ("Antmsu".equals(playerName)) {
+		if ("Antmsu".equals(playerName) || "NighTurs".equals(playerName)) {
 			antmsu = true;
 			if (myNom == 0) {
 				SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
