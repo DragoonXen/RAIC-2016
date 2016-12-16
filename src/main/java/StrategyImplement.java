@@ -166,7 +166,7 @@ public class StrategyImplement implements Strategy {
 		makeShot(move);
 		assaultEnemyWizard();
 
-		if (SchemeSelector.antmsu && world.getTickIndex() < 700 && FastMath.hypot(self, 0., 4000.) > 2100.) {
+		if (SchemeSelector.antmsu && world.getTickIndex() < 650 && FastMath.hypot(self, 0., 4000.) > 2100.) {
 			if (world.getWizards().length <= 7) {
 				return;
 			}

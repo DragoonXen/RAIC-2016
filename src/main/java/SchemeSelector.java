@@ -35,12 +35,13 @@ public class SchemeSelector {
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 
-		if ("Antmsu".equals(playerName)) {
-			antmsu = true;
-			if (myNom == 0) {
-				SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
-			}
-		}
+//		if ("Antmsu".equals(playerName)) {
+//			antmsu = true;
+//			if (myNom == 0) {
+//				SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
+//			}
+//		}
+
 //		if ("NighTurs".equals(playerName)) {
 //			schemeNo = 0;
 //		}
