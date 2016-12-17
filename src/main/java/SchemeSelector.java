@@ -13,6 +13,7 @@ public class SchemeSelector {
 
 	public static boolean goodEvasion = false;
 	public static boolean antmsu = false;
+	public static boolean core2duo = false;
 
 	// default scheme
 	public static void init(World world) {
@@ -40,6 +41,8 @@ public class SchemeSelector {
 			if (myNom == 0) {
 				SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
 			}
+		} else if ("core2duo".equals(playerName)) {
+			core2duo = true;
 		}
 
 //		if ("NighTurs".equals(playerName)) {

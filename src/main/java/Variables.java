@@ -22,6 +22,9 @@ public class Variables {
 	public static List<Long> projectiles = new ArrayList<>();
 
 	public static WizardsInfo wizardsInfo;
+	public static EnemyPositionCalc enemyPositionCalc;
+
+	public static int aggressiveDamageMultiplyer;
 
 	public static double maxTurnAngle;
 

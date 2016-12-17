@@ -97,6 +97,7 @@ public class StrategyImplement implements Strategy {
 		Variables.attackWizardId = null;
 		agressiveNeutralsCalcs.updateMap(world);
 		enemyPositionCalc.updatePositions(world);
+		Variables.enemyPositionCalc = enemyPositionCalc;
 		wizardsInfo.updateData(world, enemyPositionCalc);
 		bonusesPossibilityCalcs.updateTick(world, enemyPositionCalc);
 		teammateIdsContainer.updateTeammatesIds(world);

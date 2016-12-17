@@ -121,10 +121,37 @@ public class UnitScoreCalculation {
 		boolean enemyCanAttack = false;
 		double dangerZone;
 
-		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() > self.getLife()) {
-			staffDamage *= 4.;
-			myDamage *= 4.;
+		int aggressiveDamageMultiplyer = 1;
+		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() < self.getLife()) {
+			aggressiveDamageMultiplyer = 4;
 		}
+
+		if (Constants.ATTACK_ENEMY_WIZARD_LIFE * self.getMaxLife() < self.getLife()) {
+			int[] cntEnemy = new int[3];
+			for (WizardPhantom phantom : Variables.enemyPositionCalc.getDetectedWizards().values()) {
+				if (filteredWorld.getTickIndex() - phantom.getLastSeenTick() < 50) {
+					++cntEnemy[Variables.wizardsInfo.getWizardInfo(phantom.getId()).getLineNo()];
+				} else {
+					++cntEnemy[1];
+				}
+			}
+			switch (cntEnemy[0] + cntEnemy[2]) {
+				case 3:
+					aggressiveDamageMultiplyer = 8;
+					break;
+				case 4:
+					aggressiveDamageMultiplyer = 16;
+					break;
+				case 5:
+					aggressiveDamageMultiplyer = 32;
+					break;
+			}
+		}
+
+		Variables.aggressiveDamageMultiplyer = aggressiveDamageMultiplyer;
+
+		staffDamage *= aggressiveDamageMultiplyer;
+		myDamage *= aggressiveDamageMultiplyer;
 		for (BuildingPhantom building : filteredWorld.getBuildings()) {
 			if (building.getFaction() == Constants.getCurrentFaction()) {
 				continue;
