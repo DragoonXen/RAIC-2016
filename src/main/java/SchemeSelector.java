@@ -39,11 +39,12 @@ public class SchemeSelector {
 
 		if ("Antmsu".equals(playerName) ||
 				"NighTurs".equals(playerName) ||
-				"TonyK".equals(playerName)) {
+				"TonyK".equals(playerName) ||
+				"mortido".equals(playerName)) {
 			antmsu = true;
 		} else if ("core2duo".equals(playerName)) {
 			core2duo = true;
-		} else if ("ud1".equals(playerName) || "mortido".equals(playerName)) {
+		} else if ("ud1".equals(playerName)) {
 			sideAgressive = true;
 			antmsu = true;
 		}
