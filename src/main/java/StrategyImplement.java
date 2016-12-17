@@ -226,12 +226,17 @@ public class StrategyImplement implements Strategy {
 			double nearestWizardDistance = 10000.;
 			double tmp;
 			WizardPhantom foundWizard = null;
-			for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
-				if (phantom.isUpdated()) {
-					tmp = FastMath.hypot(middlePoint, phantom.getPosition());
-					if (tmp < nearestWizardDistance) {
-						nearestWizardDistance = tmp;
-						foundWizard = phantom;
+			if (SchemeSelector.mortido && world.getTickIndex() == 600) {
+				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(-100., -200.));
+			}
+			if (!SchemeSelector.mortido || world.getTickIndex() > 800) {
+				for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
+					if (phantom.isUpdated()) {
+						tmp = FastMath.hypot(middlePoint, phantom.getPosition());
+						if (tmp < nearestWizardDistance) {
+							nearestWizardDistance = tmp;
+							foundWizard = phantom;
+						}
 					}
 				}
 			}

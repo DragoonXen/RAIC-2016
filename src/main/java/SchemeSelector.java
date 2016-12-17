@@ -15,6 +15,7 @@ public class SchemeSelector {
 	public static boolean antmsu = false;
 	public static boolean sideAgressive = false;
 	public static boolean core2duo = false;
+	public static boolean mortido = false;
 
 	// default scheme
 	public static void init(World world) {
@@ -48,6 +49,7 @@ public class SchemeSelector {
 			if ("ud1".equals(playerName)) {
 				Constants.SIDE_AGRESSIVE_POINT = new Point(1400., 2300.);
 			} else {
+				mortido = true;
 				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1];
 			}
 			antmsu = true;
