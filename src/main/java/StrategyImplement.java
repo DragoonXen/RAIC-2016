@@ -215,6 +215,7 @@ public class StrategyImplement implements Strategy {
 
 		if (SchemeSelector.core2duo) {
 			if (aggressiveDamageMultiplyer > 10.) {
+				setAttackPoint(null);
 				SchemeSelector.sideAgressive = true;
 			} else {
 				SchemeSelector.sideAgressive = false;
