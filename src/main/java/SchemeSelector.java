@@ -36,7 +36,10 @@ public class SchemeSelector {
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 
-		if ("Antmsu".equals(playerName) || "NighTurs".equals(playerName) || "ud1".equals(playerName)) {
+		if ("Antmsu".equals(playerName) ||
+				"NighTurs".equals(playerName) ||
+				"ud1".equals(playerName) ||
+				"mortido".equals(playerName)) {
 			antmsu = true;
 		} else if ("core2duo".equals(playerName)) {
 			core2duo = true;
