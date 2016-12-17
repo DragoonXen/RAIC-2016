@@ -153,6 +153,9 @@ public class UnitScoreCalculation {
 			if (building.isInvulnerable()) {
 				if (scoreItem != null) {
 					scoreItem.setScore(scoreItem.getScore() * 1.5);
+					if (SchemeSelector.sideAgressive) {
+						scoreItem.setScore(scoreItem.getScore() * 3.);
+					}
 					structure.putItem(scoreItem);
 				}
 				continue;
@@ -163,7 +166,14 @@ public class UnitScoreCalculation {
 					structure.putItem(scoreItem);
 				}
 			} else {
-				structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(300., 300.));
+				if (SchemeSelector.sideAgressive) {
+					if (scoreItem != null) {
+						scoreItem.setScore(scoreItem.getScore() * 3.);
+						structure.putItem(scoreItem);
+					}
+				} else {
+					structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(300., 300.));
+				}
 			}
 			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);
 			if (expBonus > 0.) {
