@@ -92,7 +92,7 @@ public class StrategyImplement implements Strategy {
 	}
 
 	public void move(Wizard self, World world, Game game, Move move) {
-		Variables.attackPoint = attackPoint;
+		setAttackPoint(null);
 		Variables.world = world;
 		Variables.attackWizardId = null;
 		agressiveNeutralsCalcs.updateMap(world);
@@ -194,6 +194,33 @@ public class StrategyImplement implements Strategy {
 		targetFinder.updateTargets(filteredWorld, myLineCalc, prevPointToReach, agressiveNeutralsCalcs, stuck);
 
 		makeShot(move);
+
+		if (SchemeSelector.sideAgressive) {
+			if (enemyPositionCalc.getDetectedWizards().size() < 4) {
+				SchemeSelector.sideAgressive = false;
+			}
+		}
+
+		if (SchemeSelector.sideAgressive) {
+			double nearestWizardDistance = 10000.;
+			double tmp;
+			WizardPhantom foundWizard = null;
+			for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
+				if (phantom.isUpdated()) {
+					tmp = FastMath.hypot(middlePoint, phantom.getPosition());
+					if (tmp < nearestWizardDistance) {
+						nearestWizardDistance = tmp;
+						foundWizard = phantom;
+					}
+				}
+			}
+
+			if (foundWizard != null) {
+				this.prevWizardToPush = foundWizard.getId();
+			} else {
+				setAttackPoint(BonusesPossibilityCalcs.BONUSES_POINTS[1]);
+			}
+		}
 		assaultEnemyWizard();
 
 		if (SchemeSelector.antmsu && world.getTickIndex() < 1000 && FastMath.hypot(self, 0., 4000.) > 2100.) {
@@ -473,7 +500,6 @@ public class StrategyImplement implements Strategy {
 	}
 
 	public void chargeCalc() {
-		setAttackPoint(null);
 		if (assaultWizards.size() < 4) {
 			return;
 		}

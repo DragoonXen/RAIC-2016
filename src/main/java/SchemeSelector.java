@@ -13,6 +13,7 @@ public class SchemeSelector {
 
 	public static boolean goodEvasion = false;
 	public static boolean antmsu = false;
+	public static boolean sideAgressive = false;
 	public static boolean core2duo = false;
 
 	// default scheme
@@ -32,17 +33,18 @@ public class SchemeSelector {
 				break;
 			}
 		}
+		sideAgressive = true;
 		goodEvasion = "NighTurs".equals(playerName) ||
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 
 		if ("Antmsu".equals(playerName) ||
-				"NighTurs".equals(playerName) ||
-				"ud1".equals(playerName) ||
-				"mortido".equals(playerName)) {
+				"NighTurs".equals(playerName)) {
 			antmsu = true;
 		} else if ("core2duo".equals(playerName)) {
 			core2duo = true;
+		} else if ("ud1".equals(playerName) || "mortido".equals(playerName)) {
+			sideAgressive = true;
 		}
 		if ("Antmsu".equals(playerName) && myNom == 0) {
 			SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
