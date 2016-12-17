@@ -344,6 +344,9 @@ public class Utils {
 				continue;
 			}
 			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(minion.getId());
+			if (structure == null) {
+				continue;
+			}
 			structure.applyScores(item, FastMath.hypot(minion, item));
 		}
 

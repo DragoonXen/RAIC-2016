@@ -1651,6 +1651,9 @@ public class StrategyImplement implements Strategy {
 			}
 
 			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(minion.getId());
+			if (structure == null) {
+				continue;
+			}
 
 			for (int i = 0; i != scan_matrix.length; ++i) {
 				applyScoreForLine(scan_matrix[i], structure, new Point(minion.getX(), minion.getY()));

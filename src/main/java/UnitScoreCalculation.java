@@ -5,6 +5,7 @@ import model.Faction;
 import model.Minion;
 import model.ProjectileType;
 import model.StatusType;
+import model.Tree;
 import model.Wizard;
 
 import java.util.HashMap;
@@ -69,8 +70,27 @@ public class UnitScoreCalculation {
 		double shieldBonus = Utils.wizardStatusTicks(self, StatusType.SHIELDED) > addTicks ?
 				(1. - Constants.getGame().getShieldedDirectDamageAbsorptionFactor()) : 1.;
 
+		Point selfPoint = new Point(self.getX(), self.getY());
+		double mmRadius = Utils.PROJECTIVE_RADIUS[ProjectileType.MAGIC_MISSILE.ordinal()];
+
+		Point point = new Point();
+
 		for (Minion minion : filteredWorld.getMinions()) {
 			if (minion.getFaction() == Constants.getCurrentFaction()) {
+				continue;
+			}
+
+			point.update(minion);
+			boolean canShoot = true;
+			for (Tree tree : FilteredWorld.lastInstance.getShootingTreeList()) {
+				double distance = Utils.distancePointToSegment(new Point(tree.getX(), tree.getY()), point, selfPoint);
+				if (distance < mmRadius + tree.getRadius()) {
+					canShoot = false;
+					break;
+				}
+			}
+			if (!canShoot) {
+				System.out.println("Can't shoot " + minion.getId());
 				continue;
 			}
 
@@ -174,6 +194,18 @@ public class UnitScoreCalculation {
 				} else {
 					structure.putItem(ScoreCalcStructure.createOtherBonusApplyer(300., 300.));
 				}
+			}
+			boolean canShoot = true;
+			for (Tree tree : FilteredWorld.lastInstance.getShootingTreeList()) {
+				double distance = Utils.distancePointToSegment(new Point(tree.getX(), tree.getY()), building.getPosition(), selfPoint);
+				if (distance < mmRadius + tree.getRadius()) {
+					canShoot = false;
+					break;
+				}
+			}
+			if (!canShoot) {
+				System.out.println("Can't shoot " + building.getId());
+				continue;
 			}
 			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);
 			if (expBonus > 0.) {

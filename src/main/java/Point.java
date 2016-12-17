@@ -35,6 +35,10 @@ public class Point {
 		update(point.getX(), point.getY());
 	}
 
+	public void update(Unit unit) {
+		update(unit.getX(), unit.getY());
+	}
+
 	public double scalarMult(Point other) {
 		return x * other.x + y * other.y;
 	}
