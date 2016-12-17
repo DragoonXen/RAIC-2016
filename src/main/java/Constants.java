@@ -70,6 +70,8 @@ public abstract class Constants {
 
     public static double MAX_SHOOT_ANGLE = Math.PI / 12.;
 
+    public static Point SIDE_AGRESSIVE_POINT = new Point(1400., 2300.);
+
     public static double PREV_AIM_MODIFIER = .1;
 
     public static double EXPERIENCE_DISTANCE = 600.;

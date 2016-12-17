@@ -218,7 +218,7 @@ public class StrategyImplement implements Strategy {
 			if (foundWizard != null) {
 				this.prevWizardToPush = foundWizard.getId();
 			} else {
-				setAttackPoint(BonusesPossibilityCalcs.BONUSES_POINTS[1]);
+				setAttackPoint(Constants.SIDE_AGRESSIVE_POINT);
 			}
 		}
 		assaultEnemyWizard();
