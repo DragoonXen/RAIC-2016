@@ -213,6 +213,14 @@ public class StrategyImplement implements Strategy {
 			}
 		}
 
+		if (SchemeSelector.core2duo) {
+			if (aggressiveDamageMultiplyer > 10.) {
+				SchemeSelector.sideAgressive = true;
+			} else {
+				SchemeSelector.sideAgressive = false;
+			}
+		}
+
 		if (SchemeSelector.sideAgressive) {
 			double nearestWizardDistance = 10000.;
 			double tmp;
