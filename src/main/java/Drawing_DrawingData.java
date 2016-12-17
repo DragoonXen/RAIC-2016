@@ -34,6 +34,8 @@ public class Drawing_DrawingData {
 	private int stuck;
 	private Point prevPoint;
 
+	private boolean sideAttack;
+
 	public Drawing_DrawingData(Wizard self,
 							   World world,
 							   CurrentAction currentAction,
@@ -53,7 +55,8 @@ public class Drawing_DrawingData {
 							   Point prevPointToReach,
 							   int stuck,
 							   Point prevPoint,
-							   Long prevWizardToPush) {
+							   Long prevWizardToPush,
+							   boolean sideAttack) {
 		this.self = self;
 		this.world = world;
         this.currentAction = currentAction.clone();
@@ -84,6 +87,7 @@ public class Drawing_DrawingData {
 		this.stuck = stuck;
 		this.prevPoint = prevPoint.clonePoint();
 		this.prevWizardToPush = prevWizardToPush;
+		this.sideAttack = sideAttack;
 	}
 
     public Wizard getSelf() {
@@ -162,6 +166,10 @@ public class Drawing_DrawingData {
 		return prevWizardToPush;
 	}
 
+	public boolean isSideAttack() {
+		return sideAttack;
+	}
+
 	public Drawing_DrawingData clone() {
 		return new Drawing_DrawingData(self,
 									   world,
@@ -182,7 +190,8 @@ public class Drawing_DrawingData {
 									   prevPointToReach,
 									   stuck,
 									   prevPoint,
-									   prevWizardToPush);
+									   prevWizardToPush,
+									   sideAttack);
 	}
 
 	public WizardsInfo getWizardsInfo() {

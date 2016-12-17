@@ -113,6 +113,7 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 		this.stuck = currentDrawingData.getStuck();
 		this.prevPoint = currentDrawingData.getPrevPoint();
 		this.prevWizardToPush = currentDrawingData.getPrevWizardToPush();
+		SchemeSelector.sideAgressive = currentDrawingData.isSideAttack();
 
 		return storedData;
 	}
@@ -137,7 +138,8 @@ public class Drawing_DrawingStrategy extends StrategyImplement {
 									   pointToReach != null ? pointToReach : prevPointToReach,
 									   stuck,
 									   prevPoint,
-									   prevWizardToPush);
+									   prevWizardToPush,
+									   SchemeSelector.sideAgressive);
 	}
 
     @Override

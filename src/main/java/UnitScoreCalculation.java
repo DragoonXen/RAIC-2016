@@ -183,6 +183,9 @@ public class UnitScoreCalculation {
 			// charge base
 			if (building.getType() != BuildingType.FACTION_BASE || Variables.attackPoint == null) {
 				if (scoreItem != null) {
+					if (SchemeSelector.sideAgressive) {
+						scoreItem.setScore(scoreItem.getScore() * 3.);
+					}
 					structure.putItem(scoreItem);
 				}
 			} else {
