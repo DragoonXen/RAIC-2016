@@ -223,7 +223,7 @@ public class StrategyImplement implements Strategy {
 		}
 		assaultEnemyWizard();
 
-		if (SchemeSelector.antmsu && world.getTickIndex() < 1000 && FastMath.hypot(self, 0., 4000.) > 2100.) {
+		if (SchemeSelector.antmsu && !SchemeSelector.sideAgressive && world.getTickIndex() < 1000 && FastMath.hypot(self, 0., 4000.) > 2100.) {
 			if (world.getWizards().length <= 7) {
 				return;
 			}

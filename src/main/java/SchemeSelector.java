@@ -45,6 +45,7 @@ public class SchemeSelector {
 			core2duo = true;
 		} else if ("ud1".equals(playerName) || "mortido".equals(playerName)) {
 			sideAgressive = true;
+			antmsu = true;
 		}
 		if ("Antmsu".equals(playerName) && myNom == 0) {
 			SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
