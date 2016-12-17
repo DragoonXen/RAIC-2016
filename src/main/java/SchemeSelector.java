@@ -39,7 +39,8 @@ public class SchemeSelector {
 				"ud1".equals(playerName);
 
 		if ("Antmsu".equals(playerName) ||
-				"NighTurs".equals(playerName)) {
+				"NighTurs".equals(playerName) ||
+				"TonyK".equals(playerName)) {
 			antmsu = true;
 		} else if ("core2duo".equals(playerName)) {
 			core2duo = true;
