@@ -33,7 +33,6 @@ public class SchemeSelector {
 				break;
 			}
 		}
-		sideAgressive = true;
 		goodEvasion = "NighTurs".equals(playerName) ||
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
