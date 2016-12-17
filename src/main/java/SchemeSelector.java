@@ -50,7 +50,7 @@ public class SchemeSelector {
 				Constants.SIDE_AGRESSIVE_POINT = new Point(1400., 2300.);
 			} else {
 				mortido = true;
-				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1];
+				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(100., 100.));
 			}
 			antmsu = true;
 		}
