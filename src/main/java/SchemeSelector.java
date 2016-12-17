@@ -39,13 +39,17 @@ public class SchemeSelector {
 
 		if ("Antmsu".equals(playerName) ||
 				"NighTurs".equals(playerName) ||
-				"TonyK".equals(playerName) ||
-				"mortido".equals(playerName)) {
+				"TonyK".equals(playerName)) {
 			antmsu = true;
 		} else if ("core2duo".equals(playerName)) {
 			core2duo = true;
-		} else if ("ud1".equals(playerName)) {
+		} else if ("ud1".equals(playerName) || "mortido".equals(playerName)) {
 			sideAgressive = true;
+			if ("ud1".equals(playerName)) {
+				Constants.SIDE_AGRESSIVE_POINT = new Point(1400., 2300.);
+			} else {
+				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1];
+			}
 			antmsu = true;
 		}
 		if ("Antmsu".equals(playerName) && myNom == 0) {
