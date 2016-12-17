@@ -196,8 +196,20 @@ public class StrategyImplement implements Strategy {
 		makeShot(move);
 
 		if (SchemeSelector.sideAgressive) {
-			if (enemyPositionCalc.getDetectedWizards().size() < 4) {
+			if (world.getTickIndex() > 3000) {
 				SchemeSelector.sideAgressive = false;
+			} else if (enemyPositionCalc.getDetectedWizards().size() < 4) {
+				SchemeSelector.sideAgressive = false;
+			} else {
+				int cntMy = 0;
+				for (Wizard wizard : world.getWizards()) {
+					if (wizard.getFaction() == Constants.getCurrentFaction()) {
+						++cntMy;
+					}
+				}
+				if (cntMy < enemyPositionCalc.getDetectedWizards().size()) {
+					SchemeSelector.sideAgressive = false;
+				}
 			}
 		}
 
