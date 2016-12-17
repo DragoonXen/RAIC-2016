@@ -398,7 +398,6 @@ public class StrategyImplement implements Strategy {
 				break;
 			}
 			middlePoint.update(savedPoint);
-			middlePoint.div(cnt);
 		}
 		if (cnt <= 2) {
 			assaultWizards.clear();
@@ -504,6 +503,7 @@ public class StrategyImplement implements Strategy {
 		int betweenMeAndTower = 0;
 		double baseChargeDistance = FastMath.hypot(enemyBase, middlePoint);
 		boolean onlyMiddle = true;
+		int enemyHitPoints = 0;
 		for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
 			if (wizardsInfo.getWizardInfo(phantom.getId()).getLineNo() != 1) {
 				onlyMiddle = false;
@@ -511,6 +511,7 @@ public class StrategyImplement implements Strategy {
 			double walkDistance = Constants.MAX_WIZARDS_FORWARD_SPEED * (world.getTickIndex() - phantom.getLastSeenTick());
 			if (FastMath.hypot(enemyBase, phantom.getPosition()) - walkDistance < baseChargeDistance) {
 				++betweenMeAndTower;
+				enemyHitPoints += phantom.getLife();
 			}
 		}
 
@@ -526,13 +527,29 @@ public class StrategyImplement implements Strategy {
 			}
 			return;
 		}
-		if (betweenMeAndTower >= assaultWizards.size()) {
-			return;
-		}
 		if (myBase.isInvulnerable()) {
 			return;
 		}
 		if (my_towers[0] > 0 && my_towers[2] > 0) {
+			return;
+		}
+
+		int hitPoints = 0;
+		int rezerveHitPoints = 0;
+		for (Wizard wizard : assaultWizards) {
+			if (wizard.getLife() > wizard.getLife() * Constants.ATTACK_ENEMY_WIZARD_LIFE) {
+				hitPoints += wizard.getLife();
+			} else {
+				rezerveHitPoints += wizard.getLife();
+			}
+		}
+
+		if (hitPoints + rezerveHitPoints * 0.3 > enemyHitPoints * 5.) {
+			assaultApply(enemy_towers[1] == 0);
+			return;
+		}
+
+		if (betweenMeAndTower >= assaultWizards.size()) {
 			return;
 		}
 
