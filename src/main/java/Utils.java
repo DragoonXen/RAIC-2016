@@ -769,6 +769,10 @@ public class Utils {
 				score *= Constants.ORC_ATTACKS_ME_ADD_PRIORITY;
 			}
 		}
+
+		if (Variables.aggressiveDamageMultiplyer > 20.) {
+			score *= 10.;
+		}
 		return score;
 	}
 

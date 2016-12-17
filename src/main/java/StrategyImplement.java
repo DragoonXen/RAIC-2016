@@ -103,6 +103,35 @@ public class StrategyImplement implements Strategy {
 		teammateIdsContainer.updateTeammatesIds(world);
 		SkillsLearning.updateSkills(self, enemyPositionCalc, world.getWizards(), move);
 		fightStatus = FightStatus.NO_ENEMY;
+
+		int aggressiveDamageMultiplyer = 1;
+		if (Constants.AGRESSIVE_PUSH_WIZARD_LIFE * self.getMaxLife() < self.getLife()) {
+			aggressiveDamageMultiplyer = 4;
+		}
+
+		if (Constants.ATTACK_ENEMY_WIZARD_LIFE * self.getMaxLife() < self.getLife()) {
+			int[] cntEnemy = new int[3];
+			for (WizardPhantom phantom : Variables.enemyPositionCalc.getDetectedWizards().values()) {
+				if (world.getTickIndex() - phantom.getLastSeenTick() < 50) {
+					++cntEnemy[Variables.wizardsInfo.getWizardInfo(phantom.getId()).getLineNo()];
+				} else {
+					++cntEnemy[1];
+				}
+			}
+			switch (cntEnemy[0] + cntEnemy[2]) {
+				case 3:
+					aggressiveDamageMultiplyer = 8;
+					break;
+				case 4:
+					aggressiveDamageMultiplyer = 16;
+					break;
+				case 5:
+					aggressiveDamageMultiplyer = 32;
+					break;
+			}
+		}
+
+		Variables.aggressiveDamageMultiplyer = aggressiveDamageMultiplyer;
 		treeCut = false;
 		moveToPoint = null;
 		manaFree = true;
