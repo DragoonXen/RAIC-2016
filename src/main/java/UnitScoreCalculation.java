@@ -246,10 +246,23 @@ public class UnitScoreCalculation {
 			}
 		}
 
+		boolean skipWizards = false;
+		if (SchemeSelector.mortido && filteredWorld.getTickIndex() <= 800) {
+			skipWizards = true;
+			for (WizardPhantom wizardPhantom : Variables.enemyPositionCalc.getDetectedWizards().values()) {
+				if (wizardPhantom.isUpdated()) {
+					if (FastMath.hypot(self, wizardPhantom.getPosition()) < 600) {
+						skipWizards = false;
+						break;
+					}
+				}
+			}
+		}
+
 		boolean meHasFrostSkill = myWizardInfo.isHasFrostBolt();
 		int absorbMagicDamageBonus = myWizardInfo.getAbsorbMagicBonus();
 		for (Wizard wizard : filteredWorld.getWizards()) {
-			if (wizard.getFaction() == Constants.getCurrentFaction()) {
+			if (wizard.getFaction() == Constants.getCurrentFaction() || skipWizards) {
 				continue;
 			}
 			ScoreCalcStructure structure = new ScoreCalcStructure();

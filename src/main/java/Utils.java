@@ -352,6 +352,9 @@ public class Utils {
 
 		for (Wizard wizard : filteredWorld.getWizards()) {
 			ScoreCalcStructure structure = unitScoreCalculation.getUnitsScoreCalc(wizard.getId());
+			if (structure == null) {
+				continue;
+			}
 			structure.applyScores(item, FastMath.hypot(wizard, item));
 		}
 
