@@ -43,15 +43,18 @@ public class SchemeSelector {
 		} else if ("core2duo".equals(playerName) || "morozec".equals(playerName)) {
 			core2duo = true;
 		} else {
-			if ("ud1".equals(playerName) ||
-					"mortido".equals(playerName) ||
-					"Antmsu".equals(playerName) ||
-					"NighTurs".equals(playerName)) {
-				sideAgressive = true;
-				mortido = true;
-				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(300., 300.));
+			if ("Antmsu".equals(playerName) || "NighTurs".equals(playerName)) {
 				antmsu = true;
 			}
+//			if ("ud1".equals(playerName) ||
+//					"mortido".equals(playerName) ||
+//					"Antmsu".equals(playerName) ||
+//					"NighTurs".equals(playerName)) {
+//				sideAgressive = true;
+//				mortido = true;
+//				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(300., 300.));
+//				antmsu = true;
+//			}
 		}
 		if ("Antmsu".equals(playerName) && myNom == 0) {
 			SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
