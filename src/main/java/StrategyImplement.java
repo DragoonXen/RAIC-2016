@@ -229,7 +229,19 @@ public class StrategyImplement implements Strategy {
 			if (SchemeSelector.mortido && world.getTickIndex() == 600) {
 				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(-100., -200.));
 			}
-			if (!SchemeSelector.mortido || world.getTickIndex() > 800) {
+			if (SchemeSelector.mortido) {
+				if (world.getTickIndex() > 800) {
+					Point leftDownCorner = new Point(0., 4000.);
+					List<Pair<Double, WizardPhantom>> aims = new ArrayList<>();
+					for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
+						if (phantom.isUpdated()) {
+							aims.add(new Pair<>(FastMath.hypot(leftDownCorner, phantom.getPosition()), phantom));
+						}
+					}
+					aims.sort((o1, o2) -> Double.compare(o2.getFirst(), o1.getFirst()));
+					foundWizard = aims.get((aims.size() + 1) / 2).getSecond();
+				}
+			} else {
 				for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
 					if (phantom.isUpdated()) {
 						tmp = FastMath.hypot(middlePoint, phantom.getPosition());
