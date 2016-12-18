@@ -2,9 +2,6 @@ import model.Player;
 import model.Wizard;
 import model.World;
 
-import java.util.Calendar;
-import java.util.Date;
-
 /**
  * Created by dragoon on 12/15/16.
  */
@@ -49,21 +46,14 @@ public class SchemeSelector {
 			if ("Antmsu".equals(playerName) || "NighTurs".equals(playerName)) {
 				antmsu = true;
 			}
-			Calendar calendar = Calendar.getInstance();
-			Date dt = new Date();
-			calendar.set(Calendar.MINUTE, 45);//
-			calendar.set(Calendar.HOUR, 11);
-			calendar.set(Calendar.DATE, 18);
-			if (calendar.getTime().before(dt)) {
-				if ("ud1".equals(playerName) || "mortido".equals(playerName) || "Antmsu".equals(playerName) || "NighTurs".equals(playerName)) {
-					sideAgressive = true;
-					mortido = true;
-					Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(300., 300.));
-					antmsu = true;
-				} else if ("tyamgin".equals(playerName)) {
-					antmsu = true;
-				}
-			}
+//			if ("ud1".equals(playerName) || "mortido".equals(playerName) || "Antmsu".equals(playerName) || "NighTurs".equals(playerName)) {
+//				sideAgressive = true;
+//				mortido = true;
+//				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(300., 300.));
+//				antmsu = true;
+//			} else if ("tyamgin".equals(playerName)) {
+//				antmsu = true;
+//			}
 		}
 		if ("Antmsu".equals(playerName) && myNom == 0) {
 			SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
