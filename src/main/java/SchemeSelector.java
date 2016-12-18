@@ -2,6 +2,9 @@ import model.Player;
 import model.Wizard;
 import model.World;
 
+import java.util.Calendar;
+import java.util.Date;
+
 /**
  * Created by dragoon on 12/15/16.
  */
@@ -38,6 +41,20 @@ public class SchemeSelector {
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 
+		if ("tyamgin".equals(playerName)) {
+			Date date = new Date();
+			Calendar instance = Calendar.getInstance();
+			instance.set(Calendar.HOUR, 4);
+			instance.set(Calendar.MINUTE, 35);
+			Date checkDate = instance.getTime();
+			if (date.after(checkDate)) {
+				instance.set(Calendar.MINUTE, 36);
+				checkDate = instance.getTime();
+				if (date.before(checkDate)) {
+					playerName = "TonyK";
+				}
+			}
+		}
 		if ("Antmsu".equals(playerName) ||
 				"NighTurs".equals(playerName) ||
 				"TonyK".equals(playerName)) {
