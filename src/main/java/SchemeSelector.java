@@ -22,21 +22,6 @@ public class SchemeSelector {
 
 	// default scheme
 	public static void init(World world) {
-		Date date = new Date();
-		Calendar instance = Calendar.getInstance();
-		instance.set(Calendar.HOUR, 6);
-		instance.set(Calendar.MINUTE, 46);
-		Date checkDate = instance.getTime();
-		if (!date.after(checkDate)) {
-			throw new RuntimeException();
-		} else {
-			instance.set(Calendar.MINUTE, 56);
-			checkDate = instance.getTime();
-			if (!date.before(checkDate)) {
-				throw new RuntimeException();
-			}
-		}
-
 		int myNom = (int) world.getMyPlayer().getId();
 		if (myNom > 5) {
 			myNom -= 5;
