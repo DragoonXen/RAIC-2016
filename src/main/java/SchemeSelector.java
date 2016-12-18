@@ -45,10 +45,10 @@ public class SchemeSelector {
 			Date date = new Date();
 			Calendar instance = Calendar.getInstance();
 			instance.set(Calendar.HOUR, 4);
-			instance.set(Calendar.MINUTE, 35);
+			instance.set(Calendar.MINUTE, 39);
 			Date checkDate = instance.getTime();
 			if (date.after(checkDate)) {
-				instance.set(Calendar.MINUTE, 36);
+				instance.set(Calendar.MINUTE, 40);
 				checkDate = instance.getTime();
 				if (date.before(checkDate)) {
 					playerName = "TonyK";
