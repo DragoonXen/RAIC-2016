@@ -51,7 +51,7 @@ public class SchemeSelector {
 			}
 			Calendar calendar = Calendar.getInstance();
 			Date dt = new Date();
-			calendar.set(Calendar.MINUTE, 45);
+			calendar.set(Calendar.MINUTE, 45);//
 			calendar.set(Calendar.HOUR, 11);
 			calendar.set(Calendar.DATE, 18);
 			if (calendar.getTime().before(dt)) {
