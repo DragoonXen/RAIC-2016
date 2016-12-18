@@ -238,8 +238,10 @@ public class StrategyImplement implements Strategy {
 							aims.add(new Pair<>(FastMath.hypot(leftDownCorner, phantom.getPosition()), phantom));
 						}
 					}
-					aims.sort((o1, o2) -> Double.compare(o2.getFirst(), o1.getFirst()));
-					foundWizard = aims.get((aims.size() + 1) / 2).getSecond();
+					if (!aims.isEmpty()) {
+						aims.sort((o1, o2) -> Double.compare(o2.getFirst(), o1.getFirst()));
+						foundWizard = aims.get((aims.size() + 1) / 2 - 1).getSecond();
+					}
 				}
 			} else {
 				for (WizardPhantom phantom : enemyPositionCalc.getDetectedWizards().values()) {
