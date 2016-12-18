@@ -240,7 +240,7 @@ public class StrategyImplement implements Strategy {
 					}
 					if (!aims.isEmpty()) {
 						aims.sort((o1, o2) -> Double.compare(o2.getFirst(), o1.getFirst()));
-						foundWizard = aims.get((aims.size() + 1) / 2 - 1).getSecond();
+						foundWizard = aims.get(aims.size() > 2 ? 1 : 0).getSecond();
 					}
 				}
 			} else {
