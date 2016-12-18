@@ -109,7 +109,7 @@ public class StrategyImplement implements Strategy {
 			aggressiveDamageMultiplyer = 4;
 		}
 
-		if (Constants.ATTACK_ENEMY_WIZARD_LIFE * self.getMaxLife() < self.getLife()) {
+		if (!SchemeSelector.recar && Constants.ATTACK_ENEMY_WIZARD_LIFE * self.getMaxLife() < self.getLife()) {
 			int[] cntEnemy = new int[3];
 			for (WizardPhantom phantom : Variables.enemyPositionCalc.getDetectedWizards().values()) {
 				if (world.getTickIndex() - phantom.getLastSeenTick() < 50) {
