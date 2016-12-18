@@ -90,7 +90,6 @@ public class UnitScoreCalculation {
 				}
 			}
 			if (!canShoot) {
-				System.out.println("Can't shoot " + minion.getId());
 				continue;
 			}
 
@@ -207,7 +206,6 @@ public class UnitScoreCalculation {
 				}
 			}
 			if (!canShoot) {
-				System.out.println("Can't shoot " + building.getId());
 				continue;
 			}
 			double expBonus = ScanMatrixItem.calcExpBonus(building.getLife(), building.getMaxLife(), 2.);

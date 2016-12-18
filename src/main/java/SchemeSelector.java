@@ -41,23 +41,9 @@ public class SchemeSelector {
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 
-		if ("tyamgin".equals(playerName)) {
-			Date date = new Date();
-			Calendar instance = Calendar.getInstance();
-			instance.set(Calendar.HOUR, 4);
-			instance.set(Calendar.MINUTE, 39);
-			Date checkDate = instance.getTime();
-			if (date.after(checkDate)) {
-				instance.set(Calendar.MINUTE, 40);
-				checkDate = instance.getTime();
-				if (date.before(checkDate)) {
-					playerName = "TonyK";
-				}
-			}
-		}
 		if ("TonyK".equals(playerName)) {
 			antmsu = true;
-		} else if ("core2duo".equals(playerName)) {
+		} else if ("core2duo".equals(playerName) || "morozec".equals(playerName)) {
 			core2duo = true;
 		} else {
 			Calendar calendar = Calendar.getInstance();
@@ -70,6 +56,8 @@ public class SchemeSelector {
 					sideAgressive = true;
 					mortido = true;
 					Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(300., 300.));
+					antmsu = true;
+				} else if ("tyamgin".equals(playerName)) {
 					antmsu = true;
 				}
 			}
