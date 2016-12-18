@@ -46,12 +46,8 @@ public class SchemeSelector {
 			core2duo = true;
 		} else if ("ud1".equals(playerName) || "mortido".equals(playerName)) {
 			sideAgressive = true;
-			if ("ud1".equals(playerName)) {
-				Constants.SIDE_AGRESSIVE_POINT = new Point(1400., 2300.);
-			} else {
-				mortido = true;
-				Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(300., 300.));
-			}
+			mortido = true;
+			Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(300., 300.));
 			antmsu = true;
 		}
 		if ("Antmsu".equals(playerName) && myNom == 0) {
