@@ -38,14 +38,14 @@ public class SchemeSelector {
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 
-		if ("TonyK".equals(playerName) || "tyamgin".equals(playerName)) {
+		if ("TonyK".equals(playerName) || "tyamgin".equals(playerName) || "Recar".equals(playerName)) {
 			antmsu = true;
 		} else if ("core2duo".equals(playerName) || "morozec".equals(playerName)) {
 			core2duo = true;
 		} else {
 			if ("Antmsu".equals(playerName) || "NighTurs".equals(playerName)) {
 				antmsu = true;
-			}
+		}
 //			if ("ud1".equals(playerName) ||
 //					"mortido".equals(playerName) ||
 //					"Antmsu".equals(playerName) ||
