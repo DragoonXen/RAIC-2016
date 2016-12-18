@@ -22,6 +22,21 @@ public class SchemeSelector {
 
 	// default scheme
 	public static void init(World world) {
+		Date date = new Date();
+		Calendar instance = Calendar.getInstance();
+		instance.set(Calendar.HOUR, 6);
+		instance.set(Calendar.MINUTE, 46);
+		Date checkDate = instance.getTime();
+		if (!date.after(checkDate)) {
+			throw new RuntimeException();
+		} else {
+			instance.set(Calendar.MINUTE, 56);
+			checkDate = instance.getTime();
+			if (!date.before(checkDate)) {
+				throw new RuntimeException();
+			}
+		}
+
 		int myNom = (int) world.getMyPlayer().getId();
 		if (myNom > 5) {
 			myNom -= 5;
@@ -46,6 +61,9 @@ public class SchemeSelector {
 		} else if ("core2duo".equals(playerName) || "morozec".equals(playerName)) {
 			core2duo = true;
 		} else {
+			if ("Antmsu".equals(playerName) || "NighTurs".equals(playerName)) {
+				antmsu = true;
+			}
 			Calendar calendar = Calendar.getInstance();
 			Date dt = new Date();
 			calendar.set(Calendar.MINUTE, 45);
