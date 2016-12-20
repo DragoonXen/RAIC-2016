@@ -520,23 +520,21 @@ public class StrategyImplement implements Strategy {
 		if (stepNom < 10) {
 			return;
 		}
+		if (stepNom == 10) {
+			fireDance(move);
+		}
 		if (stepNom < 70) {
 			move.setTurn(1.);
 			return;
 		}
 		if (stepNom == 70) {
-			move.setCastAngle(0.);
-			move.setAction(ActionType.MAGIC_MISSILE);
+			fireDance(move);
 		}
 		if (stepNom < 130) {
 			move.setTurn(-1.);
 			return;
 		}
 
-		if (stepNom == 130) {
-			move.setCastAngle(0.);
-			move.setAction(ActionType.MAGIC_MISSILE);
-		}
 		int myNom = (int) self.getId();
 		if (myNom > 5) {
 			myNom -= 5;
@@ -544,17 +542,27 @@ public class StrategyImplement implements Strategy {
 
 		double distance = 80 * (myNom - 3);
 
-		double currAngle = Math.PI * .01 * (stepNom - 130);
+		double currAngle = Math.PI * .0058 * (stepNom - 130) + Math.PI * .25;
 		Point nextPoint = Constants.DANCE_POINT.addWithCopy(new Point(distance * Math.cos(currAngle),
 																	  distance * Math.sin(currAngle)));
 
-		double nextAngle = Utils.normalizeAngle(self.getAngle() - Math.PI * .25 + currAngle);
+		double nextAngle = Utils.normalizeAngle(currAngle - Math.PI * .5 - self.getAngle());
 		turnTo(nextAngle, move);
 		AccAndSpeedWithFix accAndSpeedWithFix =
 				AccAndSpeedWithFix.getAccAndSpeedByAngle(self.getAngleTo(nextPoint.getX(), nextPoint.getY()),
 														 FastMath.hypot(self, nextPoint));
 		move.setSpeed(accAndSpeedWithFix.getSpeed());
 		move.setStrafeSpeed(accAndSpeedWithFix.getStrafe());
+
+		if ((stepNom - 130) % 60 == 0) {
+			fireDance(move);
+		}
+	}
+
+	private void fireDance(Move move) {
+		move.setCastAngle(0.);
+		move.setAction(ActionType.MAGIC_MISSILE);
+		move.setMinCastDistance(1000.);
 	}
 
 	private void checkAssaultEnemyWizard() {
