@@ -70,6 +70,7 @@ public class StrategyImplement implements Strategy {
 	protected boolean turnFixed;
 	protected boolean goToBonusActivated = false;
 	protected boolean moveToLineActivated = false;
+	protected int startDancing = -1;
 	protected FightStatus fightStatus;
 	protected Long prevWizardToPush = null;
 	private List<Wizard> assaultWizards = new LinkedList<>();
@@ -263,9 +264,11 @@ public class StrategyImplement implements Strategy {
 		}
 		assaultEnemyWizard();
 
-		if (SchemeSelector.antmsu && !SchemeSelector.sideAgressive && world.getTickIndex() < 1000 && FastMath.hypot(self, 0., 4000.) > 2100.) {
+		if (SchemeSelector.antmsu && !SchemeSelector.sideAgressive && world.getTickIndex() < 1000 && FastMath.hypot(self, 0., 4000.) > 1800.) {
 			if (world.getWizards().length <= 7) {
-				return;
+				if (dance(move)) {
+					return;
+				}
 			}
 		}
 
@@ -430,6 +433,128 @@ public class StrategyImplement implements Strategy {
 		if (!turnFixed) {
 			turnTo(moveToPoint, move);
 		}
+	}
+
+	private boolean dance(Move move) {
+		Wizard[] myWizards = new Wizard[5];
+		for (Wizard wizard : world.getWizards()) {
+			if (wizard.getFaction() == Constants.getCurrentFaction()) {
+				myWizards[(int) (wizard.getId() - 1)] = wizard;
+			}
+		}
+
+		if (startDancing == -1) {
+			Point currDancePoint;
+			boolean ready = true;
+			for (Wizard myWizard : myWizards) {
+				if (Math.abs(Utils.normalizeAngle(myWizard.getAngle() + Math.PI * .25)) < 1e-5) {
+					int myNom = (int) myWizard.getId();
+					if (myNom > 5) {
+						myNom -= 5;
+					}
+					double distance = 80 * (myNom - 3);
+					distance = Math.sqrt(distance * distance / 2.);
+					if (myNom < 3) {
+						distance = -distance;
+					}
+					currDancePoint = Constants.DANCE_POINT.addWithCopy(new Point(distance, distance));
+					if (FastMath.hypot(myWizard, currDancePoint) > 1e-5) {
+						ready = false;
+						break;
+					}
+				} else {
+					ready = false;
+					break;
+				}
+			}
+			if (ready) {
+				startDancing = world.getTickIndex();
+				danceNow(move);
+				return true;
+			}
+
+			int myNom = (int) self.getId();
+			if (myNom > 5) {
+				myNom -= 5;
+			}
+			double distance = 80 * (myNom - 3);
+			distance = Math.sqrt(distance * distance / 2.);
+			if (myNom < 3) {
+				distance = -distance;
+			}
+			currDancePoint = Constants.DANCE_POINT.addWithCopy(new Point(distance, distance));
+
+			double distanceToStart = FastMath.hypot(self, currDancePoint);
+			if (distanceToStart < 5.) {
+				double angle = -Math.PI * .25;
+				turnTo(Utils.normalizeAngle(angle - self.getAngle()), move);
+				AccAndSpeedWithFix accAndSpeedWithFix =
+						AccAndSpeedWithFix.getAccAndSpeedByAngle(self.getAngleTo(currDancePoint.getX(), currDancePoint.getY()), distanceToStart);
+				move.setSpeed(accAndSpeedWithFix.getSpeed());
+				move.setStrafeSpeed(accAndSpeedWithFix.getStrafe());
+				return true;
+			}
+			currentAction.setActionType(CurrentAction.ActionType.MOVE_TO_POSITION);
+			PositionMoveLine.INSTANCE.updatePointToMove(currDancePoint);
+
+			myLineCalc = PositionMoveLine.INSTANCE;
+			direction = myLineCalc.getMoveDirection(self);
+
+			filteredWorld = Utils.filterWorld(world,
+											  new Point(self.getX() + Math.cos(direction) * Constants.MOVE_SCAN_FIGURE_CENTER,
+														self.getY() + Math.sin(direction) * Constants.MOVE_SCAN_FIGURE_CENTER),
+											  enemyPositionCalc.getBuildingPhantoms(), teammateIdsContainer);
+			updateFightStatus();
+			unitScoreCalculation.updateScores(filteredWorld, self, fightStatus, agressiveNeutralsCalcs);
+			return false;
+		} else {
+			danceNow(move);
+			return true;
+		}
+	}
+
+	private void danceNow(Move move) {
+		move.setAction(ActionType.NONE);
+		move.setTurn(0.);
+		int stepNom = world.getTickIndex() - startDancing;
+		if (stepNom < 10) {
+			return;
+		}
+		if (stepNom < 70) {
+			move.setTurn(1.);
+			return;
+		}
+		if (stepNom == 70) {
+			move.setCastAngle(0.);
+			move.setAction(ActionType.MAGIC_MISSILE);
+		}
+		if (stepNom < 130) {
+			move.setTurn(-1.);
+			return;
+		}
+
+		if (stepNom == 130) {
+			move.setCastAngle(0.);
+			move.setAction(ActionType.MAGIC_MISSILE);
+		}
+		int myNom = (int) self.getId();
+		if (myNom > 5) {
+			myNom -= 5;
+		}
+
+		double distance = 80 * (myNom - 3);
+
+		double currAngle = Math.PI * .01 * (stepNom - 130);
+		Point nextPoint = Constants.DANCE_POINT.addWithCopy(new Point(distance * Math.cos(currAngle),
+																	  distance * Math.sin(currAngle)));
+
+		double nextAngle = Utils.normalizeAngle(self.getAngle() - Math.PI * .25 + currAngle);
+		turnTo(nextAngle, move);
+		AccAndSpeedWithFix accAndSpeedWithFix =
+				AccAndSpeedWithFix.getAccAndSpeedByAngle(self.getAngleTo(nextPoint.getX(), nextPoint.getY()),
+														 FastMath.hypot(self, nextPoint));
+		move.setSpeed(accAndSpeedWithFix.getSpeed());
+		move.setStrafeSpeed(accAndSpeedWithFix.getStrafe());
 	}
 
 	private void checkAssaultEnemyWizard() {

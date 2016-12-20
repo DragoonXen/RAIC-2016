@@ -72,6 +72,8 @@ public abstract class Constants {
 
     public static Point SIDE_AGRESSIVE_POINT = new Point(1400., 2300.);
 
+    public final static Point DANCE_POINT = new Point(1485, 4000 - 1485);
+
     public static double PREV_AIM_MODIFIER = .1;
 
     public static double EXPERIENCE_DISTANCE = 600.;

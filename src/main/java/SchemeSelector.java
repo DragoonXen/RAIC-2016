@@ -39,10 +39,9 @@ public class SchemeSelector {
 				"Antmsu".equals(playerName) ||
 				"ud1".equals(playerName);
 
+		antmsu = true;
 		if ("Recar".equals(playerName)) {
 			recar = true;
-		} else if ("TonyK".equals(playerName) || "tyamgin".equals(playerName)) {
-			antmsu = true;
 		} else if ("core2duo".equals(playerName) || "morozec".equals(playerName)) {
 			core2duo = true;
 		} else if ("ud1".equals(playerName) ||
@@ -52,7 +51,6 @@ public class SchemeSelector {
 			sideAgressive = true;
 			mortido = true;
 			Constants.SIDE_AGRESSIVE_POINT = BonusesPossibilityCalcs.BONUSES_POINTS[1].addWithCopy(new Point(300., 300.));
-			antmsu = true;
 		}
 		if ("Antmsu".equals(playerName) && myNom == 0) {
 			SkillsLearning.currentSkillsToLearn = SkillsLearning.MOVEMENT_FROST_RANGE;
